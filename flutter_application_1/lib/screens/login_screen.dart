@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import 'user_home_screen.dart';
+import 'admin/admin_dashboard_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -26,10 +27,45 @@ class _LoginScreenState extends State<LoginScreen> {
 
   void _onLoginPressed() {
     if (_formKey.currentState!.validate()) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const UserHomeScreen()),
-      );
+      final email = _emailController.text.trim().toLowerCase();
+      final password = _passwordController.text.trim();
+
+      // Mock Credentials Checking
+      if ((email == 'admin@gmail.com' && password == 'admin123456') ||
+          (email == 'employee@gmail.com' && password == 'employee123')) {
+        // Admin or Employee Role -> Route to Admin Management Screen
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('เข้าสู่ระบบสำเร็จในฐานะ: ${email == 'admin@gmail.com' ? 'Admin' : 'Employee'}'),
+            backgroundColor: AppColors.primary,
+          ),
+        );
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const AdminDashboardScreen()),
+        );
+      } else if ((email == 'user1234@gmail.com' && password == 'user1234') ||
+          (email == 'member@gmail.com' && password == 'member1234')) {
+        // User (General or Member) -> Route to User Home Screen
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('เข้าสู่ระบบสำเร็จในฐานะ: ${email == 'member@gmail.com' ? 'Premiere Member' : 'General User'}'),
+            backgroundColor: AppColors.primary,
+          ),
+        );
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const UserHomeScreen()),
+        );
+      } else {
+        // Incorrect Credentials
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('อีเมลหรือรหัสผ่านไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
     }
   }
 
@@ -79,7 +115,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     color: AppColors.textSecondary,
                   ),
                 ),
-                const SizedBox(height: 36),
+                const SizedBox(height: 32),
 
                 // Form Fields
                 Form(
@@ -92,7 +128,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         keyboardType: TextInputType.emailAddress,
                         decoration: const InputDecoration(
                           labelText: 'อีเมล / บัญชีผู้ใช้',
-                          hintText: 'example@email.com',
+                          hintText: 'example@gmail.com',
                           prefixIcon: Icon(Icons.person_outline, color: AppColors.primary),
                         ),
                         validator: (value) {
@@ -171,9 +207,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ],
                     ),
                     TextButton(
-                      onPressed: () {
-                        // Action for forgot password
-                      },
+                      onPressed: () {},
                       child: const Text(
                         'ลืมรหัสผ่าน?',
                         style: TextStyle(
@@ -185,27 +219,78 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 28),
+                const SizedBox(height: 24),
 
-                // Login Button
+                // Single Login Button
                 ElevatedButton(
                   onPressed: _onLoginPressed,
                   child: const Text('เข้าสู่ระบบ'),
                 ),
-                const SizedBox(height: 32),
+                const SizedBox(height: 24),
 
-                // Footer note
-                const Text(
-                  'หากมีปัญหาในการเข้าสู่ระบบ กรุณาติดต่อผู้ดูแลระบบ',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: AppColors.textSecondary,
+                // Mock Accounts Reference Helper Box
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF1F5F9),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Row(
+                        children: [
+                          Icon(Icons.info_outline_rounded, size: 16, color: AppColors.primary),
+                          SizedBox(width: 6),
+                          Text(
+                            'บัญชีสำหรับทดสอบระบบ (Mock Data):',
+                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.primary),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      _buildCredentialRow('Admin', 'admin@gmail.com', 'admin123456'),
+                      _buildCredentialRow('Employees', 'employee@gmail.com', 'employee123'),
+                      _buildCredentialRow('User (General)', 'user1234@gmail.com', 'user1234'),
+                      _buildCredentialRow('User (Member)', 'member@gmail.com', 'member1234'),
+                    ],
                   ),
                 ),
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCredentialRow(String role, String email, String pwd) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 4.0),
+      child: InkWell(
+        onTap: () {
+          setState(() {
+            _emailController.text = email;
+            _passwordController.text = pwd;
+          });
+        },
+        child: Row(
+          children: [
+            SizedBox(
+              width: 100,
+              child: Text(
+                '$role:',
+                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+              ),
+            ),
+            Expanded(
+              child: Text(
+                '$email / $pwd',
+                style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+              ),
+            ),
+          ],
         ),
       ),
     );
