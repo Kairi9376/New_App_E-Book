@@ -2,6 +2,11 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import '../models/book_model.dart';
+import 'history_screen.dart';
+import 'saved_screen.dart';
+import 'downloads_screen.dart';
+import 'profile_screen.dart';
+import 'book_detail_screen.dart';
 
 class UserHomeScreen extends StatefulWidget {
   const UserHomeScreen({super.key});
@@ -60,53 +65,67 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // Top App Content (Scrollable)
             Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 18.0, vertical: 12.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // 1. User Header Profile Bar
-                    _buildHeaderBar(),
-                    const SizedBox(height: 16),
-
-                    // 2. Search Bar
-                    _buildSearchBar(),
-                    const SizedBox(height: 16),
-
-                    // 3. Category Horizontal Chips
-                    _buildCategoryChips(),
-                    const SizedBox(height: 20),
-
-                    // 4. Section 1: ยอดนิยม (Popular)
-                    _buildSectionHeader('ยอดนิยม', onSeeAll: () {}),
-                    const SizedBox(height: 12),
-                    _buildPopularBooksList(),
-                    const SizedBox(height: 24),
-
-                    // 5. Section 2: หนังสือใหม่ (New Books)
-                    _buildSectionHeader('หนังสือใหม่', onSeeAll: () {}),
-                    const SizedBox(height: 12),
-                    _buildNewBooksList(),
-                    const SizedBox(height: 24),
-
-                    // 6. Section 3: แนะนำ (Recommended)
-                    _buildSectionHeader('แนะนำ', onSeeAll: () {}),
-                    const SizedBox(height: 12),
-                    _buildRecommendedBooksList(),
-                    const SizedBox(height: 16),
-                  ],
-                ),
-              ),
+              child: _buildBodyContent(),
             ),
-
             // Bottom Navigation Bar
             _buildBottomNavigationBar(),
           ],
         ),
       ),
     );
+  }
+
+  Widget _buildBodyContent() {
+    switch (_currentBottomNavIndex) {
+      case 1:
+        return const HistoryScreen();
+      case 2:
+        return const SavedScreen();
+      case 3:
+        return const DownloadsScreen();
+      case 4:
+        return const ProfileScreen();
+      case 0:
+      default:
+        return SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 18.0, vertical: 12.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 1. User Header Profile Bar
+              _buildHeaderBar(),
+              const SizedBox(height: 16),
+
+              // 2. Search Bar
+              _buildSearchBar(),
+              const SizedBox(height: 16),
+
+              // 3. Category Horizontal Chips
+              _buildCategoryChips(),
+              const SizedBox(height: 20),
+
+              // 4. Section 1: ยอดนิยม (Popular)
+              _buildSectionHeader('ยอดนิยม', onSeeAll: () {}),
+              const SizedBox(height: 12),
+              _buildPopularBooksList(),
+              const SizedBox(height: 24),
+
+              // 5. Section 2: หนังสือใหม่ (New Books)
+              _buildSectionHeader('หนังสือใหม่', onSeeAll: () {}),
+              const SizedBox(height: 12),
+              _buildNewBooksList(),
+              const SizedBox(height: 24),
+
+              // 6. Section 3: แนะนำ (Recommended)
+              _buildSectionHeader('แนะนำ', onSeeAll: () {}),
+              const SizedBox(height: 12),
+              _buildRecommendedBooksList(),
+              const SizedBox(height: 16),
+            ],
+          ),
+        );
+    }
   }
 
   // --- 1. Header Bar Widget ---
@@ -326,24 +345,31 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
   Widget _buildBookCard(BookModel book) {
     final isBookmarked = _bookmarkedIds.contains(book.id);
 
-    return Container(
-      width: 175,
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFF1F5F9)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => BookDetailScreen(book: book)),
+        );
+      },
+      child: Container(
+        width: 175,
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFFF1F5F9)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.03),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
           // Cover Image with Floating Bookmark Button
           Stack(
             children: [
@@ -477,103 +503,111 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 
-  // --- Compact Tile Widget for New Books Section ---
   Widget _buildNewBookTile(BookModel book) {
     final isBookmarked = _bookmarkedIds.contains(book.id);
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFF1F5F9)),
-      ),
-      child: Row(
-        children: [
-          // Book Thumbnail
-          ClipRRect(
-            borderRadius: BorderRadius.circular(10),
-            child: _buildImage(book.imagePath, width: 60, height: 75),
-          ),
-          const SizedBox(width: 12),
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => BookDetailScreen(book: book)),
+        );
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: const Color(0xFFF1F5F9)),
+        ),
+        child: Row(
+          children: [
+            // Book Thumbnail
+            ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: _buildImage(book.imagePath, width: 60, height: 75),
+            ),
+            const SizedBox(width: 12),
 
-          // Info Column
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  book.title,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                Text(
-                  book.author,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-                const SizedBox(height: 4),
-
-                // Rating & Tags Row
-                Row(
-                  children: [
-                    const Icon(Icons.star_rounded, size: 14, color: Colors.amber),
-                    const SizedBox(width: 4),
-                    Text(
-                      book.ratingText,
-                      style: const TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary,
-                      ),
+            // Info Column
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    book.title,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
                     ),
-                  ],
-                ),
-                const SizedBox(height: 6),
-                Wrap(
-                  spacing: 6,
-                  children: book.tags
-                      .map(
-                        (tag) => Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF1F5F9),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Text(
-                            tag,
-                            style: const TextStyle(
-                              fontSize: 10,
-                              color: AppColors.textSecondary,
+                  ),
+                  Text(
+                    book.author,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+
+                  // Rating & Tags Row
+                  Row(
+                    children: [
+                      const Icon(Icons.star_rounded, size: 14, color: Colors.amber),
+                      const SizedBox(width: 4),
+                      Text(
+                        book.ratingText,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Wrap(
+                    spacing: 6,
+                    children: book.tags
+                        .map(
+                          (tag) => Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF1F5F9),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              tag,
+                              style: const TextStyle(
+                                fontSize: 10,
+                                color: AppColors.textSecondary,
+                              ),
                             ),
                           ),
-                        ),
-                      )
-                      .toList(),
-                ),
-              ],
+                        )
+                        .toList(),
+                  ),
+                ],
+              ),
             ),
-          ),
 
-          // Bookmark Icon Button
-          IconButton(
-            onPressed: () => _toggleBookmark(book.id),
-            icon: Icon(
-              isBookmarked ? Icons.bookmark : Icons.bookmark_border_rounded,
-              color: AppColors.primary,
-              size: 20,
+            // Bookmark Icon Button
+            IconButton(
+              onPressed: () => _toggleBookmark(book.id),
+              icon: Icon(
+                isBookmarked ? Icons.bookmark : Icons.bookmark_border_rounded,
+                color: AppColors.primary,
+                size: 20,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
