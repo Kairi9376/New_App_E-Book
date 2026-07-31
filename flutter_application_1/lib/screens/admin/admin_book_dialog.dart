@@ -187,7 +187,56 @@ class _AdminBookDialogState extends State<AdminBookDialog> {
                     ),
                     const SizedBox(height: 14),
 
-                    // File Cover Picker Placeholder Box
+                    // PDF File Picker Box (Critical for E-Book)
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEFF6FF),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFFBFDBFE)),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 44,
+                            height: 44,
+                            decoration: BoxDecoration(
+                              color: AppColors.primary.withOpacity(0.15),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(Icons.picture_as_pdf_rounded, color: AppColors.primary),
+                          ),
+                          const SizedBox(width: 12),
+                          const Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'อัปโหลดไฟล์หนังสือ (PDF) *',
+                                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.primary),
+                                ),
+                                Text(
+                                  'รองรับเอกสาร .pdf (สูงสุด 100MB)',
+                                  style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                                ),
+                              ],
+                            ),
+                          ),
+                          ElevatedButton(
+                            onPressed: () {},
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primary,
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              minimumSize: Size.zero,
+                            ),
+                            child: const Text('เลือกไฟล์ PDF', style: TextStyle(fontSize: 11)),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+
+                    // File Cover Picker Box
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
@@ -201,7 +250,7 @@ class _AdminBookDialogState extends State<AdminBookDialog> {
                             width: 44,
                             height: 44,
                             decoration: BoxDecoration(
-                              color: AppColors.primary.withValues(alpha: 0.1),
+                              color: AppColors.primary.withOpacity(0.1),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: const Icon(Icons.image_outlined, color: AppColors.primary),
@@ -228,7 +277,7 @@ class _AdminBookDialogState extends State<AdminBookDialog> {
                               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                               minimumSize: Size.zero,
                             ),
-                            child: const Text('เลือกไฟล์', style: TextStyle(fontSize: 11)),
+                            child: const Text('เลือกรูปปก', style: TextStyle(fontSize: 11)),
                           ),
                         ],
                       ),

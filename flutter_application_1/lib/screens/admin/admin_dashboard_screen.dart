@@ -1,8 +1,10 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import '../../theme/app_theme.dart';
 import '../../models/book_model.dart';
 import 'admin_book_dialog.dart';
+import '../employee/add_book_screen.dart';
 import '../login_screen.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
@@ -59,15 +61,22 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   ];
 
   Widget _buildImage(String path, {double? width, double? height}) {
-    final file = File(path);
-    if (file.existsSync()) {
-      return Image.file(
-        file,
-        width: width,
-        height: height,
-        fit: BoxFit.cover,
-      );
+    if (path.startsWith('http://') || path.startsWith('https://')) {
+      return Image.network(path, width: width, height: height, fit: BoxFit.cover, errorBuilder: (_, __, ___) => _buildPlaceholder(width, height));
     }
+    if (path.startsWith('assets/')) {
+      return Image.asset(path, width: width, height: height, fit: BoxFit.cover, errorBuilder: (_, __, ___) => _buildPlaceholder(width, height));
+    }
+    if (!kIsWeb) {
+      final file = File(path);
+      if (file.existsSync()) {
+        return Image.file(file, width: width, height: height, fit: BoxFit.cover);
+      }
+    }
+    return _buildPlaceholder(width, height);
+  }
+
+  Widget _buildPlaceholder(double? width, double? height) {
     return Container(
       width: width,
       height: height,
@@ -145,7 +154,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             Container(
               padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.2),
+                color: Colors.white.withOpacity(0.2),
                 shape: BoxShape.circle,
               ),
               child: const Icon(Icons.admin_panel_settings_rounded, color: Colors.white, size: 22),
@@ -230,7 +239,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
+              color: Colors.black.withOpacity(0.05),
               blurRadius: 6,
               offset: const Offset(0, 2),
             ),
@@ -270,9 +279,11 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     ];
 
     return Container(
-      color: Colors.white,
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      border: const Border(bottom: BorderSide(color: Color(0xFFE2E8F0))),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        border: Border(bottom: BorderSide(color: Color(0xFFE2E8F0))),
+      ),
       child: Row(
         children: List.generate(tabs.length, (index) {
           final isSelected = _selectedTab == index;
@@ -369,14 +380,31 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 ),
               ),
             ),
-            const SizedBox(width: 10),
+            const SizedBox(width: 8),
             ElevatedButton.icon(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const EmployeeAddBookScreen()),
+                );
+              },
+              icon: const Icon(Icons.picture_as_pdf_rounded, size: 18, color: Colors.white),
+              label: const Text('ฟอร์มพนักงาน (PDF)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF059669), // Green accent for employee PDF form
+                minimumSize: const Size(130, 42),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            OutlinedButton.icon(
               onPressed: _openAddBookDialog,
               icon: const Icon(Icons.add_rounded, size: 18),
-              label: const Text('เพิ่มหนังสือ', style: TextStyle(fontSize: 13)),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                minimumSize: const Size(110, 42),
+              label: const Text('เพิ่มแบบเร็ว', style: TextStyle(fontSize: 12)),
+              style: OutlinedButton.styleFrom(
+                minimumSize: const Size(100, 42),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10),
                 ),
@@ -501,7 +529,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 child: Row(
                   children: [
                     CircleAvatar(
-                      backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+                      backgroundColor: AppColors.primary.withOpacity(0.1),
                       child: Text(
                         user['name'][0],
                         style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary),

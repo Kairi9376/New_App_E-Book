@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import '../models/saved_model.dart';
@@ -20,20 +21,27 @@ class _SavedScreenState extends State<SavedScreen> {
   }
 
   Widget _buildImage(String path, {double? width, double? height}) {
-    final file = File(path);
-    if (file.existsSync()) {
-      return Image.file(
-        file,
-        width: width,
-        height: height,
-        fit: BoxFit.cover,
-      );
+    if (path.startsWith('http://') || path.startsWith('https://')) {
+      return Image.network(path, width: width, height: height, fit: BoxFit.cover, errorBuilder: (_, __, ___) => _buildPlaceholder(width, height));
     }
+    if (path.startsWith('assets/')) {
+      return Image.asset(path, width: width, height: height, fit: BoxFit.cover, errorBuilder: (_, __, ___) => _buildPlaceholder(width, height));
+    }
+    if (!kIsWeb) {
+      final file = File(path);
+      if (file.existsSync()) {
+        return Image.file(file, width: width, height: height, fit: BoxFit.cover);
+      }
+    }
+    return _buildPlaceholder(width, height);
+  }
+
+  Widget _buildPlaceholder(double? width, double? height) {
     return Container(
       width: width,
       height: height,
       color: const Color(0xFF1E293B),
-      child: const Icon(Icons.bookmark_added_rounded, color: Colors.white, size: 40),
+      child: const Icon(Icons.book_rounded, color: AppColors.primary, size: 32),
     );
   }
 
@@ -91,7 +99,7 @@ class _SavedScreenState extends State<SavedScreen> {
         border: Border.all(color: const Color(0xFFF1F5F9)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
+            color: Colors.black.withOpacity(0.03),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),

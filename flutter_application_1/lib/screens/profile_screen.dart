@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import 'login_screen.dart';
@@ -7,15 +8,22 @@ class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
 
   Widget _buildImage(String path, {double? width, double? height}) {
-    final file = File(path);
-    if (file.existsSync()) {
-      return Image.file(
-        file,
-        width: width,
-        height: height,
-        fit: BoxFit.cover,
-      );
+    if (path.startsWith('http://') || path.startsWith('https://')) {
+      return Image.network(path, width: width, height: height, fit: BoxFit.cover, errorBuilder: (_, __, ___) => _buildPlaceholder(width, height));
     }
+    if (path.startsWith('assets/')) {
+      return Image.asset(path, width: width, height: height, fit: BoxFit.cover, errorBuilder: (_, __, ___) => _buildPlaceholder(width, height));
+    }
+    if (!kIsWeb) {
+      final file = File(path);
+      if (file.existsSync()) {
+        return Image.file(file, width: width, height: height, fit: BoxFit.cover);
+      }
+    }
+    return _buildPlaceholder(width, height);
+  }
+
+  Widget _buildPlaceholder(double? width, double? height) {
     return Container(
       width: width,
       height: height,
@@ -119,7 +127,7 @@ class ProfileScreen extends StatelessWidget {
               color: const Color(0xFF5E97F6),
               borderRadius: BorderRadius.circular(20),
             ),
-            child: const Row(
+            child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
@@ -142,7 +150,7 @@ class ProfileScreen extends StatelessWidget {
           const SizedBox(height: 16),
 
           // 4. Membership Dates Row
-          const Row(
+          Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
@@ -187,7 +195,7 @@ class ProfileScreen extends StatelessWidget {
               border: Border.all(color: const Color(0xFFE2E8F0)),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.02),
+                  color: Colors.black.withOpacity(0.02),
                   blurRadius: 8,
                   offset: const Offset(0, 3),
                 ),
@@ -227,7 +235,7 @@ class ProfileScreen extends StatelessWidget {
                 borderRadius: BorderRadius.circular(14),
               ),
             ),
-            child: const Row(
+            child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(

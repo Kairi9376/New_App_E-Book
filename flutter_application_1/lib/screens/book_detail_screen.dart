@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import '../models/book_model.dart';
@@ -40,20 +41,27 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
   }
 
   Widget _buildImage(String path, {double? width, double? height}) {
-    final file = File(path);
-    if (file.existsSync()) {
-      return Image.file(
-        file,
-        width: width,
-        height: height,
-        fit: BoxFit.cover,
-      );
+    if (path.startsWith('http://') || path.startsWith('https://')) {
+      return Image.network(path, width: width, height: height, fit: BoxFit.cover, errorBuilder: (_, __, ___) => _buildPlaceholder(width, height));
     }
+    if (path.startsWith('assets/')) {
+      return Image.asset(path, width: width, height: height, fit: BoxFit.cover, errorBuilder: (_, __, ___) => _buildPlaceholder(width, height));
+    }
+    if (!kIsWeb) {
+      final file = File(path);
+      if (file.existsSync()) {
+        return Image.file(file, width: width, height: height, fit: BoxFit.cover);
+      }
+    }
+    return _buildPlaceholder(width, height);
+  }
+
+  Widget _buildPlaceholder(double? width, double? height) {
     return Container(
       width: width,
       height: height,
       color: Colors.amber.shade100,
-      child: const Icon(Icons.book_rounded, color: AppColors.primary, size: 60),
+      child: const Icon(Icons.book, color: AppColors.primary, size: 48),
     );
   }
 
@@ -126,7 +134,7 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                               borderRadius: BorderRadius.circular(16),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.12),
+                                  color: Colors.black.withOpacity(0.12),
                                   blurRadius: 20,
                                   offset: const Offset(0, 10),
                                 ),

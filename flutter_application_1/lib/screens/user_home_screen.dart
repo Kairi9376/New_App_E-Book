@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import '../models/book_model.dart';
@@ -41,15 +42,22 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
   }
 
   Widget _buildImage(String path, {double? width, double? height, BoxFit fit = BoxFit.cover}) {
-    final file = File(path);
-    if (file.existsSync()) {
-      return Image.file(
-        file,
-        width: width,
-        height: height,
-        fit: fit,
-      );
+    if (path.startsWith('http://') || path.startsWith('https://')) {
+      return Image.network(path, width: width, height: height, fit: fit, errorBuilder: (_, __, ___) => _buildPlaceholder(width, height));
     }
+    if (path.startsWith('assets/')) {
+      return Image.asset(path, width: width, height: height, fit: fit, errorBuilder: (_, __, ___) => _buildPlaceholder(width, height));
+    }
+    if (!kIsWeb) {
+      final file = File(path);
+      if (file.existsSync()) {
+        return Image.file(file, width: width, height: height, fit: fit);
+      }
+    }
+    return _buildPlaceholder(width, height);
+  }
+
+  Widget _buildPlaceholder(double? width, double? height) {
     return Container(
       width: width,
       height: height,
@@ -162,7 +170,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                   color: const Color(0xFFE2EDFF),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Row(
+                child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(
@@ -361,7 +369,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
           border: Border.all(color: const Color(0xFFF1F5F9)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.03),
+              color: Colors.black.withOpacity(0.03),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
