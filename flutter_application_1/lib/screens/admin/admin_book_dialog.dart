@@ -207,7 +207,7 @@ class _AdminBookDialogState extends State<AdminBookDialog> {
                             child: const Icon(Icons.picture_as_pdf_rounded, color: AppColors.primary),
                           ),
                           const SizedBox(width: 12),
-                          const Expanded(
+                          Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
@@ -256,7 +256,7 @@ class _AdminBookDialogState extends State<AdminBookDialog> {
                             child: const Icon(Icons.image_outlined, color: AppColors.primary),
                           ),
                           const SizedBox(width: 12),
-                          const Expanded(
+                          Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [

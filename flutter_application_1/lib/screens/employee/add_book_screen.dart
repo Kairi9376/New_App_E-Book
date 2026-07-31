@@ -1,7 +1,5 @@
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import '../../theme/app_theme.dart';
-import '../../models/book_model.dart';
 
 class EmployeeAddBookScreen extends StatefulWidget {
   const EmployeeAddBookScreen({super.key});
@@ -138,7 +136,7 @@ class _EmployeeAddBookScreenState extends State<EmployeeAddBookScreen> {
       barrierDismissible: false,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Column(
+        title: Column(
           children: [
             Icon(Icons.check_circle_rounded, color: Color(0xFF10B981), size: 56),
             SizedBox(height: 12),
@@ -176,6 +174,7 @@ class _EmployeeAddBookScreenState extends State<EmployeeAddBookScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
         backgroundColor: AppColors.primary,
@@ -184,7 +183,7 @@ class _EmployeeAddBookScreenState extends State<EmployeeAddBookScreen> {
           icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Row(
+        title: Row(
           children: [
             Icon(Icons.picture_as_pdf_rounded, color: Colors.white, size: 22),
             SizedBox(width: 8),
@@ -372,10 +371,10 @@ class _EmployeeAddBookScreenState extends State<EmployeeAddBookScreen> {
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: const Color(0xFFBFDBFE)),
       ),
-      child: const Row(
+      child: Row(
         children: [
-          Icon(Icons.info_outline_rounded, color: AppColors.primary, size: 24),
-          SizedBox(width: 12),
+          const Icon(Icons.info_outline_rounded, color: AppColors.primary, size: 24),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -450,7 +449,7 @@ class _EmployeeAddBookScreenState extends State<EmployeeAddBookScreen> {
                         const SizedBox(height: 4),
                         Text(
                           _pdfFileName != null
-                              ? 'ขนาดไฟล์: ${_pdfFileSizeMB} MB • พร้อมใช้งาน'
+                              ? 'ขนาดไฟล์: $_pdfFileSizeMB MB • พร้อมใช้งาน'
                               : 'รองรับไฟล์เอกสาร PDF ทุกชนิด (ไม่เกิน 100MB)',
                           style: TextStyle(
                             fontSize: 12,
@@ -470,6 +469,7 @@ class _EmployeeAddBookScreenState extends State<EmployeeAddBookScreen> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: _pdfFileName != null ? const Color(0xFF059669) : AppColors.primary,
                       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      minimumSize: const Size(0, 40),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     ),
                   ),
@@ -618,7 +618,7 @@ class _EmployeeAddBookScreenState extends State<EmployeeAddBookScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Row(
+                Row(
                   children: [
                     Icon(Icons.preview_rounded, color: AppColors.primary),
                     SizedBox(width: 8),

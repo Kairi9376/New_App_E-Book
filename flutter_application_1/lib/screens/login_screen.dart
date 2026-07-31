@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import 'user_home_screen.dart';
 import 'admin/admin_dashboard_screen.dart';
+import 'employee/employee_dashboard_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -25,25 +26,39 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
+  void _navigateTo(Widget page) {
+    FocusScope.of(context).unfocus();
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => page),
+    );
+  }
+
   void _onLoginPressed() {
     if (_formKey.currentState!.validate()) {
+      FocusScope.of(context).unfocus();
       final email = _emailController.text.trim().toLowerCase();
       final password = _passwordController.text.trim();
 
       // Mock Credentials Checking
-      if ((email == 'admin@gmail.com' && password == 'admin123456') ||
-          (email == 'employee@gmail.com' && password == 'employee123')) {
-        // Admin or Employee Role -> Route to Admin Management Screen
+      if (email == 'admin@gmail.com' && password == 'admin123456') {
+        // Admin Role -> Route to Admin Management Screen
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('เข้าสู่ระบบสำเร็จในฐานะ: ${email == 'admin@gmail.com' ? 'Admin' : 'Employee'}'),
+          const SnackBar(
+            content: Text('เข้าสู่ระบบสำเร็จในฐานะ: Admin (ผู้ดูแลระบบ)'),
             backgroundColor: AppColors.primary,
           ),
         );
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const AdminDashboardScreen()),
+        _navigateTo(const AdminDashboardScreen());
+      } else if (email == 'employee@gmail.com' && password == 'employee123') {
+        // Employee Role -> Route to Employee Portal (Staff Dashboard)
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('เข้าสู่ระบบสำเร็จในฐานะ: Employee (พนักงานจัดการ PDF)'),
+            backgroundColor: Color(0xFF10B981),
+          ),
         );
+        _navigateTo(const EmployeeDashboardScreen());
       } else if ((email == 'user1234@gmail.com' && password == 'user1234') ||
           (email == 'member@gmail.com' && password == 'member1234')) {
         // User (General or Member) -> Route to User Home Screen
@@ -53,10 +68,7 @@ class _LoginScreenState extends State<LoginScreen> {
             backgroundColor: AppColors.primary,
           ),
         );
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const UserHomeScreen()),
-        );
+        _navigateTo(const UserHomeScreen());
       } else {
         // Incorrect Credentials
         ScaffoldMessenger.of(context).showSnackBar(
@@ -221,10 +233,13 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 24),
 
-                // Single Login Button
-                ElevatedButton(
-                  onPressed: _onLoginPressed,
-                  child: const Text('เข้าสู่ระบบ'),
+                SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: ElevatedButton(
+                    onPressed: _onLoginPressed,
+                    child: const Text('เข้าสู่ระบบ'),
+                  ),
                 ),
                 const SizedBox(height: 24),
 

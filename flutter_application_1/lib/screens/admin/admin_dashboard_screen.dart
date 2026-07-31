@@ -380,31 +380,14 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 ),
               ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 10),
             ElevatedButton.icon(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const EmployeeAddBookScreen()),
-                );
-              },
-              icon: const Icon(Icons.picture_as_pdf_rounded, size: 18, color: Colors.white),
-              label: const Text('ฟอร์มพนักงาน (PDF)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF059669), // Green accent for employee PDF form
-                minimumSize: const Size(130, 42),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            OutlinedButton.icon(
               onPressed: _openAddBookDialog,
               icon: const Icon(Icons.add_rounded, size: 18),
-              label: const Text('เพิ่มแบบเร็ว', style: TextStyle(fontSize: 12)),
-              style: OutlinedButton.styleFrom(
-                minimumSize: const Size(100, 42),
+              label: const Text('เพิ่มหนังสือใหม่', style: TextStyle(fontSize: 13)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                minimumSize: const Size(120, 42),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10),
                 ),
