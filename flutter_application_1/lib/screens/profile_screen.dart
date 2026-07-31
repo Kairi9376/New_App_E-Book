@@ -2,7 +2,10 @@ import 'dart:io';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
+import '../models/kyc_model.dart';
 import 'login_screen.dart';
+import 'kyc_submission_screen.dart';
+import 'membership_package_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -204,6 +207,38 @@ class ProfileScreen extends StatelessWidget {
             child: Column(
               children: [
                 _buildMenuItem(
+                  icon: Icons.verified_user_rounded,
+                  title: 'ยืนยันตัวตน (KYC Verification)',
+                  subtitle: 'ยื่นเอกสารอนุมัติก่อนสมัครแพ็กเกจ',
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => KycSubmissionScreen(
+                          currentKyc: MockKycData.submissions.first,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+                const Divider(height: 1, thickness: 1, color: Color(0xFFF1F5F9)),
+                _buildMenuItem(
+                  icon: Icons.workspace_premium_rounded,
+                  title: 'สมัครแพ็กเกจสมาชิก (Premiere Member)',
+                  subtitle: 'อ่าน e-Book PDF ได้ทุกเล่มแบบไม่จำกัด',
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const MembershipPackageScreen(
+                          kycStatus: KycStatus.pending,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+                const Divider(height: 1, thickness: 1, color: Color(0xFFF1F5F9)),
+                _buildMenuItem(
                   icon: Icons.settings_outlined,
                   title: 'การตั้งค่า',
                   onTap: () {},
@@ -274,6 +309,7 @@ class ProfileScreen extends StatelessWidget {
   Widget _buildMenuItem({
     required IconData icon,
     required String title,
+    String? subtitle,
     required VoidCallback onTap,
   }) {
     return ListTile(
@@ -288,6 +324,12 @@ class ProfileScreen extends StatelessWidget {
           color: AppColors.textPrimary,
         ),
       ),
+      subtitle: subtitle != null
+          ? Text(
+              subtitle,
+              style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+            )
+          : null,
       trailing: const Icon(
         Icons.chevron_right_rounded,
         color: AppColors.textSecondary,

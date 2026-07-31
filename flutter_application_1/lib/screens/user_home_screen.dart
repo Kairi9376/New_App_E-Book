@@ -3,11 +3,13 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import '../models/book_model.dart';
+import '../models/kyc_model.dart';
 import 'history_screen.dart';
 import 'saved_screen.dart';
 import 'downloads_screen.dart';
 import 'profile_screen.dart';
 import 'book_detail_screen.dart';
+import 'kyc_submission_screen.dart';
 
 class UserHomeScreen extends StatefulWidget {
   const UserHomeScreen({super.key});
@@ -111,6 +113,10 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
 
               // 3. Category Horizontal Chips
               _buildCategoryChips(),
+              const SizedBox(height: 16),
+
+              // KYC Identity Banner Prompt
+              _buildKycPromptBanner(),
               const SizedBox(height: 20),
 
               // 4. Section 1: ยอดนิยม (Popular)
@@ -220,6 +226,74 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
           ],
         ),
       ],
+    );
+  }
+
+  Widget _buildKycPromptBanner() {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF0047AB), Color(0xFF336BBD)],
+        ),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF0047AB).withOpacity(0.2),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.verified_user_rounded, color: Colors.white, size: 22),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: const [
+                Text(
+                  'ยืนยันตัวตน (KYC) เพื่อสมัครแพ็กเกจสมาชิก',
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white),
+                ),
+                SizedBox(height: 2),
+                Text(
+                  'ยื่นบัตรประชาชนรอแอดมินอนุมัติเพื่ออ่าน PDF แบบไม่จำกัด',
+                  style: TextStyle(fontSize: 11, color: Colors.white70),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => KycSubmissionScreen(
+                    currentKyc: MockKycData.submissions.first,
+                  ),
+                ),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.amber.shade700,
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              minimumSize: const Size(0, 36),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            child: const Text('ยื่น KYC', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white)),
+          ),
+        ],
+      ),
     );
   }
 
