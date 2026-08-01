@@ -1,12 +1,12 @@
 -- ============================================================
--- ฐานข้อมูลสำหรับโปรเจกต์ E-Book Application (ebook_db)
--- รองรับการนำเข้าผ่าน phpMyAdmin (XAMPP)
+-- ຖານຂໍ້ມູນสำหรับໂຄງການ E-Book Application (ebook_db)
+-- ຮອງຮັບການນຳເຂົ້າຜ່ານ phpMyAdmin (XAMPP)
 -- ============================================================
 
 CREATE DATABASE IF NOT EXISTS ebook_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE ebook_db;
 
--- 1. ตารางผู้ใช้งาน (Users)
+-- 1. ຕາຕະລາງຜູ້ໃຊ້ງານ (Users)
 CREATE TABLE IF NOT EXISTS users (
     user_id INT AUTO_INCREMENT PRIMARY KEY,
     email VARCHAR(255) NOT NULL UNIQUE,
@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS users (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
--- 2. ตารางการยื่นยืนยันตัวตน (KYC Verifications)
+-- 2. ຕາຕະລາງການຢືນຢັນຕົວຕົນ (KYC Verifications)
 CREATE TABLE IF NOT EXISTS kyc_verifications (
     kyc_id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
@@ -44,7 +44,7 @@ CREATE TABLE IF NOT EXISTS kyc_verifications (
     FOREIGN KEY (reviewed_by) REFERENCES users(user_id) ON DELETE SET NULL
 );
 
--- 3. ตารางนักเขียน (Authors)
+-- 3. ຕາຕະລາງນັກຂຽນ (Authors)
 CREATE TABLE IF NOT EXISTS authors (
     author_id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(255) NOT NULL UNIQUE,
@@ -52,14 +52,14 @@ CREATE TABLE IF NOT EXISTS authors (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- 4. ตารางหมวดหมู่หนังสือ (Categories)
+-- 4. ຕາຕະລາງໝວດໝູ່ປຶ້ມ (Categories)
 CREATE TABLE IF NOT EXISTS categories (
     category_id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(100) NOT NULL UNIQUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- 5. ตารางหนังสือ (Books)
+-- 5. ຕາຕະລາງປຶ້ມ (Books)
 CREATE TABLE IF NOT EXISTS books (
     book_id INT AUTO_INCREMENT PRIMARY KEY,
     title VARCHAR(255) NOT NULL,
@@ -79,7 +79,7 @@ CREATE TABLE IF NOT EXISTS books (
     FOREIGN KEY (uploaded_by) REFERENCES users(user_id)
 );
 
--- 6. ตารางเชื่อม หนังสือ กับ หมวดหมู่ (Book Categories)
+-- 6. ຕາຕະລາງເຊື່ອມ ປຶ້ມ ກັບ ໝວດໝູ່ (Book Categories)
 CREATE TABLE IF NOT EXISTS book_categories (
     book_id INT NOT NULL,
     category_id INT NOT NULL,
@@ -88,7 +88,7 @@ CREATE TABLE IF NOT EXISTS book_categories (
     FOREIGN KEY (category_id) REFERENCES categories(category_id) ON DELETE CASCADE
 );
 
--- 7. ตารางแพ็กเกจสมาชิก (Packages)
+-- 7. ຕາຕະລາງແພັກເກດສະມາຊິກ (Packages)
 CREATE TABLE IF NOT EXISTS packages (
     package_id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
@@ -100,7 +100,7 @@ CREATE TABLE IF NOT EXISTS packages (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- 8. ตารางการซื้อแพ็กเกจและการโอนเงิน (Subscriptions)
+-- 8. ຕາຕະລາງການຊື້ແພັກເກດ ແລະ ການໂອນເງິນ (Subscriptions)
 CREATE TABLE IF NOT EXISTS subscriptions (
     subscription_id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
@@ -120,7 +120,7 @@ CREATE TABLE IF NOT EXISTS subscriptions (
     FOREIGN KEY (approved_by) REFERENCES users(user_id) ON DELETE SET NULL
 );
 
--- 9. ตารางหนังสือเล่มโปรด / ชั้นหนังสือส่วนตัว (Bookmarks)
+-- 9. ຕາຕະລາງປຶ້ມເລົ່ມໂປດ / ຫ້ອງປຶ້ມສ່ວນຕົວ (Bookmarks)
 CREATE TABLE IF NOT EXISTS bookmarks (
     bookmark_id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
@@ -131,7 +131,7 @@ CREATE TABLE IF NOT EXISTS bookmarks (
     UNIQUE KEY unique_user_bookmark (user_id, book_id)
 );
 
--- 10. ตารางประวัติการอ่าน (Reading History)
+-- 10. ຕາຕະລາງປະຫວັດການອ່ານ (Reading History)
 CREATE TABLE IF NOT EXISTS reading_history (
     history_id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
@@ -144,7 +144,7 @@ CREATE TABLE IF NOT EXISTS reading_history (
     UNIQUE KEY unique_user_book (user_id, book_id)
 );
 
--- 11. ตารางประวัติการดาวน์โหลด (Downloads)
+-- 11. ຕາຕະລາງປະຫວັດການດາວໂຫຼດ (Downloads)
 CREATE TABLE IF NOT EXISTS downloads (
     download_id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
@@ -156,7 +156,7 @@ CREATE TABLE IF NOT EXISTS downloads (
     FOREIGN KEY (book_id) REFERENCES books(book_id) ON DELETE CASCADE
 );
 
--- 12. ตารางการแจ้งเตือน (Notifications)
+-- 12. ຕາຕະລາງການແຈ້ງເຕືອນ (Notifications)
 CREATE TABLE IF NOT EXISTS notifications (
     notification_id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
@@ -169,7 +169,7 @@ CREATE TABLE IF NOT EXISTS notifications (
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
 
--- 13. ตารางบันทึกการทำงานของแอดมิน/พนักงาน (Audit Logs)
+-- 13. ຕາຕະລາງບັນທຶກການເຮັດວຽກຂອງແອດມິນ/ພະນັກງານ (Audit Logs)
 CREATE TABLE IF NOT EXISTS audit_logs (
     log_id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
@@ -181,47 +181,47 @@ CREATE TABLE IF NOT EXISTS audit_logs (
 );
 
 -- ============================================================
--- ข้อมูลเริ่มต้น (Seed Initial Data)
+-- ຂໍ້ມູນເລີ່ມຕົ້ນ (Seed Initial Data - ພາສາລາວ)
 -- ============================================================
 
 -- 1. Insert Initial Users
 INSERT INTO users (user_id, email, password_hash, first_name, last_name, phone_number, role, status) VALUES
-(1, 'admin@gmail.com', '$2a$10$w8T.tK.yvT4N9w6P8L8L.e7pA0rQ1z3m6V5N7P9L3K1J', 'ผู้ดูแล', 'ระบบ (Admin)', '02055551111', 'admin', 'active'),
-(2, 'employee@gmail.com', '$2a$10$w8T.tK.yvT4N9w6P8L8L.e7pA0rQ1z3m6V5N7P9L3K1J', 'พนักงาน', 'จัดการคลัง', '02055552222', 'employee', 'active'),
-(3, 'user1234@gmail.com', '$2a$10$w8T.tK.yvT4N9w6P8L8L.e7pA0rQ1z3m6V5N7P9L3K1J', 'สมชาย', 'ใจดี', '02055553333', 'user', 'active'),
-(4, 'member@gmail.com', '$2a$10$w8T.tK.yvT4N9w6P8L8L.e7pA0rQ1z3m6V5N7P9L3K1J', 'พรีเมี่ยม', 'สมาชิก', '02055554444', 'user', 'active')
+(1, 'admin@gmail.com', '$2a$10$w8T.tK.yvT4N9w6P8L8L.e7pA0rQ1z3m6V5N7P9L3K1J', 'ຜູ້ດູແລ', 'ລະບົບ (Admin)', '02055551111', 'admin', 'active'),
+(2, 'employee@gmail.com', '$2a$10$w8T.tK.yvT4N9w6P8L8L.e7pA0rQ1z3m6V5N7P9L3K1J', 'ພະນັກງານ', 'ຈັດການຄັງ', '02055552222', 'employee', 'active'),
+(3, 'user1234@gmail.com', '$2a$10$w8T.tK.yvT4N9w6P8L8L.e7pA0rQ1z3m6V5N7P9L3K1J', 'ສົມຊາຍ', 'ໃຈດີ', '02055553333', 'user', 'active'),
+(4, 'member@gmail.com', '$2a$10$w8T.tK.yvT4N9w6P8L8L.e7pA0rQ1z3m6V5N7P9L3K1J', 'ພຣີມ່ຽມ', 'ສະມາຊິກ', '02055554444', 'user', 'active')
 ON DUPLICATE KEY UPDATE email=email;
 
 -- 2. Insert Authors
 INSERT INTO authors (author_id, name, biography) VALUES
-(1, 'Stephen T. Radentz', 'ผู้เขียนหนังสือด้านการพัฒนาตนเองและความสุขในการทำงาน'),
-(2, 'Dr. Elias Thorne', 'อาจารย์และนักวิจัยด้านฟิสิกส์ควันตัมและเทคโนโลยีสมัยใหม่'),
-(3, 'ดร.จอน วงวิไล', 'ผู้เชี่ยวชาญด้านสังคมศาสตร์และประวัติศาสตร์'),
-(4, 'Nageen Prakashan', 'สำนักพิมพ์หนังสือวิทยศาสตร์และคณิตศาสตร์')
+(1, 'Stephen T. Radentz', 'ຜູ້ຂຽນປຶ້ມດ້ານການພັດທະນາຕົນເອງ ແລະ ຄວາມສຸກໃນການເຮັດວຽກ'),
+(2, 'Dr. Elias Thorne', 'ອາຈານ ແລະ ນັກວິໄຈດ້ານຟິຊິກຄວອນຕຳ ແລະ ເຕັກໂນໂລຊີສະໄໝໃໝ່'),
+(3, 'ດຣ.ຈອນ ວົງວິໄລ', 'ຜູ້ຊ່ຽວຊານດ້ານສັງຄົມສາດ ແລະ ປະຫວັດສາດ'),
+(4, 'Nageen Prakashan', 'ສຳນັກພິມປຶ້ມວິທະຍາສາດ ແລະ ຄະນິດສາດ')
 ON DUPLICATE KEY UPDATE name=name;
 
 -- 3. Insert Categories
 INSERT INTO categories (category_id, name) VALUES
-(1, 'ชีวประวัติ / ชีวิต'),
-(2, 'วิทยาศาสตร์ / Physics'),
-(3, 'เทคโนโลยี / Computer'),
-(4, 'ศิลปะ / วรรณคดี'),
-(5, 'คณิตศาสตร์')
+(1, 'ຊີວະປະຫວັດ / ຊີວິດ'),
+(2, 'ວິທະຍາສາດ / Physics'),
+(3, 'ເຕັກໂນໂລຊີ / Computer'),
+(4, 'ສິນລະປະ / ວັນນະຄະດີ'),
+(5, 'ຄະນິດສາດ')
 ON DUPLICATE KEY UPDATE name=name;
 
 -- 4. Insert Packages
 INSERT INTO packages (package_id, name, description, price, duration_days, is_for_student, is_active) VALUES
-(1, 'Standard Monthly', 'เข้าถึงหนังสืออ่านฟรีและสมาชิกทั่วไป 30 วัน', 49000.00, 30, FALSE, TRUE),
-(2, 'Student Special', 'แพ็กเกจพิเศษสำหรับนักเรียน/นักศึกษา ยืนยันผ่าน KYC', 29000.00, 30, TRUE, TRUE),
-(3, 'Premium Yearly', 'เข้าถึงหนังสือทุกเล่มในคลังแบบไม่จำกัด 365 วัน', 490000.00, 365, FALSE, TRUE)
+(1, 'Standard Monthly', 'ເຂົ້າເຖິງປຶ້ມອ່ານຟຣີ ແລະ ສະມາຊິກທົ່ວໄປ 30 ວັນ', 49000.00, 30, FALSE, TRUE),
+(2, 'Student Special', 'ແພັກເກດພິເສດสำหรับນັກຮຽນ/ນັກສຶກສາ ຢືນຢັນຜ່ານ KYC', 29000.00, 30, TRUE, TRUE),
+(3, 'Premium Yearly', 'ເຂົ້າເຖິງປຶ້ມທຸກເລົ່ມໃນຄັງແບບບໍ່ຈຳກັດ 365 ວັນ', 490000.00, 365, FALSE, TRUE)
 ON DUPLICATE KEY UPDATE name=name;
 
 -- 5. Insert Books
 INSERT INTO books (book_id, title, author_id, language, page_count, file_size_bytes, description, cover_image_url, file_pdf_url, uploaded_by, is_free, is_hidden) VALUES
-(1, 'The Happiness Effect', 1, 'EN', 240, 15400000, 'หนังสือถ่ายทอดเรื่องราวการสร้างความสุขและการมองโลกในแง่ดี', 'assets/happiness_cover.jpg', 'assets/sample_book.pdf', 2, TRUE, FALSE),
-(2, 'High School Science', 4, 'LA', 310, 22100000, 'ตำราเรียนวิทยาศาสตร์ระดับมัธยมปลาย ครอบคลุมพื้นฐานฟิสิกส์ เคมี ชีววิทยา', 'assets/science_cover.jpg', 'assets/sample_book.pdf', 2, TRUE, FALSE),
-(3, 'Quantum Mechanics', 2, 'EN', 450, 38000000, 'เจาะลึกทฤษฎีควอนตัมและกลศาสตร์สมัยใหม่', 'assets/quantum_cover.jpg', 'assets/sample_book.pdf', 2, FALSE, FALSE),
-(4, 'หนังสือสังคมศึกษา', 3, 'LA', 180, 12000000, 'ความรู้เกี่ยวกับสังคม วัฒนธรรม และภูมิศาสตร์', 'assets/social_cover.jpg', 'assets/sample_book.pdf', 2, TRUE, FALSE)
+(1, 'The Happiness Effect', 1, 'EN', 240, 15400000, 'ປຶ້ມຖ່າຍທອດເລື່ອງราวການສ້າງຄວາມສຸກ ແລະ ການມອງໂລກໃນແງ່ດີ', 'assets/happiness_cover.jpg', 'assets/sample_book.pdf', 2, TRUE, FALSE),
+(2, 'High School Science (ວິທະຍາສາດ)', 4, 'LA', 310, 22100000, 'ຕຳລາຮຽນວິທະຍາສາດລະດັບມັດທະຍົມປາຍ ຄອບຄຸມພື້ນຖານຟິຊິກ ເຄມີ ຊີວະວິທະຍາ', 'assets/science_cover.jpg', 'assets/sample_book.pdf', 2, TRUE, FALSE),
+(3, 'Quantum Mechanics', 2, 'EN', 450, 38000000, 'ເຈາະລຶກທິດສະດີຄວອນຕຳ ແລະ ກົນລະສາດສະໄໝໃໝ່', 'assets/quantum_cover.jpg', 'assets/sample_book.pdf', 2, FALSE, FALSE),
+(4, 'ປຶ້ມສັງຄົມສຶກສາ', 3, 'LA', 180, 12000000, 'ຄວາມຮູ້ກ່ຽວກັບສັງຄົມ ວັດທະນະທຳ ແລະ ພູມສາດ', 'assets/social_cover.jpg', 'assets/sample_book.pdf', 2, TRUE, FALSE)
 ON DUPLICATE KEY UPDATE title=title;
 
 -- 6. Insert Book Categories
@@ -241,7 +241,7 @@ ON DUPLICATE KEY UPDATE subscription_id=subscription_id;
 -- 8. Insert KYC Verifications
 INSERT INTO kyc_verifications (kyc_id, user_id, document_type, document_number, document_image_url, selfie_image_url, is_student, school_name, status) VALUES
 (1, 3, 'national_id', '1-1002-34567-89-0', 'kyc/id_card_001.jpg', 'kyc/selfie_001.jpg', FALSE, NULL, 'pending'),
-(2, 4, 'student_card', 'STU-99887766', 'kyc/id_card_002.jpg', 'kyc/selfie_002.jpg', TRUE, 'มหาวิทยาลัยแห่งชาติ', 'approved')
+(2, 4, 'student_card', 'STU-99887766', 'kyc/id_card_002.jpg', 'kyc/selfie_002.jpg', TRUE, 'ມະຫາວິທະຍາໄລແຫ່ງຊາດ', 'approved')
 ON DUPLICATE KEY UPDATE kyc_id=kyc_id;
 
 -- 9. Insert Bookmarks
