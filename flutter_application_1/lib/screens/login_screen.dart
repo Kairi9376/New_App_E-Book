@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
+import '../services/api_service.dart';
 import 'user_home_screen.dart';
 import 'admin/admin_dashboard_screen.dart';
 import 'employee/employee_dashboard_screen.dart';
@@ -34,42 +35,59 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  void _onLoginPressed() {
+  void _onLoginPressed() async {
     if (_formKey.currentState!.validate()) {
       FocusScope.of(context).unfocus();
       final email = _emailController.text.trim().toLowerCase();
       final password = _passwordController.text.trim();
 
-      // Mock Credentials Checking
-      if (email == 'admin@gmail.com' && password == 'admin123456') {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('ເຂົ້າສູ່ລະບົບສຳເລັດໃນຖານະ: Admin (ຜູ້ດູແລລະບົບ)'),
-            backgroundColor: AppColors.primary,
-          ),
-        );
-        _navigateTo(const AdminDashboardScreen());
-      } else if (email == 'employee@gmail.com' && password == 'employee123') {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('ເຂົ້າສູ່ລະບົບສຳເລັດໃນຖານະ: Employee (ພະນັກງານຈັດການ PDF)'),
-            backgroundColor: Color(0xFF10B981),
-          ),
-        );
-        _navigateTo(const EmployeeDashboardScreen());
-      } else if ((email == 'user1234@gmail.com' && password == 'user1234') ||
-          (email == 'member@gmail.com' && password == 'member1234')) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('ເຂົ້າສູ່ລະບົບສຳເລັດໃນຖານະ: ${email == 'member@gmail.com' ? 'Premiere Member' : 'ຜູ້ໃຊ້ທົ່ວໄປ'}'),
-            backgroundColor: AppColors.primary,
-          ),
-        );
-        _navigateTo(const UserHomeScreen());
+      // Show loading indicator
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+
+      final result = await ApiService.login(email, password);
+
+      if (!mounted) return;
+      Navigator.pop(context); // Dismiss loading dialog
+
+      if (result['success'] == true) {
+        final user = result['user'] ?? {};
+        final role = user['role'] ?? 'user';
+
+        if (role == 'admin') {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('ເຂົ້າສູ່ລະບົບສຳເລັດໃນຖານະ: Admin (ຜູ້ດູແລລະບົບ)'),
+              backgroundColor: AppColors.primary,
+            ),
+          );
+          _navigateTo(const AdminDashboardScreen());
+        } else if (role == 'employee') {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('ເຂົ້າສູ່ລະບົບສຳເລັດໃນຖານະ: Employee (ພະນັກງານຈັດການ PDF)'),
+              backgroundColor: Color(0xFF10B981),
+            ),
+          );
+          _navigateTo(const EmployeeDashboardScreen());
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('ເຂົ້າສູ່ລະບົບສຳເລັດໃນຖານະ: ${email == 'member@gmail.com' ? 'Premiere Member' : 'ຜູ້ໃຊ້ທົ່ວໄປ'}'),
+              backgroundColor: AppColors.primary,
+            ),
+          );
+          _navigateTo(const UserHomeScreen());
+        }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('ອີເມວ ຫຼື ລະຫັດຜ່ານບໍ່ຖືກຕ້ອງ ກະລຸນາລອງໃໝ່ອີກຄັ້ງ'),
+          SnackBar(
+            content: Text(result['message'] ?? 'ອີເມວ ຫຼື ລະຫັດຜ່ານບໍ່ຖືກຕ້ອງ ກະລຸນາລອງໃໝ່ອີກຄັ້ງ'),
             backgroundColor: Colors.redAccent,
           ),
         );

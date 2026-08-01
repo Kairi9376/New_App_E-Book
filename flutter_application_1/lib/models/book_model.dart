@@ -6,10 +6,13 @@ class BookModel {
   final String ratingText;
   final List<String> tags;
   final String imagePath;
+  final String? pdfUrl;
+  final String? description;
   final bool isPopular;
   final bool isNew;
   final bool isRecommended;
   final bool isBookmarked;
+  final bool isFree;
 
   BookModel({
     required this.id,
@@ -19,11 +22,78 @@ class BookModel {
     this.ratingText = '',
     required this.tags,
     required this.imagePath,
+    this.pdfUrl,
+    this.description,
     this.isPopular = false,
     this.isNew = false,
     this.isRecommended = false,
     this.isBookmarked = false,
+    this.isFree = true,
   });
+
+  factory BookModel.fromMap(Map<String, dynamic> map, {String uploadsBaseUrl = 'http://localhost:5000/uploads'}) {
+    List<String> parsedTags = [];
+    if (map['categories'] != null && map['categories'].toString().isNotEmpty) {
+      parsedTags = map['categories'].toString().split(', ').where((t) => t.isNotEmpty).toList();
+    } else if (map['tags'] != null) {
+      if (map['tags'] is List) {
+        parsedTags = List<String>.from(map['tags']);
+      } else if (map['tags'] is String) {
+        parsedTags = map['tags'].toString().split(',');
+      }
+    }
+
+    String cover = map['cover_image_url'] ?? map['imagePath'] ?? '';
+    if (cover.startsWith('/uploads/') || cover.startsWith('uploads/')) {
+      cover = '$uploadsBaseUrl/${cover.replaceAll(RegExp(r'^/?uploads/'), '')}';
+    }
+
+    String? pdf = map['file_pdf_url'] ?? map['pdfUrl'];
+    if (pdf != null && (pdf.startsWith('/uploads/') || pdf.startsWith('uploads/'))) {
+      pdf = '$uploadsBaseUrl/${pdf.replaceAll(RegExp(r'^/?uploads/'), '')}';
+    }
+
+    double parsedRating = 4.5;
+    if (map['rating'] != null) {
+      parsedRating = double.tryParse(map['rating'].toString()) ?? 4.5;
+    }
+
+    return BookModel(
+      id: (map['book_id'] ?? map['id'] ?? '').toString(),
+      title: map['title'] ?? '',
+      author: map['author_name'] ?? map['author'] ?? 'ไม่ระบุผู้แต่ง',
+      rating: parsedRating,
+      ratingText: map['ratingText'] ?? (parsedRating == 0.0 ? 'New' : parsedRating.toStringAsFixed(1)),
+      tags: parsedTags.isEmpty ? ['ทั่วไป'] : parsedTags,
+      imagePath: cover,
+      pdfUrl: pdf,
+      description: map['description'] ?? '',
+      isPopular: map['is_popular'] == 1 || map['is_popular'] == true || map['isPopular'] == true,
+      isNew: map['is_new'] == 1 || map['is_new'] == true || map['isNew'] == true,
+      isRecommended: map['is_recommended'] == 1 || map['is_recommended'] == true || map['isRecommended'] == true,
+      isBookmarked: map['is_bookmarked'] == 1 || map['is_bookmarked'] == true || map['isBookmarked'] == true,
+      isFree: map['is_free'] == 1 || map['is_free'] == true || map['isFree'] == true,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'title': title,
+      'author': author,
+      'rating': rating,
+      'ratingText': ratingText,
+      'tags': tags,
+      'imagePath': imagePath,
+      'pdfUrl': pdfUrl,
+      'description': description,
+      'isPopular': isPopular,
+      'isNew': isNew,
+      'isRecommended': isRecommended,
+      'isBookmarked': isBookmarked,
+      'isFree': isFree,
+    };
+  }
 }
 
 class MockBookData {
@@ -40,7 +110,7 @@ class MockBookData {
     ),
     BookModel(
       id: '2',
-      title: 'High School Science (ວິທະຍາສາດ)',
+      title: 'High School Science',
       author: 'Nageen Prakashan',
       rating: 3.7,
       ratingText: '3.7',
@@ -57,7 +127,7 @@ class MockBookData {
       author: 'Dr. Elias Thorne',
       rating: 0.0,
       ratingText: 'New',
-      tags: ['ສິນລະປະ'],
+      tags: ['ສິລະປະ'],
       imagePath: '/Users/intern/.gemini/antigravity/brain/c8a3c47e-e27f-493b-ba56-c3f80ddc659c/quantum_cover_1785383995867.jpg',
       isNew: true,
     ),
@@ -90,7 +160,7 @@ class MockBookData {
       author: 'English Teacher',
       rating: 4.9,
       ratingText: '4.9',
-      tags: ['English'],
+      tags: ['ພາສາອັງກິດ'],
       imagePath: '/Users/intern/.gemini/antigravity/brain/c8a3c47e-e27f-493b-ba56-c3f80ddc659c/happiness_cover_1785383965921.jpg',
       isRecommended: true,
     ),
@@ -98,8 +168,8 @@ class MockBookData {
       id: '7',
       title: 'Everything you need to ace MATHS',
       author: 'Award Winning teacher',
-      rating: 4.8,
-      ratingText: '4.8',
+      rating: 5.0,
+      ratingText: '5.0',
       tags: ['ຄະນິດສາດ'],
       imagePath: '/Users/intern/.gemini/antigravity/brain/c8a3c47e-e27f-493b-ba56-c3f80ddc659c/science_cover_1785383980996.jpg',
       isRecommended: true,
