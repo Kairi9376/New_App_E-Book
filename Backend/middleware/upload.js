@@ -23,7 +23,8 @@ const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     let dest = 'uploads/covers';
 
-    if (file.fieldname === 'pdf' || file.mimetype === 'application/pdf') {
+    const ext = path.extname(file.originalname).toLowerCase();
+    if (file.fieldname === 'pdf' || file.mimetype === 'application/pdf' || ext === '.pdf') {
       dest = 'uploads/pdfs';
     } else if (file.fieldname === 'slip') {
       dest = 'uploads/slips';
@@ -42,12 +43,12 @@ const storage = multer.diskStorage({
   }
 });
 
-// File Filter
+// File Filter (Permissive for images, pdfs, and octet-streams)
 const fileFilter = (req, file, cb) => {
-  const allowedImageTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-  const allowedPdfTypes = ['application/pdf'];
+  const allowedExts = ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.pdf'];
+  const ext = path.extname(file.originalname).toLowerCase();
 
-  if (allowedImageTypes.includes(file.mimetype) || allowedPdfTypes.includes(file.mimetype)) {
+  if (allowedExts.includes(ext) || file.mimetype.startsWith('image/') || file.mimetype === 'application/pdf' || file.mimetype === 'application/octet-stream' || !ext) {
     cb(null, true);
   } else {
     cb(new Error('Only image files (JPG, PNG, WEBP) and PDF documents are allowed!'), false);

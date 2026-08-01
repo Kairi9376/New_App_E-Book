@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import '../models/kyc_model.dart';
+import '../services/api_service.dart';
 import 'login_screen.dart';
 import 'kyc_submission_screen.dart';
 import 'membership_package_screen.dart';
@@ -66,8 +67,12 @@ class ProfileScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const avatarPath =
-        '/Users/intern/.gemini/antigravity/brain/c8a3c47e-e27f-493b-ba56-c3f80ddc659c/user_avatar_1785383949902.jpg';
+    final user = ApiService.currentUser ?? {};
+    final firstName = user['first_name'] ?? 'ສົມຊາຍ';
+    final lastName = user['last_name'] ?? 'ໃຈດີ';
+    final role = user['role'] ?? 'user';
+    final email = user['email'] ?? 'user@gmail.com';
+    final isPremiere = role == 'admin' || role == 'employee' || email == 'member@gmail.com';
 
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 20.0),
@@ -85,9 +90,13 @@ class ProfileScreen extends StatelessWidget {
                     shape: BoxShape.circle,
                     border: Border.all(color: const Color(0xFFE2E8F0), width: 2),
                   ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(60),
-                    child: _buildImage(avatarPath, width: 110, height: 110),
+                  child: CircleAvatar(
+                    radius: 50,
+                    backgroundColor: AppColors.primary.withOpacity(0.12),
+                    child: Text(
+                      firstName.isNotEmpty ? firstName[0].toUpperCase() : 'U',
+                      style: const TextStyle(fontSize: 36, fontWeight: FontWeight.bold, color: AppColors.primary),
+                    ),
                   ),
                 ),
                 Positioned(
@@ -113,21 +122,31 @@ class ProfileScreen extends StatelessWidget {
           const SizedBox(height: 16),
 
           // Name
-          const Text(
-            'John Johnny',
-            style: TextStyle(
+          Text(
+            '$firstName $lastName',
+            style: const TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.bold,
               color: AppColors.textPrimary,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 4),
+
+          // Email
+          Text(
+            email,
+            style: const TextStyle(
+              fontSize: 14,
+              color: AppColors.textSecondary,
+            ),
+          ),
+          const SizedBox(height: 10),
 
           // Badge
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
             decoration: BoxDecoration(
-              color: const Color(0xFF5E97F6),
+              color: isPremiere ? const Color(0xFF5E97F6) : const Color(0xFF94A3B8),
               borderRadius: BorderRadius.circular(20),
             ),
             child: Row(
@@ -139,9 +158,9 @@ class ProfileScreen extends StatelessWidget {
                   color: Colors.white,
                 ),
                 const SizedBox(width: 6),
-                const Text(
-                  'Premiere User',
-                  style: TextStyle(
+                Text(
+                  isPremiere ? 'Premiere Member' : 'General User',
+                  style: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,

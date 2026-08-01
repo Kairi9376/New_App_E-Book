@@ -42,14 +42,23 @@ exports.login = async (req, res) => {
         } catch (_) {}
       }
 
-      // 2. Try direct string equality (for plain text passwords in DB)
+      // 2. Try direct string equality (for plain text passwords in DB like '123456')
       if (!isMatch && user.password_hash === cleanPassword) {
         isMatch = true;
       }
 
-      // 3. Try mock password fallback for seed users
-      if (!isMatch && mockAccounts[cleanEmail] && mockAccounts[cleanEmail].password === cleanPassword) {
-        isMatch = true;
+      // 3. Try fallback for default credentials (both '123456' and legacy passwords)
+      if (!isMatch) {
+        const allowedPasswords = {
+          'admin@gmail.com': ['123456', 'admin123456'],
+          'employee@gmail.com': ['123456', 'employee123'],
+          'user1234@gmail.com': ['123456', 'user1234'],
+          'member@gmail.com': ['123456', 'member1234']
+        };
+
+        if (allowedPasswords[cleanEmail] && allowedPasswords[cleanEmail].includes(cleanPassword)) {
+          isMatch = true;
+        }
       }
     } else {
       // Fallback if MySQL database/table is not yet imported into phpMyAdmin

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../theme/app_theme.dart';
+import '../../services/api_service.dart';
 
 class EmployeeAddBookScreen extends StatefulWidget {
   const EmployeeAddBookScreen({super.key});
@@ -114,7 +115,7 @@ class _EmployeeAddBookScreenState extends State<EmployeeAddBookScreen> {
     }
   }
 
-  void _onSaveBook() {
+  void _onSaveBook() async {
     if (!_formKey.currentState!.validate()) return;
 
     if (_pdfFileName == null) {
@@ -127,14 +128,48 @@ class _EmployeeAddBookScreenState extends State<EmployeeAddBookScreen> {
       return;
     }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('ບັນທຶກປຶ້ມ PDF "${_titleController.text.trim()}" ເຂົ້າລະບົບສຳເລັດ!'),
-        backgroundColor: const Color(0xFF10B981),
-      ),
+    // Show progress dialog
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
     );
 
-    Navigator.pop(context, true);
+    final currentUser = ApiService.currentUser ?? {};
+    final userId = currentUser['user_id'] ?? 2; // Default to Staff/Employee ID
+
+    final response = await ApiService.createBook({
+      'title': _titleController.text.trim(),
+      'author_id': 1, // Default author ID
+      'language': 'LA',
+      'page_count': int.tryParse(_pagesController.text.trim()) ?? 100,
+      'description': _descriptionController.text.trim(),
+      'cover_image_url': _coverImagePath ?? 'assets/sample_cover.png',
+      'file_pdf_url': _pdfFileName ?? 'assets/sample_book.pdf',
+      'uploaded_by': userId,
+      'is_free': _accessType == 'Free',
+      'category_ids': [1]
+    });
+
+    if (!mounted) return;
+    Navigator.pop(context); // Dismiss loading dialog
+
+    if (response['success'] == true) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('ບັນທຶກປຶ້ມ PDF "${_titleController.text.trim()}" ເຂົ້າລະບົບສຳເລັດ!'),
+          backgroundColor: const Color(0xFF10B981),
+        ),
+      );
+      Navigator.pop(context, true);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(response['message'] ?? 'ບໍ່ສາມາດບັນທຶກປຶ້ມໄດ້'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+    }
   }
 
   @override

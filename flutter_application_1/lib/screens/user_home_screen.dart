@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import '../models/book_model.dart';
 import '../models/kyc_model.dart';
+import '../services/api_service.dart';
 import 'history_screen.dart';
 import 'saved_screen.dart';
 import 'downloads_screen.dart';
@@ -21,6 +22,8 @@ class UserHomeScreen extends StatefulWidget {
 class _UserHomeScreenState extends State<UserHomeScreen> {
   int _selectedCategoryIndex = 0;
   int _currentBottomNavIndex = 0;
+  List<BookModel> _fetchedBooks = [];
+  bool _isLoadingBooks = true;
 
   final List<String> _categories = [
     'ທັງໝົດ',
@@ -32,6 +35,24 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
   ];
 
   final Set<String> _bookmarkedIds = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _loadBackendData();
+  }
+
+  Future<void> _loadBackendData() async {
+    setState(() => _isLoadingBooks = true);
+    final selectedCat = _selectedCategoryIndex == 0 ? null : _categories[_selectedCategoryIndex];
+    final books = await ApiService.getBooks(categoryId: selectedCat);
+    if (mounted) {
+      setState(() {
+        _fetchedBooks = books;
+        _isLoadingBooks = false;
+      });
+    }
+  }
 
   void _toggleBookmark(String bookId) {
     setState(() {
@@ -144,26 +165,33 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
 
   // --- 1. Header Bar Widget ---
   Widget _buildHeaderBar() {
-    const avatarPath =
-        '/Users/intern/.gemini/antigravity/brain/c8a3c47e-e27f-493b-ba56-c3f80ddc659c/user_avatar_1785383949902.jpg';
+    final user = ApiService.currentUser ?? {};
+    final firstName = user['first_name'] ?? 'ສົມຊາຍ';
+    final lastName = user['last_name'] ?? 'ໃຈດີ';
+    final role = user['role'] ?? 'user';
+    final email = user['email'] ?? '';
+    final isPremiere = role == 'admin' || role == 'employee' || email == 'member@gmail.com';
 
     return Row(
       children: [
-        // User Avatar
-        ClipRRect(
-          borderRadius: BorderRadius.circular(24),
-          child: _buildImage(avatarPath, width: 46, height: 46),
+        CircleAvatar(
+          radius: 23,
+          backgroundColor: AppColors.primary.withOpacity(0.12),
+          child: Text(
+            firstName.isNotEmpty ? firstName[0].toUpperCase() : 'U',
+            style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary, fontSize: 18),
+          ),
         ),
         const SizedBox(width: 12),
 
-        // User Info Name & Premiere Badge
+        // User Info Name & Badge
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'John Johnny',
-                style: TextStyle(
+              Text(
+                '$firstName $lastName',
+                style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
                   color: AppColors.textPrimary,
@@ -179,15 +207,15 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(
+                    const Icon(
                       Icons.check_circle_rounded,
                       size: 13,
                       color: AppColors.primary,
                     ),
-                    SizedBox(width: 4),
+                    const SizedBox(width: 4),
                     Text(
-                      'Premiere User',
-                      style: TextStyle(
+                      isPremiere ? 'Premiere User' : 'General User',
+                      style: const TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
                         color: AppColors.primary,
@@ -385,15 +413,31 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
 
   // --- 4. Section 1: Popular Books Horizontal List ---
   Widget _buildPopularBooksList() {
-    final books = MockBookData.popularBooks;
+    if (_isLoadingBooks) {
+      return const SizedBox(
+        height: 200,
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    final books = _fetchedBooks.where((b) => b.isPopular || b.isFree).toList();
+    final displayBooks = books.isNotEmpty ? books : _fetchedBooks;
+
+    if (displayBooks.isEmpty) {
+      return const SizedBox(
+        height: 100,
+        child: Center(child: Text('ບໍ່ພົບປຶ້ມຍອດນິຍົມในขณะนี้')),
+      );
+    }
+
     return SizedBox(
       height: 290,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
-        itemCount: books.length,
+        itemCount: displayBooks.length,
         separatorBuilder: (_, __) => const SizedBox(width: 14),
         itemBuilder: (context, index) {
-          return _buildBookCard(books[index]);
+          return _buildBookCard(displayBooks[index]);
         },
       ),
     );
@@ -401,23 +445,55 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
 
   // --- 5. Section 2: New Books Vertical List ---
   Widget _buildNewBooksList() {
-    final books = MockBookData.newBooks;
+    if (_isLoadingBooks) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 20),
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    final books = _fetchedBooks.where((b) => b.isNew || b.ratingText == 'New').toList();
+    final displayBooks = books.isNotEmpty ? books : _fetchedBooks;
+
+    if (displayBooks.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.all(16.0),
+        child: Text('ບໍ່ພົບປຶ້ມໃໝ່'),
+      );
+    }
+
     return Column(
-      children: books.map((book) => _buildNewBookTile(book)).toList(),
+      children: displayBooks.map((book) => _buildNewBookTile(book)).toList(),
     );
   }
 
   // --- 6. Section 3: Recommended Books Horizontal List ---
   Widget _buildRecommendedBooksList() {
-    final books = MockBookData.recommendedBooks;
+    if (_isLoadingBooks) {
+      return const SizedBox(
+        height: 200,
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    final books = _fetchedBooks.where((b) => b.isRecommended || b.rating >= 4.0).toList();
+    final displayBooks = books.isNotEmpty ? books : _fetchedBooks;
+
+    if (displayBooks.isEmpty) {
+      return const SizedBox(
+        height: 100,
+        child: Center(child: Text('ບໍ່ພົບປຶ້ມແນະນຳ')),
+      );
+    }
+
     return SizedBox(
       height: 290,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
-        itemCount: books.length,
+        itemCount: displayBooks.length,
         separatorBuilder: (_, __) => const SizedBox(width: 14),
         itemBuilder: (context, index) {
-          return _buildBookCard(books[index]);
+          return _buildBookCard(displayBooks[index]);
         },
       ),
     );

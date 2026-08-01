@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'dart:io';
 import '../../theme/app_theme.dart';
 import '../../models/book_model.dart';
+import '../../services/api_service.dart';
 import 'add_book_screen.dart';
 import '../login_screen.dart';
 
@@ -17,7 +18,8 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
   String _searchQuery = '';
   String _selectedCategoryFilter = 'ທັງໝົດ';
 
-  final List<BookModel> _employeeBooks = List.from(MockBookData.popularBooks);
+  List<BookModel> _employeeBooks = [];
+  bool _isLoading = true;
 
   final List<String> _categories = [
     'ທັງໝົດ',
@@ -29,6 +31,23 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
     'ຜະຈົນໄພ',
   ];
 
+  @override
+  void initState() {
+    super.initState();
+    _fetchBooks();
+  }
+
+  Future<void> _fetchBooks() async {
+    setState(() => _isLoading = true);
+    final books = await ApiService.getBooks();
+    if (mounted) {
+      setState(() {
+        _employeeBooks = books;
+        _isLoading = false;
+      });
+    }
+  }
+
   void _openAddBookScreen() {
     FocusScope.of(context).unfocus();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
@@ -39,20 +58,7 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
       );
 
       if (result == true && mounted) {
-        setState(() {
-          _employeeBooks.insert(
-            0,
-            BookModel(
-              id: DateTime.now().millisecondsSinceEpoch.toString(),
-              title: 'ຄູ່ມືການພັດທະນາ Flutter Web E-Book (PDF)',
-              author: 'ທີມງານຝ່າຍລະບົບ (Staff)',
-              rating: 5.0,
-              ratingText: 'New',
-              tags: ['ເຕັກໂນໂລຊີ'],
-              imagePath: 'assets/sample_cover.png',
-            ),
-          );
-        });
+        _fetchBooks();
       }
     });
   }

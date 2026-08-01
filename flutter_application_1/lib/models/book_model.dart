@@ -13,11 +13,15 @@ class BookModel {
   final bool isRecommended;
   final bool isBookmarked;
   final bool isFree;
+  final int? authorId;
+  final List<int> categoryIds;
 
   BookModel({
     required this.id,
     required this.title,
     required this.author,
+    this.authorId,
+    this.categoryIds = const [],
     required this.rating,
     this.ratingText = '',
     required this.tags,
@@ -43,6 +47,21 @@ class BookModel {
       }
     }
 
+    List<int> parsedCategoryIds = [];
+    if (map['category_ids'] != null && map['category_ids'].toString().isNotEmpty) {
+      parsedCategoryIds = map['category_ids']
+          .toString()
+          .split(',')
+          .map((id) => int.tryParse(id.trim()))
+          .whereType<int>()
+          .toList();
+    }
+
+    int? parsedAuthorId;
+    if (map['author_id'] != null) {
+      parsedAuthorId = int.tryParse(map['author_id'].toString());
+    }
+
     String cover = map['cover_image_url'] ?? map['imagePath'] ?? '';
     if (cover.startsWith('/uploads/') || cover.startsWith('uploads/')) {
       cover = '$uploadsBaseUrl/${cover.replaceAll(RegExp(r'^/?uploads/'), '')}';
@@ -61,10 +80,12 @@ class BookModel {
     return BookModel(
       id: (map['book_id'] ?? map['id'] ?? '').toString(),
       title: map['title'] ?? '',
-      author: map['author_name'] ?? map['author'] ?? 'ไม่ระบุผู้แต่ง',
+      author: map['author_name'] ?? map['author'] ?? 'ບໍ່ລະບຸຜູ້ແຕ່ງ',
+      authorId: parsedAuthorId,
+      categoryIds: parsedCategoryIds,
       rating: parsedRating,
       ratingText: map['ratingText'] ?? (parsedRating == 0.0 ? 'New' : parsedRating.toStringAsFixed(1)),
-      tags: parsedTags.isEmpty ? ['ทั่วไป'] : parsedTags,
+      tags: parsedTags.isEmpty ? ['ທົ່ວໄປ'] : parsedTags,
       imagePath: cover,
       pdfUrl: pdf,
       description: map['description'] ?? '',

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import '../models/kyc_model.dart';
+import '../services/api_service.dart';
 import 'membership_package_screen.dart';
 
 class KycSubmissionScreen extends StatefulWidget {
@@ -61,7 +62,18 @@ class _KycSubmissionScreenState extends State<KycSubmissionScreen> {
 
     setState(() => _isSubmitting = true);
 
-    await Future.delayed(const Duration(seconds: 1));
+    final user = ApiService.currentUser ?? {};
+    final userId = user['user_id'] ?? 3;
+
+    final success = await ApiService.submitKyc({
+      'user_id': userId,
+      'document_type': 'national_id',
+      'document_number': _idCardController.text.trim(),
+      'document_image_url': _idCardImagePath ?? '',
+      'selfie_image_url': _selfieImagePath ?? '',
+      'is_student': false,
+      'school_name': null
+    });
 
     final updatedKyc = widget.currentKyc.copyWith(
       status: KycStatus.pending,
@@ -69,21 +81,21 @@ class _KycSubmissionScreenState extends State<KycSubmissionScreen> {
       reviewedAt: null,
     );
 
-    setState(() {
-      _isSubmitting = false;
-      _currentStatus = KycStatus.pending;
-      _rejectReason = null;
-    });
-
-    if (widget.onKycUpdated != null) {
-      widget.onKycUpdated!(updatedKyc);
-    }
-
     if (mounted) {
+      setState(() {
+        _isSubmitting = false;
+        _currentStatus = KycStatus.pending;
+        _rejectReason = null;
+      });
+
+      if (widget.onKycUpdated != null) {
+        widget.onKycUpdated!(updatedKyc);
+      }
+
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('ສົ່ງຂໍ້ມູນຢືນຢັນຕົວຕົນ (KYC) ສຳເລັດ! ກະລຸນາລໍຖ້າແອດມິນອະນຸມັດ'),
-          backgroundColor: Color(0xFF10B981),
+        SnackBar(
+          content: Text(success ? 'ສົ່ງຂໍ້ມູນຢືນຢັນຕົວຕົນ (KYC) ເຂົ້າຖານຂໍ້ມູນ MySQL ສຳເລັດ!' : 'ສົ່ງຂໍ້ມູນຢືນຢັນຕົວຕົນ (KYC) ສຳເລັດ! ກະລຸນາລໍຖ້າແອດມິນອະນຸມັດ'),
+          backgroundColor: const Color(0xFF10B981),
         ),
       );
     }

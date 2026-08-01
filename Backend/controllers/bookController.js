@@ -7,7 +7,8 @@ exports.getAllBooks = async (req, res) => {
 
     let query = `
       SELECT b.*, a.name AS author_name, u.first_name AS uploader_first_name, u.last_name AS uploader_last_name,
-             GROUP_CONCAT(c.name SEPARATOR ', ') AS categories
+             GROUP_CONCAT(c.name SEPARATOR ', ') AS categories,
+             GROUP_CONCAT(c.category_id SEPARATOR ', ') AS category_ids
       FROM books b
       LEFT JOIN authors a ON b.author_id = a.author_id
       LEFT JOIN users u ON b.uploaded_by = u.user_id
@@ -61,7 +62,8 @@ exports.getBookById = async (req, res) => {
     const [rows] = await pool.query(`
       SELECT b.*, a.name AS author_name, a.biography AS author_biography,
              u.first_name AS uploader_first_name, u.last_name AS uploader_last_name,
-             GROUP_CONCAT(c.name SEPARATOR ', ') AS categories
+             GROUP_CONCAT(c.name SEPARATOR ', ') AS categories,
+             GROUP_CONCAT(c.category_id SEPARATOR ', ') AS category_ids
       FROM books b
       LEFT JOIN authors a ON b.author_id = a.author_id
       LEFT JOIN users u ON b.uploaded_by = u.user_id
@@ -87,29 +89,37 @@ exports.createBook = async (req, res) => {
     const {
       title, author_id, language, page_count, file_size_bytes,
       description, cover_image_url, file_pdf_url, uploaded_by,
-      is_free, category_ids
+      is_free, category_ids, category_id
     } = req.body;
 
-    if (!title || !author_id || !file_pdf_url || !uploaded_by) {
-      return res.status(400).json({ success: false, message: 'Title, author_id, file_pdf_url and uploaded_by are required' });
+    if (!title) {
+      return res.status(400).json({ success: false, message: 'Title is required' });
     }
+
+    const finalAuthorId = author_id || 1;
+    const finalUploadedBy = uploaded_by || 1;
+    const finalPdfUrl = file_pdf_url || 'assets/sample_book.pdf';
 
     const [result] = await pool.query(
       `INSERT INTO books (title, author_id, language, page_count, file_size_bytes, description, cover_image_url, file_pdf_url, uploaded_by, is_free, is_hidden)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, FALSE)`,
-      [title, author_id, language || 'LA', page_count || 0, file_size_bytes || 0, description || null, cover_image_url || null, file_pdf_url, uploaded_by, is_free ? 1 : 0]
+      [title, finalAuthorId, language || 'LA', page_count || 0, file_size_bytes || 0, description || null, cover_image_url || null, finalPdfUrl, finalUploadedBy, is_free ? 1 : 0]
     );
 
     const book_id = result.insertId;
 
-    if (Array.isArray(category_ids) && category_ids.length > 0) {
-      for (const catId of category_ids) {
+    const targetCategories = category_ids || (category_id ? [category_id] : [1]);
+    if (Array.isArray(targetCategories) && targetCategories.length > 0) {
+      for (const catId of targetCategories) {
         await pool.query('INSERT INTO book_categories (book_id, category_id) VALUES (?, ?)', [book_id, catId]);
       }
+    } else {
+      await pool.query('INSERT INTO book_categories (book_id, category_id) VALUES (?, 1) ON DUPLICATE KEY UPDATE book_id=book_id', [book_id]);
     }
 
     res.status(201).json({ success: true, message: 'Book created successfully', book_id });
   } catch (error) {
+    console.error('Create Book Error:', error);
     res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -118,23 +128,37 @@ exports.createBook = async (req, res) => {
 exports.updateBook = async (req, res) => {
   try {
     const { id } = req.params;
-    const { title, language, page_count, description, cover_image_url, is_free, is_hidden } = req.body;
+    const { title, author_id, language, page_count, description, cover_image_url, file_pdf_url, is_free, is_hidden, category_ids, category_id } = req.body;
 
     await pool.query(
       `UPDATE books 
        SET title = COALESCE(?, title),
+           author_id = COALESCE(?, author_id),
            language = COALESCE(?, language),
            page_count = COALESCE(?, page_count),
            description = COALESCE(?, description),
            cover_image_url = COALESCE(?, cover_image_url),
+           file_pdf_url = COALESCE(?, file_pdf_url),
            is_free = COALESCE(?, is_free),
            is_hidden = COALESCE(?, is_hidden)
        WHERE book_id = ?`,
-      [title, language, page_count, description, cover_image_url, is_free, is_hidden, id]
+      [title || null, author_id || null, language || null, page_count || null, description || null, cover_image_url || null, file_pdf_url || null, is_free !== undefined ? (is_free ? 1 : 0) : null, is_hidden !== undefined ? (is_hidden ? 1 : 0) : null, id]
     );
+
+    // Update book_categories mapping if provided
+    const targetCategories = category_ids || (category_id ? [category_id] : null);
+    if (targetCategories && Array.isArray(targetCategories) && targetCategories.length > 0) {
+      await pool.query('DELETE FROM book_categories WHERE book_id = ?', [id]);
+      for (const cId of targetCategories) {
+        if (cId) {
+          await pool.query('INSERT INTO book_categories (book_id, category_id) VALUES (?, ?)', [id, cId]);
+        }
+      }
+    }
 
     res.json({ success: true, message: 'Book updated successfully' });
   } catch (error) {
+    console.error('Update Book Error:', error);
     res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -143,9 +167,17 @@ exports.updateBook = async (req, res) => {
 exports.deleteBook = async (req, res) => {
   try {
     const { id } = req.params;
+    
+    // Safely cleanup foreign key dependencies first
+    await pool.query('DELETE FROM book_categories WHERE book_id = ?', [id]);
+    await pool.query('DELETE FROM bookmarks WHERE book_id = ?', [id]);
+    await pool.query('DELETE FROM reading_history WHERE book_id = ?', [id]);
+    await pool.query('DELETE FROM downloads WHERE book_id = ?', [id]);
     await pool.query('DELETE FROM books WHERE book_id = ?', [id]);
+
     res.json({ success: true, message: 'Book deleted successfully' });
   } catch (error) {
+    console.error('Delete Book Error:', error);
     res.status(500).json({ success: false, message: error.message });
   }
 };
