@@ -8,41 +8,71 @@ exports.login = async (req, res) => {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      return res.status(400).json({ success: false, message: 'Please provide email and password' });
+      return res.status(400).json({ success: false, message: 'ກະລຸນາກອກອີເມວ ແລະ ລະຫັດຜ່ານ' });
     }
 
-    const [rows] = await pool.query('SELECT * FROM users WHERE email = ?', [email]);
-    if (rows.length === 0) {
-      return res.status(401).json({ success: false, message: 'Invalid credentials' });
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanPassword = password.trim();
+
+    const mockAccounts = {
+      'admin@gmail.com': { password: 'admin123456', role: 'admin', first_name: 'Admin', last_name: 'System' },
+      'employee@gmail.com': { password: 'employee123', role: 'employee', first_name: 'Staff', last_name: 'Employee' },
+      'user1234@gmail.com': { password: 'user1234', role: 'user', first_name: 'General', last_name: 'User' },
+      'member@gmail.com': { password: 'member1234', role: 'user', first_name: 'Premiere', last_name: 'Member' }
+    };
+
+    let user = null;
+
+    try {
+      const [rows] = await pool.query('SELECT * FROM users WHERE LOWER(email) = ?', [cleanEmail]);
+      if (rows.length > 0) {
+        user = rows[0];
+      }
+    } catch (dbErr) {
+      console.warn('MySQL User Query Warning:', dbErr.message);
     }
 
-    const user = rows[0];
-
-    // Password verification (supports bcrypt hash or direct fallback for initial seed)
     let isMatch = false;
-    if (user.password_hash.startsWith('$2a$') || user.password_hash.startsWith('$2b$')) {
-      isMatch = await bcrypt.compare(password, user.password_hash);
-    }
-    
-    // Direct string match fallback if hash check is false (convenience for initial seeds)
-    if (!isMatch) {
-      const mockPasswords = {
-        'admin@gmail.com': 'admin123456',
-        'employee@gmail.com': 'employee123',
-        'user1234@gmail.com': 'user1234',
-        'member@gmail.com': 'member1234'
-      };
-      if (mockPasswords[email] && mockPasswords[email] === password) {
+
+    if (user) {
+      // 1. Try bcrypt verification
+      if (user.password_hash && (user.password_hash.startsWith('$2a$') || user.password_hash.startsWith('$2b$'))) {
+        try {
+          isMatch = await bcrypt.compare(cleanPassword, user.password_hash);
+        } catch (_) {}
+      }
+
+      // 2. Try direct string equality (for plain text passwords in DB)
+      if (!isMatch && user.password_hash === cleanPassword) {
         isMatch = true;
+      }
+
+      // 3. Try mock password fallback for seed users
+      if (!isMatch && mockAccounts[cleanEmail] && mockAccounts[cleanEmail].password === cleanPassword) {
+        isMatch = true;
+      }
+    } else {
+      // Fallback if MySQL database/table is not yet imported into phpMyAdmin
+      if (mockAccounts[cleanEmail] && mockAccounts[cleanEmail].password === cleanPassword) {
+        isMatch = true;
+        const mock = mockAccounts[cleanEmail];
+        user = {
+          user_id: cleanEmail === 'admin@gmail.com' ? 1 : cleanEmail === 'employee@gmail.com' ? 2 : cleanEmail === 'member@gmail.com' ? 4 : 3,
+          email: cleanEmail,
+          first_name: mock.first_name,
+          last_name: mock.last_name,
+          role: mock.role,
+          status: 'active'
+        };
       }
     }
 
-    if (!isMatch) {
-      return res.status(401).json({ success: false, message: 'Invalid email or password' });
+    if (!isMatch || !user) {
+      return res.status(401).json({ success: false, message: 'ອີເມວ ຫຼື ລະຫັດຜ່ານບໍ່ຖືກຕ້ອງ (Invalid email or password)' });
     }
 
-    if (user.status !== 'active') {
-      return res.status(403).json({ success: false, message: `Account is ${user.status}: ${user.suspended_reason || 'Contact admin'}` });
+    if (user.status && user.status !== 'active') {
+      return res.status(403).json({ success: false, message: `ບັນຊີຖືກ ${user.status}: ${user.suspended_reason || 'ກະລຸນາຕິດຕໍ່ຜູ້ດູແລລະບົບ'}` });
     }
 
     const token = jwt.sign(
@@ -53,7 +83,7 @@ exports.login = async (req, res) => {
 
     const { password_hash, ...userProfile } = user;
 
-    res.json({
+    return res.json({
       success: true,
       message: 'Login successful',
       token,
