@@ -1,7 +1,9 @@
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
+const path = require('path');
 const { testConnection } = require('./config/db');
+const upload = require('./middleware/upload');
 
 // Load environment variables
 dotenv.config();
@@ -14,6 +16,9 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Serve Uploaded Files Static Folder (Access files via http://localhost:5000/uploads/...)
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 // Test Database Connection
 testConnection();
 
@@ -23,12 +28,50 @@ app.get('/', (req, res) => {
     message: 'Welcome to E-Book Application RESTful API',
     status: 'Running',
     database: 'MySQL (phpMyAdmin / XAMPP)',
+    static_uploads: 'http://localhost:5000/uploads',
     timestamp: new Date().toISOString()
   });
 });
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', uptime: process.uptime() });
+});
+
+// Single & Multiple File Upload Endpoint
+app.post('/api/upload', upload.fields([
+  { name: 'cover', maxCount: 1 },
+  { name: 'pdf', maxCount: 1 },
+  { name: 'slip', maxCount: 1 },
+  { name: 'kyc_doc', maxCount: 1 },
+  { name: 'selfie', maxCount: 1 },
+  { name: 'profile', maxCount: 1 }
+]), (req, res) => {
+  try {
+    const files = req.files;
+    const responseData = {};
+
+    for (const key in files) {
+      if (files[key] && files[key].length > 0) {
+        const file = files[key][0];
+        // Create relative URL path
+        const relativePath = path.relative(__dirname, file.path).replace(/\\/g, '/');
+        responseData[key] = {
+          filename: file.filename,
+          url: `http://localhost:${PORT}/${relativePath}`,
+          path: relativePath,
+          size: file.size
+        };
+      }
+    }
+
+    res.json({
+      success: true,
+      message: 'File(s) uploaded successfully',
+      uploads: responseData
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Upload error', error: error.message });
+  }
 });
 
 // Import & Mount Routes (13 Tables API Endpoint Groups)
@@ -60,4 +103,5 @@ app.use((err, req, res, next) => {
 // Start Express Server
 app.listen(PORT, () => {
   console.log(`🚀 E-Book API Server is running on http://localhost:${PORT}`);
+  console.log(`📁 Uploads available at http://localhost:${PORT}/uploads/`);
 });
