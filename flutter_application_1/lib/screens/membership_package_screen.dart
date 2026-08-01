@@ -22,39 +22,39 @@ class _MembershipPackageScreenState extends State<MembershipPackageScreen> {
 
   final List<Map<String, dynamic>> _packages = [
     {
-      'title': 'แพ็กเกจทดลองอ่าน (Basic)',
-      'price': 'ฟรี 0 บาท',
-      'duration': 'ถาวร',
+      'title': 'ແພັກເກັດທົດລອງອ່ານ (Basic)',
+      'price': 'ຟຣີ 0 ກີບ',
+      'duration': 'ຖາວອນ',
       'features': [
-        'อ่านหนังสือสาธารณะทั่วไป',
-        'บันทึกหนังสือที่ชอบได้ 5 เล่ม',
-        'อ่านตัวอย่างไฟล์ PDF ฟรี 10 หน้าแรก',
+        'ອ່ານປຶ້ມສາທາລະນະທົ່ວໄປ',
+        'ບັນທຶກປຶ້ມທີ່ມັກໄດ້ 5 ເລີ່ມ',
+        'ອ່ານຕົວຢ່າງໄຟລ໌ PDF ຟຣີ 10 ໜ້າທຳອິດ',
       ],
       'color': const Color(0xFF64748B),
       'isPopular': false,
     },
     {
-      'title': 'แพ็กเกจพรีเมียมรายเดือน (Premiere Monthly)',
-      'price': '199 บาท',
-      'duration': '/ เดือน',
+      'title': 'ແພັກເກັດພຣີມ່ຽມລາຍເດືອນ (Premiere Monthly)',
+      'price': '199,000 ກີບ',
+      'duration': '/ ເດືອນ',
       'features': [
-        'อ่านหนังสือ PDF ทุกเล่มในคลังไม่จำกัด',
-        'ดาวน์โหลดไว้อ่านออฟไลน์ได้ไม่จำกัด',
-        'ไม่มีโฆษณาคั่น',
-        'ตราสัญลักษณ์ Premiere บนโปรไฟล์',
+        'ອ່ານປຶ້ມ PDF ທຸກເລີ່ມໃນຄັງແບບບໍ່ຈຳກັດ',
+        'ດາວໂຫຼດໄວ້ອ່ານອອບໄລນ໌ໄດ້ແບບບໍ່ຈຳກັດ',
+        'ບໍ່ມີໂຄສະນາຄັ້ນ',
+        'ຕາສັນຍາລັກ Premiere ບົນໂປຣໄຟລ໌',
       ],
       'color': AppColors.primary,
       'isPopular': true,
     },
     {
-      'title': 'แพ็กเกจพรีเมียมรายปี (Premiere Yearly)',
-      'price': '1,890 บาท',
-      'duration': '/ ปี (ประหยัด 20%)',
+      'title': 'ແພັກເກັດພຣີມ່ຽມລາຍປີ (Premiere Yearly)',
+      'price': '1,890,000 ກີບ',
+      'duration': '/ ປີ (ປະຢັດ 20%)',
       'features': [
-        'สิทธิ์ทั้งหมดของพรีเมียมรายเดือน',
-        'รับหนังสือเล่มพิเศษฟรีทุกเดือน',
-        'สิทธิ์สตรีมมิ่งหนังสือเสียง (Audiobook)',
-        'ซัพพอร์ตระดับ VIP ตลอด 24 ชั่วโมง',
+        'ສິດທັງໝົດຂອງພຣີມ່ຽມລາຍເດືອນ',
+        'ຮັບປຶ້ມເລີ່ມພິເສດຟຣີທຸກເດືອນ',
+        'ສິດສະຕຣີມມິ່ງປຶ້ມສຽງ (Audiobook)',
+        'ຊັບພອດລະດັບ VIP ຕະຫຼອດ 24 ຊົ່ວໂມງ',
       ],
       'color': const Color(0xFF7C3AED),
       'isPopular': false,
@@ -76,16 +76,16 @@ class _MembershipPackageScreenState extends State<MembershipPackageScreen> {
           children: [
             const Icon(Icons.workspace_premium_rounded, color: Color(0xFFF59E0B), size: 28),
             const SizedBox(width: 8),
-            const Text('ยืนยันสมัครแพ็กเกจ'),
+            const Text('ຢືນຢັນສະໝັກແພັກເກັດ'),
           ],
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('คุณกำลังเลือกสมัคร: ${pkg['title']}'),
+            Text('ທ່ານກຳລັງເລືອກສະໝັກ: ${pkg['title']}'),
             const SizedBox(height: 6),
-            Text('ราคา: ${pkg['price']} ${pkg['duration']}'),
+            Text('ລາຄາ: ${pkg['price']} ${pkg['duration']}'),
             const SizedBox(height: 12),
             Container(
               padding: const EdgeInsets.all(10),
@@ -97,7 +97,7 @@ class _MembershipPackageScreenState extends State<MembershipPackageScreen> {
                 children: [
                   const Icon(Icons.verified_user_rounded, color: Color(0xFF10B981), size: 18),
                   const SizedBox(width: 6),
-                  const Text('ตรวจสอบ KYC อนุมัติแล้ว', style: TextStyle(fontSize: 12, color: Color(0xFF065F46), fontWeight: FontWeight.bold)),
+                  const Text('ກວດສອບ KYC ອະນຸມັດແລ້ວ', style: TextStyle(fontSize: 12, color: Color(0xFF065F46), fontWeight: FontWeight.bold)),
                 ],
               ),
             ),
@@ -106,14 +106,14 @@ class _MembershipPackageScreenState extends State<MembershipPackageScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('ยกเลิก', style: TextStyle(color: AppColors.textSecondary)),
+            child: const Text('ຍົກເລີກ', style: TextStyle(color: AppColors.textSecondary)),
           ),
           ElevatedButton(
             onPressed: () {
               Navigator.pop(ctx);
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text('สมัคร ${pkg['title']} สำเร็จเรียบร้อยแล้ว!'),
+                  content: Text('ສະໝັກ ${pkg['title']} ສຳເລັດຮຽບຮ້ອຍແລ້ວ!'),
                   backgroundColor: const Color(0xFF10B981),
                 ),
               );
@@ -122,7 +122,7 @@ class _MembershipPackageScreenState extends State<MembershipPackageScreen> {
               backgroundColor: AppColors.primary,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),
-            child: const Text('ยืนยันชำระเงิน'),
+            child: const Text('ຢືນຢັນຊຳລະເງິນ'),
           ),
         ],
       ),
@@ -138,16 +138,16 @@ class _MembershipPackageScreenState extends State<MembershipPackageScreen> {
           children: [
             const Icon(Icons.gpp_maybe_rounded, color: Color(0xFFEF4444), size: 28),
             const SizedBox(width: 8),
-            const Text('ต้องยืนยันตัวตน (KYC) ก่อน'),
+            const Text('ຕ້ອງຢືນຢັນຕົວຕົນ (KYC) ກ່ອນ'),
           ],
         ),
         content: const Text(
-          'ตามนโยบายความปลอดภัย ผู้ใช้ต้องทำการยืนยันตัวตน (KYC) และได้รับการอนุมัติจากแอดมินก่อน จึงจะสามารถสมัครแพ็กเกจสมาชิกได้',
+          'ຕາມນະໂຍບາຍຄວາມປອດໄພ ຜູ້ໃຊ້ຕ້ອງດຳເນີນການຢືນຢັນຕົວຕົນ (KYC) ແລະ ໄດ້ຮັບການອະນຸມັດຈາກແອດມິນກ່ອນ ຈຶ່ງຈະສາມາດສະໝັກແພັກເກັດສະມາຊິກໄດ້',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('ไว้ทีหลัง'),
+            child: const Text('ໄວ້ທີຫຼັງ'),
           ),
           ElevatedButton(
             onPressed: () {
@@ -160,7 +160,7 @@ class _MembershipPackageScreenState extends State<MembershipPackageScreen> {
                         KycModel(
                           id: 'kyc_new',
                           userId: 'u123',
-                          userName: 'ผู้ใช้งานระบบ',
+                          userName: 'ຜູ້ໃຊ້ງານລະບົບ',
                           userEmail: 'user1234@gmail.com',
                           idCardNumber: '',
                           fullName: '',
@@ -174,7 +174,7 @@ class _MembershipPackageScreenState extends State<MembershipPackageScreen> {
               );
             },
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
-            child: const Text('ไปที่หน้ายืนยันตัวตน KYC'),
+            child: const Text('ໄປທີ່ໜ້າຢືນຢັນຕົວຕົນ KYC'),
           ),
         ],
       ),
@@ -186,7 +186,7 @@ class _MembershipPackageScreenState extends State<MembershipPackageScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        title: const Text('เลือกแพ็กเกจสมาชิก (Subscription Packages)'),
+        title: const Text('ເລືອກແພັກເກັດສະມາຊິກ (Subscription Packages)'),
         elevation: 0,
       ),
       body: SingleChildScrollView(
@@ -196,15 +196,10 @@ class _MembershipPackageScreenState extends State<MembershipPackageScreen> {
             constraints: const BoxConstraints(maxWidth: 850),
             child: Column(
               children: [
-                // Header Banner
                 _buildHeaderBanner(),
                 const SizedBox(height: 24),
-
-                // KYC Status Bar Indicator
                 _buildKycStatusNotice(),
                 const SizedBox(height: 24),
-
-                // Packages List
                 ListView.separated(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
@@ -229,21 +224,21 @@ class _MembershipPackageScreenState extends State<MembershipPackageScreen> {
       children: [
         Container(
           padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: const Color(0xFFFEF3C7),
+          decoration: const BoxDecoration(
+            color: Color(0xFFFEF3C7),
             shape: BoxShape.circle,
           ),
           child: const Icon(Icons.workspace_premium_rounded, color: Color(0xFFD97706), size: 40),
         ),
         const SizedBox(height: 12),
         const Text(
-          'เลือกแพ็กเกจที่เหมาะกับสไตล์การอ่านของคุณ',
-          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+          'ເລືອກແພັກເກັດທີ່ເໝາະສົມກັບສະໄຕລ໌ການອ່ານຂອງທ່ານ',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 6),
         const Text(
-          'เข้าถึงคลังหนังสือ PDF และ e-Book คุณภาพสูงนับหมื่นเล่มได้แบบไม่จำกัด',
+          'ເຂົ້າເຖິງຄັງປຶ້ມ PDF ແລະ e-Book ຄຸນນະພາບສູງນັບໝື່ນເລີ່ມໄດ້ແບບບໍ່ຈຳກັດ',
           style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
           textAlign: TextAlign.center,
         ),
@@ -270,8 +265,8 @@ class _MembershipPackageScreenState extends State<MembershipPackageScreen> {
           Expanded(
             child: Text(
               isApproved
-                  ? 'ยืนยันตัวตน KYC ผ่านแล้ว: คุณปลดล็อกสิทธิ์สมัครแพ็กเกจสมาชิกได้เรียบร้อย'
-                  : 'เงื่อนไขการสมัคร: คุณต้องยืนยันตัวตน (KYC) และได้รับการอนุมัติจากแอดมินก่อนสมัครแพ็กเกจ',
+                  ? 'ຢືນຢັນຕົວຕົນ KYC ຜ່ານແລ້ວ: ທ່ານປົດລັອກສິດສະໝັກແພັກເກັດສະມາຊິກໄດ້ຮຽບຮ້ອຍ'
+                  : 'ເງື່ອນໄຂການສະໝັກ: ທ່ານຕ້ອງຢືນຢັນຕົວຕົນ (KYC) ແລະ ໄດ້ຮັບການອະນຸມັດຈາກແອດມິນກ່ອນສະໝັກແພັກເກັດ',
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.bold,
@@ -282,7 +277,7 @@ class _MembershipPackageScreenState extends State<MembershipPackageScreen> {
           if (!isApproved)
             TextButton(
               onPressed: _showKycRequiredDialog,
-              child: const Text('ยืนยันตัวตนทันที', style: TextStyle(fontWeight: FontWeight.bold)),
+              child: const Text('ຢືນຢັນຕົວຕົນທັນທີ', style: TextStyle(fontWeight: FontWeight.bold)),
             ),
         ],
       ),
@@ -323,7 +318,7 @@ class _MembershipPackageScreenState extends State<MembershipPackageScreen> {
                   children: [
                     Text(
                       pkg['title'],
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: pkgColor),
+                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: pkgColor),
                     ),
                     if (isPopular) ...[
                       const SizedBox(width: 8),
@@ -333,7 +328,7 @@ class _MembershipPackageScreenState extends State<MembershipPackageScreen> {
                           color: const Color(0xFFF59E0B),
                           borderRadius: BorderRadius.circular(10),
                         ),
-                        child: const Text('ขายดีที่สุด', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white)),
+                        child: const Text('ຂາຍດີທີ່ສຸດ', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white)),
                       ),
                     ],
                   ],
@@ -355,7 +350,7 @@ class _MembershipPackageScreenState extends State<MembershipPackageScreen> {
               children: [
                 Text(
                   pkg['price'],
-                  style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                  style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
                 ),
                 const SizedBox(width: 6),
                 Text(
@@ -391,7 +386,7 @@ class _MembershipPackageScreenState extends State<MembershipPackageScreen> {
                   backgroundColor: pkgColor,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
-                child: const Text('เลือกแพ็กเกจนี้', style: TextStyle(fontWeight: FontWeight.bold)),
+                child: const Text('ເລືອກແພັກເກັດນີ້', style: TextStyle(fontWeight: FontWeight.bold)),
               ),
             ),
           ],

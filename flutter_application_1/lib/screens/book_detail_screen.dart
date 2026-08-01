@@ -221,7 +221,7 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                                     onPressed: () {},
                                     icon: const Icon(Icons.menu_book_rounded, size: 20),
                                     label: const Text(
-                                      'อ่านเลย',
+                                      'ອ່ານເລີຍ',
                                       style: TextStyle(
                                         fontSize: 15,
                                         fontWeight: FontWeight.bold,
@@ -246,7 +246,7 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                                     onPressed: () {},
                                     icon: const Icon(Icons.file_download_outlined, size: 20),
                                     label: const Text(
-                                      'ดาวน์โหลด',
+                                      'ດາວໂຫຼດ',
                                       style: TextStyle(
                                         fontSize: 15,
                                         fontWeight: FontWeight.bold,
@@ -266,11 +266,11 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                           ),
                           const SizedBox(height: 24),
 
-                          // Synopsis / เรื่องย่อ Section
+                          // Synopsis Section
                           const Align(
                             alignment: Alignment.centerLeft,
                             child: Text(
-                              'เรื่องย่อ',
+                              'ເນື້ອເຣື່ອງຫຍໍ້',
                               style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
@@ -302,7 +302,7 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                               child: Row(
                                 children: [
                                   Text(
-                                    _isExpanded ? 'ซ่อนข้อความ' : 'อ่านเพิ่มเติม',
+                                    _isExpanded ? 'ຊ່ອນຂໍ້ຄວາມ' : 'ອ່ານເພີ່ມເຕີມ',
                                     style: const TextStyle(
                                       fontSize: 14,
                                       fontWeight: FontWeight.bold,

@@ -52,7 +52,7 @@ class _KycSubmissionScreenState extends State<KycSubmissionScreen> {
     if (_idCardImagePath == null || _selfieImagePath == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('กรุณาอัปโหลดรูปภาพบัตรประชาชนและรูปถ่ายคู่กับบัตรประชาชนให้ครบถ้วน'),
+          content: Text('ກະລຸນາອັບໂຫຼດຮູບພາບບັດປະຈຳຕົວ ແລະ ຮູບຖ່າຍຄູ່ກັບບັດປະຈຳຕົວໃຫ້ຄົບຖ້ວນ'),
           backgroundColor: Colors.redAccent,
         ),
       );
@@ -82,7 +82,7 @@ class _KycSubmissionScreenState extends State<KycSubmissionScreen> {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('ส่งข้อมูลยืนยันตัวตน (KYC) สำเร็จ! กรุณารอแอดมินอนุมัติ'),
+          content: Text('ສົ່ງຂໍ້ມູນຢືນຢັນຕົວຕົນ (KYC) ສຳເລັດ! ກະລຸນາລໍຖ້າແອດມິນອະນຸມັດ'),
           backgroundColor: Color(0xFF10B981),
         ),
       );
@@ -116,7 +116,7 @@ class _KycSubmissionScreenState extends State<KycSubmissionScreen> {
                             const Icon(Icons.check_circle_rounded, color: Color(0xFF10B981), size: 28),
                             const SizedBox(width: 8),
                             Text(
-                              'แนบไฟล์แล้ว ($placeholderText)',
+                              'ແນບໄຟລ໌ແລ້ວ ($placeholderText)',
                               style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF065F46)),
                             ),
                           ],
@@ -145,11 +145,11 @@ class _KycSubmissionScreenState extends State<KycSubmissionScreen> {
                   const SizedBox(height: 8),
                   Text(
                     placeholderText,
-                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.primary),
+                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.primary),
                   ),
                   const SizedBox(height: 4),
                   const Text(
-                    'คลิกเพื่อเลือกรูปภาพ หรือถ่ายภาพ',
+                    'ຄລິກເພື່ອເລືອກຮູບພາບ ຫຼື ຖ່າຍຮູບ',
                     style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
                   ),
                 ],
@@ -163,7 +163,7 @@ class _KycSubmissionScreenState extends State<KycSubmissionScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        title: const Text('ยืนยันตัวตน (KYC Verification)'),
+        title: const Text('ຢືນຢັນຕົວຕົນ (KYC Verification)'),
         elevation: 0,
       ),
       body: SingleChildScrollView(
@@ -174,11 +174,9 @@ class _KycSubmissionScreenState extends State<KycSubmissionScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // 1. Status Banner Card
                 _buildStatusHeaderBanner(),
                 const SizedBox(height: 20),
 
-                // 2. Form or Summary depending on status
                 if (_currentStatus == KycStatus.approved) ...[
                   _buildApprovedCard(),
                 ] else if (_currentStatus == KycStatus.pending) ...[
@@ -208,32 +206,32 @@ class _KycSubmissionScreenState extends State<KycSubmissionScreen> {
         borderColor = const Color(0xFF6EE7B7);
         textColor = const Color(0xFF065F46);
         icon = Icons.verified_user_rounded;
-        titleText = 'สถานะ: ยืนยันตัวตนผ่านแล้ว (Approved)';
-        descText = 'บัญชีของคุณได้รับการตรวจสอบและอนุมัติ KYC เรียบร้อย สามารถสมัครแพ็กเกจสมาชิก Premiere ได้ทันที!';
+        titleText = 'ສະຖານະ: ຢືນຢັນຕົວຕົນຜ່ານແລ້ວ (Approved)';
+        descText = 'ບັນຊີຂອງທ່ານໄດ້ຮັບການກວດສອບ ແລະ ອະນຸມັດ KYC ຮຽບຮ້ອຍ ສາມາດສະໝັກແພັກເກັດສະມາຊິກ Premiere ໄດ້ທັນທີ!';
         break;
       case KycStatus.pending:
         bannerColor = const Color(0xFFFFFBEB);
         borderColor = const Color(0xFFFDE68A);
         textColor = const Color(0xFF92400E);
         icon = Icons.pending_actions_rounded;
-        titleText = 'สถานะ: รอแอดมินตรวจสอบเอกสาร (Pending)';
-        descText = 'แอดมินกำลังดำเนินการตรวจสอบบัตรประชาชนและหลักฐานของคุณ โดยปกติจะใช้เวลา 1-24 ชั่วโมง';
+        titleText = 'ສະຖານະ: ລໍຖ້າແອດມິນກວດສອບເອກະສານ (Pending)';
+        descText = 'ແອດມິນກຳລັງດຳເນີນການກວດສອບບັດປະຈຳຕົວ ແລະ ຫຼັກຖານຂອງທ່ານ ໂດຍປົກກະຕິຈະໃຊ້ເວລາ 1-24 ຊົ່ວໂມງ';
         break;
       case KycStatus.rejected:
         bannerColor = const Color(0xFFFEF2F2);
         borderColor = const Color(0xFFFCA5A5);
         textColor = const Color(0xFF991B1B);
         icon = Icons.gpp_bad_rounded;
-        titleText = 'สถานะ: การยืนยันตัวตนถูกปฏิเสธ (Rejected)';
-        descText = _rejectReason ?? 'เอกสารของคุณไม่ผ่านการอนุมัติ โปรดตรวจสอบและแก้ไขข้อมูลก่อนส่งอีกครั้ง';
+        titleText = 'ສະຖານະ: ການຢືນຢັນຕົວຕົນຖືກປະຕິເສດ (Rejected)';
+        descText = _rejectReason ?? 'ເອກະສານຂອງທ່ານບໍ່ຜ່ານການອະນຸມັດ ກະລຸນາກວດສອບ ແລະ ແກ້ໄຂຂໍ້ມູນກ່ອນສົ່ງອີກຄັ້ງ';
         break;
       case KycStatus.notSubmitted:
         bannerColor = const Color(0xFFEFF6FF);
         borderColor = const Color(0xFF93C5FD);
         textColor = const Color(0xFF1E40AF);
         icon = Icons.shield_outlined;
-        titleText = 'ขั้นตอนการยืนยันตัวตน (KYC Setup)';
-        descText = 'กรอกเลขบัตรประชาชนและแนบหลักฐานรูปถ่ายเพื่อยื่นเรื่องให้แอดมินอนุมัติสิทธิ์สมัครแพ็กเกจสมาชิก';
+        titleText = 'ຂັ້ນຕອນການຢືນຢັນຕົວຕົນ (KYC Setup)';
+        descText = 'ປ້ອນເລກບັດປະຈຳຕົວ ແລະ ແນບຫຼັກຖານຮູບຖ່າຍເພື່ອຍື່ນເລື່ອງໃຫ້ແອດມິນອະນຸມັດສິດສະໝັກແພັກເກັດສະມາຊິກ';
         break;
     }
 
@@ -261,7 +259,7 @@ class _KycSubmissionScreenState extends State<KycSubmissionScreen> {
               children: [
                 Text(
                   titleText,
-                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: textColor),
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: textColor),
                 ),
                 const SizedBox(height: 4),
                 Text(
@@ -296,13 +294,13 @@ class _KycSubmissionScreenState extends State<KycSubmissionScreen> {
           const Icon(Icons.stars_rounded, size: 64, color: Color(0xFFF59E0B)),
           const SizedBox(height: 12),
           const Text(
-            'ยินดีด้วย! บัญชีของคุณยืนยันตัวตนสำเร็จแล้ว',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+            'ຍິນດີດ້ວຍ! ບັນຊີຂອງທ່ານຢືນຢັນຕົວຕົນສຳເລັດແລ້ວ',
+            style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 8),
           const Text(
-            'คุณได้รับสิทธิ์เข้าถึงการสมัครสมาชิกและแพ็กเกจอ่าน e-Book แบบไม่จำกัด',
+            'ທ່ານໄດ້ຮັບສິດເຂົ້າເຖິງການສະໝັກສະມາຊິກ ແລະ ແພັກເກັດອ່ານ e-Book ແບບບໍ່ຈຳກັດ',
             style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
             textAlign: TextAlign.center,
           ),
@@ -318,7 +316,7 @@ class _KycSubmissionScreenState extends State<KycSubmissionScreen> {
                 );
               },
               icon: const Icon(Icons.workspace_premium_rounded, color: Colors.white),
-              label: const Text('ไปที่หน้าสมัครแพ็กเกจสมาชิก (Premiere Member)', style: TextStyle(fontWeight: FontWeight.bold)),
+              label: const Text('ໄປທີ່ໜ້າສະໝັກແພັກເກັດສະມາຊິກ (Premiere Member)', style: TextStyle(fontWeight: FontWeight.bold)),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -343,12 +341,12 @@ class _KycSubmissionScreenState extends State<KycSubmissionScreen> {
           const CircularProgressIndicator(color: Color(0xFFF59E0B)),
           const SizedBox(height: 16),
           const Text(
-            'เอกสารของคุณอยู่ระหว่างการตรวจสอบโดยแอดมิน',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+            'ເອກະສານຂອງທ່ານຢູ່ລະຫວ່າງການກວດສອບໂດຍແອດມິນ',
+            style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
           ),
           const SizedBox(height: 8),
           const Text(
-            'เมื่อแอดมินทำการอนุมัติแล้ว คุณจะได้รับแจ้งเตือนและสามารถกดสมัครแพ็กเกจสมาชิกได้ทันที',
+            'ເມື່ອແອດມິນດຳເນີນການອະນຸມັດແລ້ວ ທ່ານຈະໄດ້ຮັບແຈ້ງເຕືອນ ແລະ ສາມາດກົດສະໝັກແພັກເກັດສະມາຊິກໄດ້ທັນທີ',
             style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
             textAlign: TextAlign.center,
           ),
@@ -356,7 +354,7 @@ class _KycSubmissionScreenState extends State<KycSubmissionScreen> {
           OutlinedButton.icon(
             onPressed: () => Navigator.pop(context),
             icon: const Icon(Icons.arrow_back_rounded),
-            label: const Text('กลับสู่หน้าหลัก'),
+            label: const Text('ກັບສູ່ໜ້າຫຼັກ'),
           ),
         ],
       ),
@@ -384,44 +382,42 @@ class _KycSubmissionScreenState extends State<KycSubmissionScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'กรอกข้อมูลบัตรประชาชน',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+              'ປ້ອນຂໍ້ມູນບັດປະຈຳຕົວ',
+              style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
             ),
             const SizedBox(height: 14),
 
-            // Full Name
             TextFormField(
               controller: _fullNameController,
               decoration: InputDecoration(
-                labelText: 'ชื่อ-นามสกุล (ตรงตามบัตรประชาชน)',
+                labelText: 'ຊື່ ແລະ ນາມສະກຸນ (ກົງກັບບັດປະຈຳຕົວ)',
                 prefixIcon: const Icon(Icons.badge_outlined, color: AppColors.primary),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
               ),
               validator: (value) {
                 if (value == null || value.trim().isEmpty) {
-                  return 'กรุณากรอกชื่อ-นามสกุล';
+                  return 'ກະລຸນາປ້ອນຊື່ ແລະ ນາມສະກຸນ';
                 }
                 return null;
               },
             ),
             const SizedBox(height: 16),
 
-            // ID Card Number
             TextFormField(
               controller: _idCardController,
               keyboardType: TextInputType.number,
               decoration: InputDecoration(
-                labelText: 'เลขประจำตัวประชาชน 13 หลัก',
+                labelText: 'ເລກປະຈຳຕົວປະຊາຊົນ 13 ຫຼັກ',
                 hintText: '1-1002-34567-89-0',
                 prefixIcon: const Icon(Icons.credit_card_rounded, color: AppColors.primary),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
               ),
               validator: (value) {
                 if (value == null || value.trim().isEmpty) {
-                  return 'กรุณากรอกเลขบัตรประชาชน 13 หลัก';
+                  return 'ກະລຸນາປ້ອນເລກບັດປະຈຳຕົວ 13 ຫຼັກ';
                 }
                 if (value.replaceAll('-', '').trim().length < 13) {
-                  return 'เลขบัตรประชาชนต้องมี 13 หลัก';
+                  return 'ເລກບັດປະຈຳຕົວຕ້ອງມີ 13 ຫຼັກ';
                 }
                 return null;
               },
@@ -429,15 +425,14 @@ class _KycSubmissionScreenState extends State<KycSubmissionScreen> {
             const SizedBox(height: 24),
 
             const Text(
-              'แนบหลักฐานรูปถ่ายเพื่อยืนยันตัวตน',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+              'ແນບຫຼັກຖານຮູບຖ່າຍເພື່ອຢືນຢັນຕົວຕົນ',
+              style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
             ),
             const SizedBox(height: 12),
 
-            // Document 1: ID Card Photo
             _buildImagePreview(
               _idCardImagePath,
-              'รูปถ่ายหน้าบัตรประชาชน',
+              'ຮູບຖ່າຍໜ້າບັດປະຈຳຕົວ',
               () {
                 setState(() {
                   _idCardImagePath = 'assets/sample_id_card.png';
@@ -446,10 +441,9 @@ class _KycSubmissionScreenState extends State<KycSubmissionScreen> {
             ),
             const SizedBox(height: 14),
 
-            // Document 2: Selfie with ID Card Photo
             _buildImagePreview(
               _selfieImagePath,
-              'รูปถ่ายเซลฟี่คู่กับบัตรประชาชน',
+              'ຮູບຖ່າຍເຊວຟີຄູ່ກັບບັດປະຈຳຕົວ',
               () {
                 setState(() {
                   _selfieImagePath = 'assets/sample_selfie.png';
@@ -458,7 +452,6 @@ class _KycSubmissionScreenState extends State<KycSubmissionScreen> {
             ),
             const SizedBox(height: 28),
 
-            // Submit Button
             SizedBox(
               width: double.infinity,
               height: 50,
@@ -468,7 +461,7 @@ class _KycSubmissionScreenState extends State<KycSubmissionScreen> {
                     ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
                     : const Icon(Icons.send_rounded, color: Colors.white),
                 label: Text(
-                  _isSubmitting ? 'กำลังส่งข้อมูล...' : 'ส่งข้อมูลยื่นเรื่องให้แอดมินอนุมัติ',
+                  _isSubmitting ? 'ກຳລັງສົ່ງຂໍ້ມູນ...' : 'ສົ່ງຂໍ້ມູນຍື່ນເລື່ອງໃຫ້ແອດມິນອະນຸມັດ',
                   style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
                 ),
                 style: ElevatedButton.styleFrom(

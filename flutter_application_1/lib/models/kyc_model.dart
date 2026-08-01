@@ -37,13 +37,13 @@ class KycModel {
   String get statusText {
     switch (status) {
       case KycStatus.notSubmitted:
-        return 'ยังไม่ได้ยืนยันตัวตน';
+        return 'ຍັງບໍ່ທັນໄດ້ຢືນຢັນຕົວຕົນ';
       case KycStatus.pending:
-        return 'รอแอดมินอนุมัติ';
+        return 'ລໍຖ້າແອດມິນອະນຸມັດ';
       case KycStatus.approved:
-        return 'อนุมัติแล้ว (ผ่าน KYC)';
+        return 'ອະນຸມັດແລ້ວ (ຜ່ານ KYC)';
       case KycStatus.rejected:
-        return 'ไม่อนุมัติ (ถูกปฏิเสธ)';
+        return 'ບໍ່ອະນຸມັດ (ຖືກປະຕິເສດ)';
     }
   }
 
@@ -74,10 +74,10 @@ class MockKycData {
     KycModel(
       id: 'kyc_001',
       userId: 'u123',
-      userName: 'สมชาย ใจดี',
+      userName: 'ສົມຊາຍ ໃຈດີ',
       userEmail: 'user1234@gmail.com',
       idCardNumber: '1-1002-34567-89-0',
-      fullName: 'นาย สมชาย ใจดี',
+      fullName: 'ທ່ານ ສົມຊາຍ ໃຈດີ',
       idCardImagePath: 'assets/sample_id_card.png',
       selfieImagePath: 'assets/sample_selfie.png',
       status: KycStatus.pending,
@@ -86,10 +86,10 @@ class MockKycData {
     KycModel(
       id: 'kyc_002',
       userId: 'u124',
-      userName: 'ศิริพร วงศ์สวัสดิ์',
+      userName: 'ສິລິພອນ ວົງສະຫວັດ',
       userEmail: 'siriporn@gmail.com',
       idCardNumber: '3-5099-00123-45-6',
-      fullName: 'นางสาว ศิริพร วงศ์สวัสดิ์',
+      fullName: 'ນາງ ສິລິພອນ ວົງສະຫວັດ',
       idCardImagePath: 'assets/sample_id_card.png',
       selfieImagePath: 'assets/sample_selfie.png',
       status: KycStatus.pending,
@@ -98,10 +98,10 @@ class MockKycData {
     KycModel(
       id: 'kyc_003',
       userId: 'u125',
-      userName: 'พรีเมียร์ สมาชิก',
+      userName: 'ພຣີມ່ຽມ ສະມາຊິກ',
       userEmail: 'member@gmail.com',
       idCardNumber: '1-7099-00987-65-4',
-      fullName: 'นาย พรีเมียร์ สมาชิก',
+      fullName: 'ທ່ານ ພຣີມ່ຽມ ສະມາຊິກ',
       idCardImagePath: 'assets/sample_id_card.png',
       selfieImagePath: 'assets/sample_selfie.png',
       status: KycStatus.approved,
@@ -111,14 +111,14 @@ class MockKycData {
     KycModel(
       id: 'kyc_004',
       userId: 'u126',
-      userName: 'วีระชัย มีสุข',
+      userName: 'ວີຣະໄຊ ມີສຸກ',
       userEmail: 'weerachai@gmail.com',
       idCardNumber: '2-1009-88776-54-3',
-      fullName: 'นาย วีระชัย มีสุข',
+      fullName: 'ທ່ານ ວີຣະໄຊ ມີສຸກ',
       idCardImagePath: 'assets/sample_id_card.png',
       selfieImagePath: 'assets/sample_selfie.png',
       status: KycStatus.rejected,
-      rejectReason: 'ภาพถ่ายบัตรประชาชนไม่ชัดเจน โปรดถ่ายภาพใหม่ในที่สว่าง',
+      rejectReason: 'ຮູບຖ່າຍບັດປະຈຳຕົວບໍ່ຈະແຈ້ງ ກະລຸນາຖ່າຍຮູບໃໝ່ຢູ່ບ່ອນທີ່ມີແສງສະຫວ່າງ',
       submittedAt: DateTime.now().subtract(const Duration(days: 2)),
       reviewedAt: DateTime.now().subtract(const Duration(days: 1)),
     ),

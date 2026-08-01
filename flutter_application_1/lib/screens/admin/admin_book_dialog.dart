@@ -20,13 +20,13 @@ class _AdminBookDialogState extends State<AdminBookDialog> {
   late String _selectedCategory;
 
   final List<String> _categories = [
-    'วิทยาศาสตร์',
-    'ศิลปะ',
-    'สุขภาพ',
-    'ชีวิต',
-    'ผจญภัย',
-    'เทคโนโลยี',
-    'คณิตศาสตร์',
+    'ວິທະຍາສາດ',
+    'ສິນລະປະ',
+    'ສຸຂະພາບ',
+    'ຊີວິດ',
+    'ຜະຈົນໄພ',
+    'ເຕັກໂນໂລຊີ',
+    'ຄະນິດສາດ',
     'English',
   ];
 
@@ -79,7 +79,6 @@ class _AdminBookDialogState extends State<AdminBookDialog> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header Title & Close Button
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -92,7 +91,7 @@ class _AdminBookDialogState extends State<AdminBookDialog> {
                       ),
                       const SizedBox(width: 8),
                       Text(
-                        isEditing ? 'แก้ไขข้อมูลหนังสือ' : 'เพิ่มหนังสือใหม่',
+                        isEditing ? 'ແກ້ໄຂຂໍ້ມູນປຶ້ມ' : 'ເພີ່ມປຶ້ມໃໝ່',
                         style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
@@ -109,41 +108,36 @@ class _AdminBookDialogState extends State<AdminBookDialog> {
               ),
               const Divider(height: 20),
 
-              // Form Inputs
               Form(
                 key: _formKey,
                 child: Column(
                   children: [
-                    // Title Field
                     TextFormField(
                       controller: _titleController,
                       decoration: const InputDecoration(
-                        labelText: 'ชื่อหนังสือ',
-                        hintText: 'กรอกชื่อหนังสือ',
+                        labelText: 'ຊື່ປຶ້ມ',
+                        hintText: 'ປ້ອນຊື່ປຶ້ມ',
                         prefixIcon: Icon(Icons.book_rounded, color: AppColors.primary),
                       ),
                       validator: (value) =>
-                          value == null || value.trim().isEmpty ? 'กรุณากรอกชื่อหนังสือ' : null,
+                          value == null || value.trim().isEmpty ? 'ກະລຸນາປ້ອນຊື່ປຶ້ມ' : null,
                     ),
                     const SizedBox(height: 14),
 
-                    // Author Field
                     TextFormField(
                       controller: _authorController,
                       decoration: const InputDecoration(
-                        labelText: 'ชื่อผู้แต่ง / ผู้เขียน',
-                        hintText: 'กรอกชื่อผู้แต่ง',
+                        labelText: 'ຊື່ຜູ້ແຕ່ງ / ຜູ້ຂຽນ',
+                        hintText: 'ປ້ອນຊື່ຜູ້ແຕ່ງ',
                         prefixIcon: Icon(Icons.person_outline_rounded, color: AppColors.primary),
                       ),
                       validator: (value) =>
-                          value == null || value.trim().isEmpty ? 'กรุณากรอกชื่อผู้แต่ง' : null,
+                          value == null || value.trim().isEmpty ? 'ກະລຸນາປ້ອນຊື່ຜູ້ແຕ່ງ' : null,
                     ),
                     const SizedBox(height: 14),
 
-                    // Category Dropdown & Pages Row
                     Row(
                       children: [
-                        // Category Dropdown
                         Expanded(
                           flex: 3,
                           child: DropdownButtonFormField<String>(
@@ -151,7 +145,7 @@ class _AdminBookDialogState extends State<AdminBookDialog> {
                                 ? _selectedCategory
                                 : _categories.first,
                             decoration: const InputDecoration(
-                              labelText: 'หมวดหมู่',
+                              labelText: 'ໝວດໝູ່',
                               contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                             ),
                             items: _categories.map((cat) {
@@ -171,14 +165,13 @@ class _AdminBookDialogState extends State<AdminBookDialog> {
                         ),
                         const SizedBox(width: 10),
 
-                        // Pages Field
                         Expanded(
                           flex: 2,
                           child: TextFormField(
                             controller: _pagesController,
                             keyboardType: TextInputType.number,
                             decoration: const InputDecoration(
-                              labelText: 'จำนวนหน้า',
+                              labelText: 'ຈຳນວນໜ້າ',
                               contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                             ),
                           ),
@@ -187,7 +180,6 @@ class _AdminBookDialogState extends State<AdminBookDialog> {
                     ),
                     const SizedBox(height: 14),
 
-                    // PDF File Picker Box (Critical for E-Book)
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
@@ -212,11 +204,11 @@ class _AdminBookDialogState extends State<AdminBookDialog> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'อัปโหลดไฟล์หนังสือ (PDF) *',
+                                  'ອັບໂຫຼດໄຟລ໌ປຶ້ມ (PDF) *',
                                   style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.primary),
                                 ),
                                 Text(
-                                  'รองรับเอกสาร .pdf (สูงสุด 100MB)',
+                                  'ຮອງຮັບເອກະສານ .pdf (ສູງສຸດ 100MB)',
                                   style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
                                 ),
                               ],
@@ -229,14 +221,13 @@ class _AdminBookDialogState extends State<AdminBookDialog> {
                               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                               minimumSize: Size.zero,
                             ),
-                            child: const Text('เลือกไฟล์ PDF', style: TextStyle(fontSize: 11)),
+                            child: const Text('ເລືອກໄຟລ໌ PDF', style: TextStyle(fontSize: 11)),
                           ),
                         ],
                       ),
                     ),
                     const SizedBox(height: 12),
 
-                    // File Cover Picker Box
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
@@ -261,11 +252,11 @@ class _AdminBookDialogState extends State<AdminBookDialog> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'อัปโหลดรูปปกหนังสือ',
+                                  'ອັບໂຫຼດຮູບປົກປຶ້ມ',
                                   style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
                                 ),
                                 Text(
-                                  'รองรับ JPG, PNG (ไม่เกิน 5MB)',
+                                  'ຮອງຮັບ JPG, PNG (ບໍ່ເກີນ 5MB)',
                                   style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
                                 ),
                               ],
@@ -277,14 +268,13 @@ class _AdminBookDialogState extends State<AdminBookDialog> {
                               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                               minimumSize: Size.zero,
                             ),
-                            child: const Text('เลือกรูปปก', style: TextStyle(fontSize: 11)),
+                            child: const Text('ເລືອກຮູບປົກ', style: TextStyle(fontSize: 11)),
                           ),
                         ],
                       ),
                     ),
                     const SizedBox(height: 20),
 
-                    // Buttons Action Row
                     Row(
                       children: [
                         Expanded(
@@ -296,7 +286,7 @@ class _AdminBookDialogState extends State<AdminBookDialog> {
                                 borderRadius: BorderRadius.circular(10),
                               ),
                             ),
-                            child: const Text('ยกเลิก'),
+                            child: const Text('ຍົກເລີກ'),
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -310,7 +300,7 @@ class _AdminBookDialogState extends State<AdminBookDialog> {
                                 borderRadius: BorderRadius.circular(10),
                               ),
                             ),
-                            child: Text(isEditing ? 'บันทึกการแก้ไข' : 'เพิ่มหนังสือ'),
+                            child: Text(isEditing ? 'ບັນທຶກການແກ້ໄຂ' : 'ເພີ່ມປຶ້ມ'),
                           ),
                         ),
                       ],

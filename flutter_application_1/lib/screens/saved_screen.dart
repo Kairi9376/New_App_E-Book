@@ -54,7 +54,7 @@ class _SavedScreenState extends State<SavedScreen> {
         children: [
           // Header Title
           const Text(
-            'บันทึก',
+            'ບັນທຶກ',
             style: TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.bold,
@@ -68,7 +68,7 @@ class _SavedScreenState extends State<SavedScreen> {
             child: _savedList.isEmpty
                 ? const Center(
                     child: Text(
-                      'ไม่มีหนังสือที่บันทึกไว้',
+                      'ບໍ່ມີປຶ້ມທີ່ບັນທຶກໄວ້',
                       style: TextStyle(fontSize: 15, color: AppColors.textSecondary),
                     ),
                   )

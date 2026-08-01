@@ -13,7 +13,7 @@ class DownloadsScreen extends StatefulWidget {
 
 class _DownloadsScreenState extends State<DownloadsScreen> {
   int _selectedCategoryIndex = 0;
-  final List<String> _categories = ['ทั้งหมด', 'วิทยาศาสตร์', 'ศิลปะ', 'สุขภาพ'];
+  final List<String> _categories = ['ທັງໝົດ', 'ວິທະຍາສາດ', 'ສິນລະປະ', 'ສຸຂະພາບ'];
 
   final List<DownloadedBookItem> _downloadList = List.from(MockDownloadsData.downloadedItems);
 
@@ -25,7 +25,7 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('ลบ "${removed.title}" ออกจากรายการดาวน์โหลดแล้ว'),
+        content: Text('ລົບ "${removed.title}" ອອກຈາກລາຍການດາວໂຫຼດແລ້ວ'),
         duration: const Duration(seconds: 2),
       ),
     );
@@ -65,7 +65,7 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
         children: [
           // Header Title
           const Text(
-            'ดาวน์โหลด',
+            'ດາວໂຫຼດ',
             style: TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.bold,
@@ -114,7 +114,7 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
             child: _downloadList.isEmpty
                 ? const Center(
                     child: Text(
-                      'ไม่มีไฟล์ดาวน์โหลดในเครื่อง',
+                      'ບໍ່ມີໄຟລ໌ດາວໂຫຼດໃນເຄື່ອງ',
                       style: TextStyle(fontSize: 15, color: AppColors.textSecondary),
                     ),
                   )
@@ -239,7 +239,7 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
                       ),
                     ),
                     child: const Text(
-                      'อ่านเลย',
+                      'ອ່ານເລີຍ',
                       style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
                     ),
                   ),

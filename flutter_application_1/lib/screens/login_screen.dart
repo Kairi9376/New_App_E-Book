@@ -42,38 +42,34 @@ class _LoginScreenState extends State<LoginScreen> {
 
       // Mock Credentials Checking
       if (email == 'admin@gmail.com' && password == 'admin123456') {
-        // Admin Role -> Route to Admin Management Screen
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('เข้าสู่ระบบสำเร็จในฐานะ: Admin (ผู้ดูแลระบบ)'),
+            content: Text('ເຂົ້າສູ່ລະບົບສຳເລັດໃນຖານະ: Admin (ຜູ້ດູແລລະບົບ)'),
             backgroundColor: AppColors.primary,
           ),
         );
         _navigateTo(const AdminDashboardScreen());
       } else if (email == 'employee@gmail.com' && password == 'employee123') {
-        // Employee Role -> Route to Employee Portal (Staff Dashboard)
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('เข้าสู่ระบบสำเร็จในฐานะ: Employee (พนักงานจัดการ PDF)'),
+            content: Text('ເຂົ້າສູ່ລະບົບສຳເລັດໃນຖານະ: Employee (ພະນັກງານຈັດການ PDF)'),
             backgroundColor: Color(0xFF10B981),
           ),
         );
         _navigateTo(const EmployeeDashboardScreen());
       } else if ((email == 'user1234@gmail.com' && password == 'user1234') ||
           (email == 'member@gmail.com' && password == 'member1234')) {
-        // User (General or Member) -> Route to User Home Screen
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('เข้าสู่ระบบสำเร็จในฐานะ: ${email == 'member@gmail.com' ? 'Premiere Member' : 'General User'}'),
+            content: Text('ເຂົ້າສູ່ລະບົບສຳເລັດໃນຖານະ: ${email == 'member@gmail.com' ? 'Premiere Member' : 'ຜູ້ໃຊ້ທົ່ວໄປ'}'),
             backgroundColor: AppColors.primary,
           ),
         );
         _navigateTo(const UserHomeScreen());
       } else {
-        // Incorrect Credentials
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('อีเมลหรือรหัสผ่านไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง'),
+            content: Text('ອີເມວ ຫຼື ລະຫັດຜ່ານບໍ່ຖືກຕ້ອງ ກະລຸນາລອງໃໝ່ອີກຄັ້ງ'),
             backgroundColor: Colors.redAccent,
           ),
         );
@@ -92,7 +88,7 @@ class _LoginScreenState extends State<LoginScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Header Logo / Icon
+                // Header Logo
                 Container(
                   width: 90,
                   height: 90,
@@ -110,20 +106,20 @@ class _LoginScreenState extends State<LoginScreen> {
 
                 // Welcome Titles
                 const Text(
-                  'ยินดีต้อนรับเข้าสู่ระบบ',
+                  'ຍິນດີຕ້ອນຮັບເຂົ້າສູ່ລະບົບ',
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    fontSize: 26,
+                    fontSize: 24,
                     fontWeight: FontWeight.bold,
                     color: AppColors.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 8),
                 const Text(
-                  'ระบบจัดการ E-Book สำหรับ Admin, พนักงาน และผู้ใช้งาน',
+                  'ລະບົບຈັດການ E-Book ສຳລັບ Admin, ພະນັກງານ ແລະ ຜູ້ໃຊ້ງານ',
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    fontSize: 14,
+                    fontSize: 13,
                     color: AppColors.textSecondary,
                   ),
                 ),
@@ -134,30 +130,28 @@ class _LoginScreenState extends State<LoginScreen> {
                   key: _formKey,
                   child: Column(
                     children: [
-                      // Email / Username Field
                       TextFormField(
                         controller: _emailController,
                         keyboardType: TextInputType.emailAddress,
                         decoration: const InputDecoration(
-                          labelText: 'อีเมล / บัญชีผู้ใช้',
+                          labelText: 'ອີເມວ / ບັນຊີຜູ້ໃຊ້',
                           hintText: 'example@gmail.com',
                           prefixIcon: Icon(Icons.person_outline, color: AppColors.primary),
                         ),
                         validator: (value) {
                           if (value == null || value.trim().isEmpty) {
-                            return 'กรุณากรอกอีเมลหรือบัญชีผู้ใช้';
+                            return 'ກະລຸນາປ້ອນອີເມວ ຫຼື ບັນຊີຜູ້ໃຊ້';
                           }
                           return null;
                         },
                       ),
                       const SizedBox(height: 16),
 
-                      // Password Field
                       TextFormField(
                         controller: _passwordController,
                         obscureText: _isPasswordObscured,
                         decoration: InputDecoration(
-                          labelText: 'รหัสผ่าน',
+                          labelText: 'ລະຫັດຜ່ານ',
                           hintText: '••••••••',
                           prefixIcon: const Icon(Icons.lock_outline, color: AppColors.primary),
                           suffixIcon: IconButton(
@@ -176,7 +170,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         validator: (value) {
                           if (value == null || value.isEmpty) {
-                            return 'กรุณากรอกรหัสผ่าน';
+                            return 'ກະລຸນາປ້ອນລະຫັດຜ່ານ';
                           }
                           return null;
                         },
@@ -210,9 +204,9 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         const SizedBox(width: 8),
                         const Text(
-                          'จำฉันไว้ในระบบ',
+                          'ຈື່ຂ້ອຍໄວ້ໃນລະບົບ',
                           style: TextStyle(
-                            fontSize: 14,
+                            fontSize: 13,
                             color: AppColors.textSecondary,
                           ),
                         ),
@@ -221,9 +215,9 @@ class _LoginScreenState extends State<LoginScreen> {
                     TextButton(
                       onPressed: () {},
                       child: const Text(
-                        'ลืมรหัสผ่าน?',
+                        'ລືມລະຫັດຜ່ານ?',
                         style: TextStyle(
-                          fontSize: 14,
+                          fontSize: 13,
                           color: AppColors.primary,
                           fontWeight: FontWeight.w600,
                         ),
@@ -238,7 +232,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   height: 52,
                   child: ElevatedButton(
                     onPressed: _onLoginPressed,
-                    child: const Text('เข้าสู่ระบบ'),
+                    child: const Text('ເຂົ້າສູ່ລະບົບ'),
                   ),
                 ),
                 const SizedBox(height: 24),
@@ -256,10 +250,10 @@ class _LoginScreenState extends State<LoginScreen> {
                     children: [
                       Row(
                         children: [
-                          Icon(Icons.info_outline_rounded, size: 16, color: AppColors.primary),
-                          SizedBox(width: 6),
-                          Text(
-                            'บัญชีสำหรับทดสอบระบบ (Mock Data):',
+                          const Icon(Icons.info_outline_rounded, size: 16, color: AppColors.primary),
+                          const SizedBox(width: 6),
+                          const Text(
+                            'ບັນຊີສຳລັບທົດລອງລະບົບ (Mock Data):',
                             style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.primary),
                           ),
                         ],
@@ -282,31 +276,27 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Widget _buildCredentialRow(String role, String email, String pwd) {
     return Padding(
-      padding: const EdgeInsets.only(top: 4.0),
-      child: InkWell(
-        onTap: () {
-          setState(() {
-            _emailController.text = email;
-            _passwordController.text = pwd;
-          });
-        },
-        child: Row(
-          children: [
-            SizedBox(
-              width: 100,
-              child: Text(
-                '$role:',
-                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
-              ),
+      padding: const EdgeInsets.only(bottom: 4.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            '$role:',
+            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+          ),
+          InkWell(
+            onTap: () {
+              setState(() {
+                _emailController.text = email;
+                _passwordController.text = pwd;
+              });
+            },
+            child: Text(
+              '$email / $pwd',
+              style: const TextStyle(fontSize: 11, color: AppColors.primary, decoration: TextDecoration.underline),
             ),
-            Expanded(
-              child: Text(
-                '$email / $pwd',
-                style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

@@ -39,12 +39,12 @@ class ProfileScreen extends StatelessWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('ออกจากระบบ'),
-        content: const Text('คุณต้องการออกจากระบบใช่หรือไม่?'),
+        title: const Text('ອອກຈາກລະບົບ'),
+        content: const Text('ທ່ານຕ້ອງການອອກຈາກລະບົບແທ້ບໍ?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('ยกเลิก'),
+            child: const Text('ຍົກເລີກ'),
           ),
           ElevatedButton(
             onPressed: () {
@@ -57,7 +57,7 @@ class ProfileScreen extends StatelessWidget {
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFFDC2626),
             ),
-            child: const Text('ออกจากระบบ'),
+            child: const Text('ອອກຈາກລະບົບ'),
           ),
         ],
       ),
@@ -75,7 +75,7 @@ class ProfileScreen extends StatelessWidget {
         children: [
           const SizedBox(height: 10),
 
-          // 1. Avatar with Edit Badge Button
+          // Avatar
           Center(
             child: Stack(
               children: [
@@ -112,7 +112,7 @@ class ProfileScreen extends StatelessWidget {
           ),
           const SizedBox(height: 16),
 
-          // 2. User Name
+          // Name
           const Text(
             'John Johnny',
             style: TextStyle(
@@ -123,7 +123,7 @@ class ProfileScreen extends StatelessWidget {
           ),
           const SizedBox(height: 8),
 
-          // 3. Premiere User Badge Chip
+          // Badge
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
             decoration: BoxDecoration(
@@ -133,13 +133,13 @@ class ProfileScreen extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(
+                const Icon(
                   Icons.check_circle_rounded,
                   size: 16,
                   color: Colors.white,
                 ),
-                SizedBox(width: 6),
-                Text(
+                const SizedBox(width: 6),
+                const Text(
                   'Premiere User',
                   style: TextStyle(
                     fontSize: 13,
@@ -152,20 +152,20 @@ class ProfileScreen extends StatelessWidget {
           ),
           const SizedBox(height: 16),
 
-          // 4. Membership Dates Row
+          // Dates
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                'สมัคร: 04/11/2026',
+              const Text(
+                'ສະໝັກ: 04/11/2026',
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.bold,
                   color: AppColors.textPrimary,
                 ),
               ),
-              Text(
-                'หมดอายุ: 04/12/2026',
+              const Text(
+                'ໝົດອາຍຸ: 04/12/2026',
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.bold,
@@ -176,11 +176,11 @@ class ProfileScreen extends StatelessWidget {
           ),
           const SizedBox(height: 24),
 
-          // 5. Account Settings Section Header
+          // Settings Header
           const Align(
             alignment: Alignment.centerLeft,
             child: Text(
-              'การตั้งค่าบัญชี',
+              'ການຕັ້ງຄ່າບັນຊີ',
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
@@ -190,7 +190,7 @@ class ProfileScreen extends StatelessWidget {
           ),
           const SizedBox(height: 12),
 
-          // 6. Settings Menu Card Group
+          // Menu List Group
           Container(
             decoration: BoxDecoration(
               color: Colors.white,
@@ -208,8 +208,8 @@ class ProfileScreen extends StatelessWidget {
               children: [
                 _buildMenuItem(
                   icon: Icons.verified_user_rounded,
-                  title: 'ยืนยันตัวตน (KYC Verification)',
-                  subtitle: 'ยื่นเอกสารอนุมัติก่อนสมัครแพ็กเกจ',
+                  title: 'ຢືນຢັນຕົວຕົນ (KYC Verification)',
+                  subtitle: 'ຍື່ນເອກະສານອະນຸມັດກ່ອນສະໝັກແພັກເກັດ',
                   onTap: () {
                     Navigator.push(
                       context,
@@ -224,8 +224,8 @@ class ProfileScreen extends StatelessWidget {
                 const Divider(height: 1, thickness: 1, color: Color(0xFFF1F5F9)),
                 _buildMenuItem(
                   icon: Icons.workspace_premium_rounded,
-                  title: 'สมัครแพ็กเกจสมาชิก (Premiere Member)',
-                  subtitle: 'อ่าน e-Book PDF ได้ทุกเล่มแบบไม่จำกัด',
+                  title: 'ສະໝັກແພັກເກັດສະມາຊິກ (Premiere Member)',
+                  subtitle: 'ອ່ານ e-Book PDF ໄດ້ທຸກເລີ່ມແບບບໍ່ຈຳກັດ',
                   onTap: () {
                     Navigator.push(
                       context,
@@ -240,19 +240,19 @@ class ProfileScreen extends StatelessWidget {
                 const Divider(height: 1, thickness: 1, color: Color(0xFFF1F5F9)),
                 _buildMenuItem(
                   icon: Icons.settings_outlined,
-                  title: 'การตั้งค่า',
+                  title: 'ການຕັ້ງຄ່າ',
                   onTap: () {},
                 ),
                 const Divider(height: 1, thickness: 1, color: Color(0xFFF1F5F9)),
                 _buildMenuItem(
                   icon: Icons.notifications_none_outlined,
-                  title: 'การแจ้งเตือน',
+                  title: 'ການແຈ້ງເຕືອນ',
                   onTap: () {},
                 ),
                 const Divider(height: 1, thickness: 1, color: Color(0xFFF1F5F9)),
                 _buildMenuItem(
                   icon: Icons.shield_outlined,
-                  title: 'ความปลอดภัย และ ความเป็นส่วนตัว',
+                  title: 'ຄວາມປອດໄພ ແລະ ຄວາມເປັນສ່ວນຕົວ',
                   onTap: () {},
                 ),
               ],
@@ -260,7 +260,7 @@ class ProfileScreen extends StatelessWidget {
           ),
           const SizedBox(height: 28),
 
-          // 7. Logout Red Outlined Button
+          // Logout Button
           OutlinedButton(
             onPressed: () => _onLogout(context),
             style: OutlinedButton.styleFrom(
@@ -273,14 +273,14 @@ class ProfileScreen extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(
+                const Icon(
                   Icons.logout_rounded,
                   color: Color(0xFFDC2626),
                   size: 20,
                 ),
-                SizedBox(width: 8),
-                Text(
-                  'ออกจากระบบ',
+                const SizedBox(width: 8),
+                const Text(
+                  'ອອກຈາກລະບົບ',
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
@@ -292,7 +292,6 @@ class ProfileScreen extends StatelessWidget {
           ),
           const SizedBox(height: 28),
 
-          // 8. App Version Text
           const Text(
             'Version 2.4.1 (Scholarly Edition)',
             style: TextStyle(

@@ -23,12 +23,12 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
   int _currentBottomNavIndex = 0;
 
   final List<String> _categories = [
-    'ทั้งหมด',
-    'วิทยาศาสตร์',
-    'ศิลปะ',
-    'สุขภาพ',
-    'ผจญภัย',
-    'เทคโนโลยี',
+    'ທັງໝົດ',
+    'ວິທະຍາສາດ',
+    'ສິນລະປະ',
+    'ສຸຂະພາບ',
+    'ຜະຈົນໄພ',
+    'ເຕັກໂນໂລຊີ',
   ];
 
   final Set<String> _bookmarkedIds = {};
@@ -119,20 +119,20 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
               _buildKycPromptBanner(),
               const SizedBox(height: 20),
 
-              // 4. Section 1: ยอดนิยม (Popular)
-              _buildSectionHeader('ยอดนิยม', onSeeAll: () {}),
+              // 4. Section 1: Popular
+              _buildSectionHeader('ຍອດນິຍົມ', onSeeAll: () {}),
               const SizedBox(height: 12),
               _buildPopularBooksList(),
               const SizedBox(height: 24),
 
-              // 5. Section 2: หนังสือใหม่ (New Books)
-              _buildSectionHeader('หนังสือใหม่', onSeeAll: () {}),
+              // 5. Section 2: New Books
+              _buildSectionHeader('ປຶ້ມໃໝ່', onSeeAll: () {}),
               const SizedBox(height: 12),
               _buildNewBooksList(),
               const SizedBox(height: 24),
 
-              // 6. Section 3: แนะนำ (Recommended)
-              _buildSectionHeader('แนะนำ', onSeeAll: () {}),
+              // 6. Section 3: Recommended
+              _buildSectionHeader('ແນະນຳ', onSeeAll: () {}),
               const SizedBox(height: 12),
               _buildRecommendedBooksList(),
               const SizedBox(height: 16),
@@ -261,12 +261,12 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: const [
                 Text(
-                  'ยืนยันตัวตน (KYC) เพื่อสมัครแพ็กเกจสมาชิก',
+                  'ຢືນຢັນຕົວຕົນ (KYC) ເພື່ອສະໝັກແພັກເກັດສະມາຊິກ',
                   style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white),
                 ),
                 SizedBox(height: 2),
                 Text(
-                  'ยื่นบัตรประชาชนรอแอดมินอนุมัติเพื่ออ่าน PDF แบบไม่จำกัด',
+                  'ຍື່ນບັດປະຈຳຕົວລໍຖ້າແອດມິນອະນຸມັດເພື່ອອ່ານ PDF ແບບບໍ່ຈຳກັດ',
                   style: TextStyle(fontSize: 11, color: Colors.white70),
                 ),
               ],
@@ -290,7 +290,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
               minimumSize: const Size(0, 36),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),
-            child: const Text('ยื่น KYC', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white)),
+            child: const Text('ຍື່ນ KYC', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white)),
           ),
         ],
       ),
@@ -307,7 +307,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
       ),
       child: const TextField(
         decoration: InputDecoration(
-          hintText: 'Search books...',
+          hintText: 'ຄົ້ນຫາປຶ້ມ ຫຼື ຊື່ຜູ້ແຕ່ງ...',
           hintStyle: TextStyle(color: AppColors.textSecondary, fontSize: 14),
           prefixIcon: Icon(Icons.search_rounded, color: AppColors.textSecondary),
           border: InputBorder.none,
@@ -371,7 +371,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
         GestureDetector(
           onTap: onSeeAll,
           child: const Text(
-            'ดูทั้งหมด',
+            'ເບິ່ງທັງໝົດ',
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,
@@ -697,11 +697,11 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
   // --- 7. Bottom Navigation Bar Widget ---
   Widget _buildBottomNavigationBar() {
     final navItems = [
-      {'icon': Icons.home_rounded, 'label': 'หน้าหลัก'},
-      {'icon': Icons.history_rounded, 'label': 'ประวัติ'},
-      {'icon': Icons.bookmark_outline_rounded, 'label': 'บันทึก'},
-      {'icon': Icons.file_download_outlined, 'label': 'ดาวน์โหลด'},
-      {'icon': Icons.person_outline_rounded, 'label': 'โปรไฟล์'},
+      {'icon': Icons.home_rounded, 'label': 'ໜ້າຫຼັກ'},
+      {'icon': Icons.history_rounded, 'label': 'ປະຫວັດ'},
+      {'icon': Icons.bookmark_outline_rounded, 'label': 'ບັນທຶກ'},
+      {'icon': Icons.file_download_outlined, 'label': 'ດາວໂຫຼດ'},
+      {'icon': Icons.person_outline_rounded, 'label': 'ໂປຣໄຟລ໌'},
     ];
 
     return Container(

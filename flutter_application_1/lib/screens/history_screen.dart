@@ -43,7 +43,7 @@ class HistoryScreen extends StatelessWidget {
         children: [
           // Header Title
           const Text(
-            'ประวัติการอ่าน',
+            'ປະຫວັດການອ່ານ',
             style: TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.bold,
@@ -145,7 +145,7 @@ class HistoryScreen extends StatelessWidget {
 
                 // Progress Percentage Text
                 Text(
-                  'อ่านแล้ว ${item.progressPercentage}%',
+                  'ອ່ານແລ້ວ ${item.progressPercentage}%',
                   style: const TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,

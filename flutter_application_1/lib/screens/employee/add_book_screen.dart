@@ -19,9 +19,9 @@ class _EmployeeAddBookScreenState extends State<EmployeeAddBookScreen> {
   final _priceController = TextEditingController();
 
   // State Variables
-  String _selectedCategory = 'เทคโนโลยี';
+  String _selectedCategory = 'ເຕັກໂນໂລຊີ';
   String _accessType = 'Premiere Member'; // 'Free', 'Premiere Member', 'Paid'
-  
+
   // PDF File Upload Mock State
   String? _pdfFileName;
   double? _pdfFileSizeMB;
@@ -33,15 +33,15 @@ class _EmployeeAddBookScreenState extends State<EmployeeAddBookScreen> {
   bool _isUploadingCover = false;
 
   final List<String> _categories = [
-    'เทคโนโลยี',
-    'วิทยาศาสตร์',
-    'ศิลปะ',
-    'สุขภาพ',
-    'ชีวิต & การพัฒนาตนเอง',
-    'ธุรกิจ & การลงทุน',
-    'นิยาย & การผจญภัย',
-    'คณิตศาสตร์',
-    'ภาษาต่างประเทศ',
+    'ເຕັກໂນໂລຊີ',
+    'ວິທະຍາສາດ',
+    'ສິນລະປະ',
+    'ສຸຂະພາບ',
+    'ຊີວິດ & ການພັດທະນາຕົນເອງ',
+    'ທຸລະກິດ & ການລົງທຶນ',
+    'ນວນນິຍາຍ & ຜະຈົນໄພ',
+    'ຄະນິດສາດ',
+    'ພາສາຕ່າງປະເທດ',
   ];
 
   @override
@@ -84,7 +84,7 @@ class _EmployeeAddBookScreenState extends State<EmployeeAddBookScreen> {
             children: [
               const Icon(Icons.picture_as_pdf_rounded, color: Colors.white, size: 20),
               const SizedBox(width: 8),
-              Expanded(child: Text('แนบไฟล์ PDFสำเร็จ: $_pdfFileName (${_pdfFileSizeMB}MB)')),
+              Expanded(child: Text('ແນບໄຟລ໌ PDF ສຳເລັດ: $_pdfFileName (${_pdfFileSizeMB}MB)')),
             ],
           ),
           backgroundColor: const Color(0xFF10B981),
@@ -106,8 +106,8 @@ class _EmployeeAddBookScreenState extends State<EmployeeAddBookScreen> {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('เลือกรูปภาพปกเรียบร้อยแล้ว'),
-          backgroundColor: AppColors.primary,
+          content: Text('ອັບໂຫຼດຮູບປົກສຳເລັດ (sample_cover.png)'),
+          backgroundColor: Color(0xFF10B981),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -115,66 +115,31 @@ class _EmployeeAddBookScreenState extends State<EmployeeAddBookScreen> {
   }
 
   void _onSaveBook() {
-    if (!_formKey.currentState!.validate()) {
-      return;
-    }
+    if (!_formKey.currentState!.validate()) return;
 
     if (_pdfFileName == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('กรุณาอัปโหลดไฟล์ PDF หนังสือเข้าระบบก่อนทำการบันทึก'),
+          content: Text('ກະລຸນາແນບໄຟລ໌ PDF ຂອງປຶ້ມກ່ອນບັນທຶກ'),
           backgroundColor: Colors.redAccent,
-          behavior: SnackBarBehavior.floating,
         ),
       );
       return;
     }
 
-    // Success Dialog
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Column(
-          children: [
-            Icon(Icons.check_circle_rounded, color: Color(0xFF10B981), size: 56),
-            SizedBox(height: 12),
-            Text(
-              'เพิ่มหนังสือ PDF สำเร็จ!',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-            ),
-          ],
-        ),
-        content: Text(
-          'หนังสือเรื่อง "${_titleController.text.trim()}" ได้ถูกอัปโหลดและบันทึกเข้าสู่ระบบเรียบร้อยแล้ว',
-          textAlign: TextAlign.center,
-          style: const TextStyle(fontSize: 14, color: AppColors.textSecondary),
-        ),
-        actions: [
-          Center(
-            child: ElevatedButton(
-              onPressed: () {
-                Navigator.pop(ctx); // Close dialog
-                Navigator.pop(context, true); // Return to previous screen
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-              child: const Text('ตกลง', style: TextStyle(fontWeight: FontWeight.bold)),
-            ),
-          ),
-        ],
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('ບັນທຶກປຶ້ມ PDF "${_titleController.text.trim()}" ເຂົ້າລະບົບສຳເລັດ!'),
+        backgroundColor: const Color(0xFF10B981),
       ),
     );
+
+    Navigator.pop(context, true);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      resizeToAvoidBottomInset: false,
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
         backgroundColor: AppColors.primary,
@@ -185,17 +150,17 @@ class _EmployeeAddBookScreenState extends State<EmployeeAddBookScreen> {
         ),
         title: Row(
           children: [
-            Icon(Icons.picture_as_pdf_rounded, color: Colors.white, size: 22),
-            SizedBox(width: 8),
-            Text(
-              'ระบบเพิ่มหนังสือ PDF (พนักงาน)',
+            const Icon(Icons.picture_as_pdf_rounded, color: Colors.white, size: 22),
+            const SizedBox(width: 8),
+            const Text(
+              'ລະບົບເພີ່ມປຶ້ມ PDF (ພະນັກງານ)',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
             ),
           ],
         ),
         actions: [
           IconButton(
-            tooltip: 'ดูตัวอย่าง',
+            tooltip: 'ເບິ່ງຕົວຢ່າງ',
             icon: const Icon(Icons.remove_red_eye_outlined, color: Colors.white),
             onPressed: () => _showPreviewModal(context),
           ),
@@ -223,54 +188,47 @@ class _EmployeeAddBookScreenState extends State<EmployeeAddBookScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Banner Header
                   _buildHeaderSection(),
                   const SizedBox(height: 24),
 
-                  // 1. Upload PDF Section (Critical)
                   _buildPdfUploadSection(),
                   const SizedBox(height: 24),
 
-                  // 2. Upload Cover Image Section
                   _buildCoverUploadSection(),
                   const SizedBox(height: 24),
 
                   const Divider(height: 32),
 
-                  // 3. Book General Info Form
                   const Text(
-                    'ข้อมูลทั่วไปของหนังสือ',
+                    'ຂໍ້ມູນທົ່ວໄປຂອງປຶ້ມ',
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
                   ),
                   const SizedBox(height: 16),
 
-                  // Title Field
                   TextFormField(
                     controller: _titleController,
                     decoration: const InputDecoration(
-                      labelText: 'ชื่อหนังสือ *',
-                      hintText: 'เช่น Flutter Web App Masterclass',
+                      labelText: 'ຊື່ປຶ້ມ *',
+                      hintText: 'ເຊັ່ນ: Flutter Web App Masterclass',
                       prefixIcon: Icon(Icons.book_rounded, color: AppColors.primary),
                     ),
                     validator: (value) =>
-                        value == null || value.trim().isEmpty ? 'กรุณากรอกชื่อหนังสือ' : null,
+                        value == null || value.trim().isEmpty ? 'ກະລຸນາປ້ອນຊື່ປຶ້ມ' : null,
                   ),
                   const SizedBox(height: 16),
 
-                  // Author Field
                   TextFormField(
                     controller: _authorController,
                     decoration: const InputDecoration(
-                      labelText: 'ชื่อผู้แต่ง / สำนักพิมพ์ *',
-                      hintText: 'เช่น ดร. สมชาย วิทยาการ',
+                      labelText: 'ຊື່ຜູ້ແຕ່ງ / ໂຮງພິມ *',
+                      hintText: 'ເຊັ່ນ: ດຣ. ສົມໄຊ ວິທະຍາການ',
                       prefixIcon: Icon(Icons.person_outline_rounded, color: AppColors.primary),
                     ),
                     validator: (value) =>
-                        value == null || value.trim().isEmpty ? 'กรุณากรอกชื่อผู้แต่ง' : null,
+                        value == null || value.trim().isEmpty ? 'ກະລຸນາປ້ອນຊື່ຜູ້ແຕ່ງ' : null,
                   ),
                   const SizedBox(height: 16),
 
-                  // Category & Pages & Access Type
                   LayoutBuilder(
                     builder: (context, constraints) {
                       final isMobile = constraints.maxWidth < 600;
@@ -297,13 +255,12 @@ class _EmployeeAddBookScreenState extends State<EmployeeAddBookScreen> {
                   ),
                   const SizedBox(height: 16),
 
-                  // Description / Synopsis Field
                   TextFormField(
                     controller: _descriptionController,
                     maxLines: 4,
                     decoration: const InputDecoration(
-                      labelText: 'เรื่องย่อ / คำอธิบายหนังสือ',
-                      hintText: 'กรอกเนื้อหาสรุปย่อของหนังสือเล่มนี้...',
+                      labelText: 'ເນື້ອເຣື່ອງຫຍໍ້ / ຄຳອະທິບາຍປຶ້ມ',
+                      hintText: 'ປ້ອນເນື້ອຫາສະຫຼຸບຫຍໍ້ຂອງປຶ້ມເລີ່ມນີ້...',
                       alignLabelWithHint: true,
                       prefixIcon: Padding(
                         padding: EdgeInsets.only(bottom: 60),
@@ -313,7 +270,6 @@ class _EmployeeAddBookScreenState extends State<EmployeeAddBookScreen> {
                   ),
                   const SizedBox(height: 28),
 
-                  // Action Buttons
                   Row(
                     children: [
                       Expanded(
@@ -327,7 +283,7 @@ class _EmployeeAddBookScreenState extends State<EmployeeAddBookScreen> {
                             });
                           },
                           icon: const Icon(Icons.refresh_rounded),
-                          label: const Text('ล้างข้อมูล'),
+                          label: const Text('ລ້າງຂໍ້ມູນ'),
                           style: OutlinedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 14),
                             shape: RoundedRectangleBorder(
@@ -342,7 +298,7 @@ class _EmployeeAddBookScreenState extends State<EmployeeAddBookScreen> {
                         child: ElevatedButton.icon(
                           onPressed: _onSaveBook,
                           icon: const Icon(Icons.cloud_upload_rounded, color: Colors.white),
-                          label: const Text('บันทึกหนังสือเข้าสู่ระบบ', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+                          label: const Text('ບັນທຶກປຶ້ມເຂົ້າສູ່ລະບົບ', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.primary,
                             padding: const EdgeInsets.symmetric(vertical: 14),
@@ -379,13 +335,13 @@ class _EmployeeAddBookScreenState extends State<EmployeeAddBookScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'ส่วนงานพนักงาน (Staff Portal): เพิ่มหนังสืออิเล็กทรอนิกส์ (E-Book)',
+                const Text(
+                  'ສ່ວນງານພະນັກງານ (Staff Portal): ເພີ່ມປຶ້ມອິດເລັກໂທຣນິກ (E-Book)',
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.primary),
                 ),
-                SizedBox(height: 2),
-                Text(
-                  'รองรับไฟล์รูปแบบ PDF เท่านั้น (ขนาดสูงสุด 100MB ต่อไฟล์) พร้อมรูปปก JPG/PNG',
+                const SizedBox(height: 2),
+                const Text(
+                  'ຮອງຮັບໄຟລ໌ຮູບແບບ PDF ເທົ່ານັ້ນ (ຂະໜາດສູງສຸດ 100MB ຕໍ່ໄຟລ໌) ພ້ອມຮູບປົກ JPG/PNG',
                   style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
                 ),
               ],
@@ -396,13 +352,12 @@ class _EmployeeAddBookScreenState extends State<EmployeeAddBookScreen> {
     );
   }
 
-  // PDF File Upload Widget
   Widget _buildPdfUploadSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
-          'อัปโหลดไฟล์หนังสือ (PDF Document) *',
+          'ອັບໂຫຼດໄຟລ໌ປຶ້ມ (PDF Document) *',
           style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
         ),
         const SizedBox(height: 8),
@@ -439,7 +394,7 @@ class _EmployeeAddBookScreenState extends State<EmployeeAddBookScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          _pdfFileName ?? 'เลือกไฟล์หนังสือ PDF (.pdf)',
+                          _pdfFileName ?? 'ເລືອກໄຟລ໌ປຶ້ມ PDF (.pdf)',
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.bold,
@@ -449,8 +404,8 @@ class _EmployeeAddBookScreenState extends State<EmployeeAddBookScreen> {
                         const SizedBox(height: 4),
                         Text(
                           _pdfFileName != null
-                              ? 'ขนาดไฟล์: $_pdfFileSizeMB MB • พร้อมใช้งาน'
-                              : 'รองรับไฟล์เอกสาร PDF ทุกชนิด (ไม่เกิน 100MB)',
+                              ? 'ຂະໜາດໄຟລ໌: $_pdfFileSizeMB MB • ພ້ອມໃຊ້ງານ'
+                              : 'ຮອງຮັບໄຟລ໌ເອກະສານ PDF ທຸກຊະນິດ (ບໍ່ເກີນ 100MB)',
                           style: TextStyle(
                             fontSize: 12,
                             color: _pdfFileName != null ? const Color(0xFF047857) : AppColors.textSecondary,
@@ -465,7 +420,7 @@ class _EmployeeAddBookScreenState extends State<EmployeeAddBookScreen> {
                       _pdfFileName != null ? Icons.swap_horiz_rounded : Icons.upload_file_rounded,
                       size: 18,
                     ),
-                    label: Text(_pdfFileName != null ? 'เปลี่ยนไฟล์' : 'เลือกไฟล์ PDF'),
+                    label: Text(_pdfFileName != null ? 'ປ່ຽນໄຟລ໌' : 'ເລືອກໄຟລ໌ PDF'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: _pdfFileName != null ? const Color(0xFF059669) : AppColors.primary,
                       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
@@ -490,13 +445,12 @@ class _EmployeeAddBookScreenState extends State<EmployeeAddBookScreen> {
     );
   }
 
-  // Cover Image Upload Widget
   Widget _buildCoverUploadSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
-          'อัปโหลดรูปภาพปกหนังสือ (Cover Image)',
+          'ອັບໂຫຼດຮູບພາບປົກປຶ້ມ (Cover Image)',
           style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
         ),
         const SizedBox(height: 8),
@@ -524,12 +478,12 @@ class _EmployeeAddBookScreenState extends State<EmployeeAddBookScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      _coverImagePath != null ? 'เลือกรูปปกเรียบร้อย (sample_cover.png)' : 'อัปโหลดรูปปก (JPG, PNG)',
+                      _coverImagePath != null ? 'ເລືອກຮູບປົກຮຽບຮ້ອຍ (sample_cover.png)' : 'ອັບໂຫຼດຮູບປົກ (JPG, PNG)',
                       style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
                     ),
                     const SizedBox(height: 4),
                     const Text(
-                      'อัตราส่วนที่แนะนำ 3:4 (เช่น 600x800 px)',
+                      'ອັດຕາສ່ວນທີ່ແນະນຳ 3:4 (ເຊັ່ນ 600x800 px)',
                       style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
                     ),
                   ],
@@ -538,7 +492,7 @@ class _EmployeeAddBookScreenState extends State<EmployeeAddBookScreen> {
               OutlinedButton.icon(
                 onPressed: _isUploadingCover ? null : _pickCoverImage,
                 icon: const Icon(Icons.add_photo_alternate_outlined, size: 18),
-                label: Text(_coverImagePath != null ? 'เปลี่ยนรูป' : 'เลือกรูปปก'),
+                label: Text(_coverImagePath != null ? 'ປ່ຽນຮູບ' : 'ເລືອກຮູບປົກ'),
                 style: OutlinedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -555,7 +509,7 @@ class _EmployeeAddBookScreenState extends State<EmployeeAddBookScreen> {
     return DropdownButtonFormField<String>(
       value: _selectedCategory,
       decoration: const InputDecoration(
-        labelText: 'หมวดหมู่หนังสือ *',
+        labelText: 'ໝວດໝູ່ປຶ້ມ *',
         prefixIcon: Icon(Icons.category_outlined, color: AppColors.primary),
       ),
       items: _categories.map((cat) {
@@ -575,8 +529,8 @@ class _EmployeeAddBookScreenState extends State<EmployeeAddBookScreen> {
       controller: _pagesController,
       keyboardType: TextInputType.number,
       decoration: const InputDecoration(
-        labelText: 'จำนวนหน้า (Pages)',
-        hintText: 'เช่น 250',
+        labelText: 'ຈຳນວນໜ້າ (Pages)',
+        hintText: 'ເຊັ່ນ 250',
         prefixIcon: Icon(Icons.auto_stories_outlined, color: AppColors.primary),
       ),
     );
@@ -586,13 +540,13 @@ class _EmployeeAddBookScreenState extends State<EmployeeAddBookScreen> {
     return DropdownButtonFormField<String>(
       value: _accessType,
       decoration: const InputDecoration(
-        labelText: 'สิทธิ์การเข้าถึงหนังสือ',
+        labelText: 'ສິດການເຂົ້າເຖິງປຶ້ມ',
         prefixIcon: Icon(Icons.lock_outline_rounded, color: AppColors.primary),
       ),
       items: const [
-        DropdownMenuItem(value: 'Free', child: Text('อ่านฟรี (ทุกสมาชิก)')),
-        DropdownMenuItem(value: 'Premiere Member', child: Text('เฉพาะสมาชิก Premiere')),
-        DropdownMenuItem(value: 'Paid', child: Text('ซื้ออ่านเป็นเล่ม')),
+        DropdownMenuItem(value: 'Free', child: Text('ອ່ານຟຣີ (ທຸກສະມາຊິກ)')),
+        DropdownMenuItem(value: 'Premiere Member', child: Text('ສະເພາະສະມາຊິກ Premiere')),
+        DropdownMenuItem(value: 'Paid', child: Text('ຊື້ອ່ານເປັນເລີ່ມ')),
       ],
       onChanged: (val) {
         if (val != null) setState(() => _accessType = val);
@@ -620,9 +574,9 @@ class _EmployeeAddBookScreenState extends State<EmployeeAddBookScreen> {
               children: [
                 Row(
                   children: [
-                    Icon(Icons.preview_rounded, color: AppColors.primary),
-                    SizedBox(width: 8),
-                    Text('ตัวอย่างมุมมองหนังสือ (Preview)', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    const Icon(Icons.preview_rounded, color: AppColors.primary),
+                    const SizedBox(width: 8),
+                    const Text('ຕົວຢ່າງມຸມມອງປຶ້ມ (Preview)', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                   ],
                 ),
                 IconButton(
@@ -647,13 +601,13 @@ class _EmployeeAddBookScreenState extends State<EmployeeAddBookScreen> {
             const SizedBox(height: 16),
             Center(
               child: Text(
-                _titleController.text.isEmpty ? '(ยังไม่ได้ระบุชื่อหนังสือ)' : _titleController.text,
+                _titleController.text.isEmpty ? '(ຍັງບໍ່ໄດ້ລະບຸຊື່ປຶ້ມ)' : _titleController.text,
                 style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
             ),
             Center(
               child: Text(
-                _authorController.text.isEmpty ? 'ผู้แต่ง: (ไม่ระบุ)' : 'ผู้แต่ง: ${_authorController.text}',
+                _authorController.text.isEmpty ? 'ຜູ້ແຕ່ງ: (ບໍ່ລະບຸ)' : 'ຜູ້ແຕ່ງ: ${_authorController.text}',
                 style: const TextStyle(fontSize: 14, color: AppColors.textSecondary),
               ),
             ),
@@ -661,9 +615,9 @@ class _EmployeeAddBookScreenState extends State<EmployeeAddBookScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Chip(label: Text('หมวดหมู่: $_selectedCategory')),
+                Chip(label: Text('ໝວດໝູ່: $_selectedCategory')),
                 const SizedBox(width: 8),
-                Chip(label: Text('รูปแบบ: PDF (${_pagesController.text} หน้า)')),
+                Chip(label: Text('ຮູບແບບ: PDF (${_pagesController.text} ໜ້າ)')),
               ],
             ),
           ],
