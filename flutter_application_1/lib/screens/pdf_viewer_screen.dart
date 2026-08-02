@@ -34,6 +34,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
   late String _viewTypeId;
   int _currentPage = 1;
   int _totalPages = 1;
+  double _zoomScale = 1.0; // Zoom multiplier (1.0 = 100%, 1.25 = 125%, 1.5 = 150%)
   bool _isDarkMode = true;
   bool _isLoading = true;
 
@@ -97,7 +98,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
     _fullPdfUrl = url;
   }
 
-  String _buildSinglePageHtml(String pdfUrl, int pageNum) {
+  String _buildSinglePageHtml(String pdfUrl, int pageNum, double zoomLevel) {
     final bgColor = _isDarkMode ? '#0F172A' : '#F8FAFC';
     final textColor = _isDarkMode ? '#94A3B8' : '#475569';
 
@@ -118,28 +119,32 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
       justify-content: center;
       min-height: 100vh;
       width: 100vw;
-      overflow: hidden;
+      overflow: auto;
       font-family: system-ui, -apple-system, sans-serif;
     }
     #page-card {
       position: relative;
-      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.4), 0 10px 10px -5px rgba(0, 0, 0, 0.3);
+      box-shadow: 0 25px 30px -5px rgba(0, 0, 0, 0.4), 0 15px 15px -5px rgba(0, 0, 0, 0.3);
       border-radius: 8px;
       overflow: hidden;
       background: white;
-      max-width: 94vw;
-      max-height: 84vh;
+      margin: auto;
       display: flex;
       justify-content: center;
       align-items: center;
     }
     #pdf-canvas {
       display: block;
-      max-width: 94vw;
-      max-height: 84vh;
       width: auto;
       height: auto;
+      max-width: 96vw;
+      max-height: 86vh;
       object-fit: contain;
+      image-rendering: -webkit-optimize-contrast;
+      image-rendering: crisp-edges;
+      text-rendering: optimizeLegibility;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
     }
     #loading-text {
       position: absolute;
@@ -158,7 +163,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
 </head>
 <body>
   <div id="page-card">
-    <div id="loading-text">ກຳລັງໂຫຼດເນື້ອຫາ PDF ໜ້າ $pageNum...</div>
+    <div id="loading-text">ກຳລັງໂຫຼດໜ້າ HD $pageNum...</div>
     <canvas id="pdf-canvas"></canvas>
   </div>
 
@@ -167,27 +172,38 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
     
     var url = '$pdfUrl';
     var pageNum = $pageNum;
+    var userZoom = $zoomLevel;
     var canvas = document.getElementById('pdf-canvas');
-    var ctx = canvas.getContext('2d');
+    var ctx = canvas.getContext('2d', { alpha: false });
     var loadingEl = document.getElementById('loading-text');
 
     pdfjsLib.getDocument({ url: url, withCredentials: false }).promise.then(function(pdfDoc) {
-      // Notify parent Flutter frame of the exact total page count of the PDF document
       try {
         window.parent.postMessage({ type: 'pdf_page_count', totalPages: pdfDoc.numPages, pageNum: pageNum }, '*');
       } catch (e) {}
 
-      // Clamp requested page to actual PDF document total pages
       var targetPage = pageNum;
-      if (targetPage > pdfDoc.numPages) {
-        targetPage = pdfDoc.numPages;
-      }
+      if (targetPage > pdfDoc.numPages) targetPage = pdfDoc.numPages;
       if (targetPage < 1) targetPage = 1;
 
       pdfDoc.getPage(targetPage).then(function(page) {
-        var viewport = page.getViewport({ scale: 1.8 });
-        canvas.height = viewport.height;
-        canvas.width = viewport.width;
+        // High-DPI Retina Super-Sampling for ultra-sharp vector/text rendering
+        var dpr = window.devicePixelRatio || 1;
+        var renderScale = 2.5 * dpr * userZoom; // High HD resolution multiplier
+        
+        var viewport = page.getViewport({ scale: renderScale });
+
+        canvas.width = Math.floor(viewport.width);
+        canvas.height = Math.floor(viewport.height);
+        
+        // CSS display bounds
+        var cssWidth = Math.floor(viewport.width / dpr / 1.5);
+        var cssHeight = Math.floor(viewport.height / dpr / 1.5);
+        canvas.style.width = cssWidth + "px";
+        canvas.style.height = cssHeight + "px";
+
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
 
         var renderContext = {
           canvasContext: ctx,
@@ -235,7 +251,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
               ..style.height = '100%'
               ..style.pointerEvents = 'auto';
 
-            iframe.srcdoc = _buildSinglePageHtml(_fullPdfUrl, _currentPage);
+            iframe.srcdoc = _buildSinglePageHtml(_fullPdfUrl, _currentPage, _zoomScale);
             return iframe;
           },
         );
@@ -280,6 +296,17 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
         if (mounted) setState(() => _isLoading = false);
       });
     }
+  }
+
+  void _setZoom(double newZoom) {
+    setState(() {
+      _zoomScale = newZoom.clamp(0.75, 2.5);
+      _isLoading = true;
+      _registerWebIframe();
+    });
+    Future.delayed(const Duration(milliseconds: 400), () {
+      if (mounted) setState(() => _isLoading = false);
+    });
   }
 
   void _setIframePointerEvents(bool enabled) {
@@ -342,7 +369,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
                     ),
                     const Divider(color: Colors.white24, height: 16),
 
-                    // Direct Jump Input Bar (พิมพ์เลขหน้า เช่น 10 แล้วกด ไป)
+                    // Direct Jump Input Bar
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                       decoration: BoxDecoration(
@@ -617,6 +644,8 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final zoomPercent = (_zoomScale * 100).round();
+
     return Scaffold(
       backgroundColor: _isDarkMode ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
       appBar: AppBar(
@@ -635,13 +664,36 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
               overflow: TextOverflow.ellipsis,
             ),
             Text(
-              'ນັກຂຽນ: ${widget.author ?? "ບໍ່ລະບຸ"} | ໜ້າ PDF: $_currentPage / $_totalPages',
+              'ນັກຂຽນ: ${widget.author ?? "ບໍ່ລະບຸ"} | ໜ້າ PDF: $_currentPage / $_totalPages | HD $zoomPercent%',
               style: const TextStyle(fontSize: 11, color: Colors.white70),
             ),
           ],
         ),
         actions: [
-          // Native Flutter Dropdown in AppBar (100% Clickable everywhere!)
+          // Zoom Out Button
+          IconButton(
+            icon: const Icon(Icons.zoom_out_rounded, color: Colors.white70),
+            tooltip: 'ຍໍ້ໜ້າ PDF (Zoom Out)',
+            onPressed: _zoomScale > 0.75 ? () => _setZoom(_zoomScale - 0.25) : null,
+          ),
+          // Zoom Level Indicator Badge
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withOpacity(0.3),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text('$zoomPercent%', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
+          ),
+          // Zoom In Button
+          IconButton(
+            icon: const Icon(Icons.zoom_in_rounded, color: Colors.white),
+            tooltip: 'ຂະຫຍາຍໜ້າ PDF (Zoom In HD)',
+            onPressed: _zoomScale < 2.5 ? () => _setZoom(_zoomScale + 0.25) : null,
+          ),
+          const SizedBox(width: 4),
+
+          // Native Flutter Dropdown in AppBar
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10),
             margin: const EdgeInsets.symmetric(vertical: 8),
@@ -714,7 +766,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'ສະແດງເນື້ອຫາໄຟລ໌ PDF: ໜ້າທີ $_currentPage / $_totalPages',
+                    'ສະແດງເນື້ອຫາໄຟລ໌ PDF (Ultra HD): ໜ້າທີ $_currentPage / $_totalPages',
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
@@ -771,7 +823,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
                                 const CircularProgressIndicator(color: AppColors.primary),
                                 const SizedBox(height: 16),
                                 Text(
-                                  'ກຳລັງໂຫຼດໜ້າທີ $_currentPage ຈາກໄຟລ໌ PDF...',
+                                  'ກຳລັງໂຫຼດໜ້າທີ $_currentPage (Ultra HD)...',
                                   style: TextStyle(
                                     color: _isDarkMode ? Colors.white70 : Colors.black87,
                                     fontSize: 14,
@@ -887,7 +939,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        'ໜ້າ PDF: $_currentPage / $_totalPages',
+                        'ໜ້າ PDF: $_currentPage / $_totalPages ($zoomPercent%)',
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 13,
