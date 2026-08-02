@@ -42,6 +42,35 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', uptime: process.uptime() });
 });
 
+// Helper to parse actual total pages from a PDF file
+function getPdfPageCount(filePath) {
+  try {
+    const fs = require('fs');
+    const buffer = fs.readFileSync(filePath);
+    const content = buffer.toString('latin1');
+    
+    // Method 1: Search for /Count N in catalog
+    const matches = content.match(/\/Count\s+(\d+)/g);
+    if (matches && matches.length > 0) {
+      let maxCount = 0;
+      for (const m of matches) {
+        const num = parseInt(m.replace(/\/Count\s+/, ''), 10);
+        if (!isNaN(num) && num > maxCount) maxCount = num;
+      }
+      if (maxCount > 0) return maxCount;
+    }
+    
+    // Method 2: Count /Type /Page
+    const pageMatches = content.match(/\/Type\s*\/Page\b/g);
+    if (pageMatches && pageMatches.length > 0) {
+      return pageMatches.length;
+    }
+  } catch (err) {
+    console.error('Error counting PDF pages:', err);
+  }
+  return 1;
+}
+
 // Single & Multiple File Upload Endpoint
 app.post('/api/upload', upload.fields([
   { name: 'cover', maxCount: 1 },
@@ -60,11 +89,18 @@ app.post('/api/upload', upload.fields([
         const file = files[key][0];
         // Create relative URL path
         const relativePath = path.relative(__dirname, file.path).replace(/\\/g, '/');
+        
+        let detectedPageCount = null;
+        if (key === 'pdf' || file.mimetype === 'application/pdf') {
+          detectedPageCount = getPdfPageCount(file.path);
+        }
+
         responseData[key] = {
           filename: file.filename,
           url: `http://localhost:${PORT}/${relativePath}`,
           path: relativePath,
-          size: file.size
+          size: file.size,
+          page_count: detectedPageCount
         };
       }
     }

@@ -3,6 +3,7 @@ import '../../theme/app_theme.dart';
 import '../../models/book_model.dart';
 import '../../services/api_service.dart';
 import '../../services/file_picker_helper.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 class AdminBookDialog extends StatefulWidget {
   final BookModel? book;
@@ -30,18 +31,22 @@ class _AdminBookDialogState extends State<AdminBookDialog> {
   bool _isUploadingCover = false;
   double _pdfUploadProgress = 0.0;
   String? _pdfFileName;
+  int _fileSizeBytes = 0;
 
   // Data from MySQL Database
   List<Map<String, dynamic>> _dbCategories = [];
   List<Map<String, dynamic>> _dbAuthors = [];
-  int? _selectedCategoryId;
+  Set<int> _selectedCategoryIds = {};
   int? _selectedAuthorId;
   bool _isLoadingData = true;
 
+  // All 5 Database Languages ENUM('LA', 'TH', 'EN', 'JP', 'CN')
   final List<Map<String, String>> _languages = [
-    {'code': 'LA', 'name': 'ພາສາລາວ (LA)'},
-    {'code': 'TH', 'name': 'ພາສາໄທ (TH)'},
-    {'code': 'EN', 'name': 'ພາສາອັງກິດ (EN)'},
+    {'code': 'LA', 'name': '🇱🇦 ພາສາລາວ (Lao - LA)'},
+    {'code': 'TH', 'name': '🇹🇭 ພາສາໄທ (Thai - TH)'},
+    {'code': 'EN', 'name': '🇬🇧 ພາສາອັງກິດ (English - EN)'},
+    {'code': 'JP', 'name': '🇯🇵 ພາສາຢີ່ປຸ່ນ (Japanese - JP)'},
+    {'code': 'CN', 'name': '🇨🇳 ພາສາຈີນ (Chinese - CN)'},
   ];
 
   @override
@@ -67,50 +72,32 @@ class _AdminBookDialogState extends State<AdminBookDialog> {
         ApiService.getAuthors(),
       ]);
 
-      final cats = results[0] as List<Map<String, dynamic>>;
-      final auths = results[1] as List<Map<String, dynamic>>;
+      final cats = results[0];
+      final auths = results[1];
 
       if (mounted) {
         setState(() {
           _dbCategories = cats;
           _dbAuthors = auths;
 
-          // Set Category default / match
+          // Set Multi-Category selection matching DB
           if (_dbCategories.isNotEmpty) {
-            if (widget.book != null) {
-              // 1. Try matching by categoryId
-              if (widget.book!.categoryIds.isNotEmpty) {
-                final targetId = widget.book!.categoryIds.first;
-                final matchById = _dbCategories.where((c) => c['category_id'] == targetId);
-                if (matchById.isNotEmpty) {
-                  _selectedCategoryId = targetId;
-                }
-              }
-              // 2. Fallback to tag name match
-              if (_selectedCategoryId == null && widget.book!.tags.isNotEmpty) {
-                final bookTag = widget.book!.tags.first;
-                final matchByTag = _dbCategories.where((c) => c['name'].toString().contains(bookTag) || bookTag.contains(c['name'].toString()));
-                if (matchByTag.isNotEmpty) {
-                  _selectedCategoryId = matchByTag.first['category_id'];
-                }
-              }
-              _selectedCategoryId ??= _dbCategories.first['category_id'];
-            } else {
-              _selectedCategoryId = _dbCategories.first['category_id'];
+            if (widget.book != null && widget.book!.categoryIds.isNotEmpty) {
+              _selectedCategoryIds = Set<int>.from(widget.book!.categoryIds);
+            } else if (_dbCategories.isNotEmpty) {
+              _selectedCategoryIds = {_dbCategories.first['category_id']};
             }
           }
 
           // Set Author default / match
           if (_dbAuthors.isNotEmpty) {
             if (widget.book != null) {
-              // 1. Try matching by authorId
               if (widget.book!.authorId != null) {
                 final matchById = _dbAuthors.where((a) => a['author_id'] == widget.book!.authorId);
                 if (matchById.isNotEmpty) {
                   _selectedAuthorId = widget.book!.authorId;
                 }
               }
-              // 2. Fallback to author name match
               if (_selectedAuthorId == null) {
                 final bookAuthor = widget.book!.author;
                 final matchByName = _dbAuthors.where((a) => a['name'].toString().trim().toLowerCase() == bookAuthor.trim().toLowerCase());
@@ -151,6 +138,10 @@ class _AdminBookDialogState extends State<AdminBookDialog> {
       _isUploadingPdf = true;
       _pdfUploadProgress = 0.4;
       _pdfFileName = fileInfo.name;
+      _fileSizeBytes = fileInfo.size;
+      if (fileInfo.pageCount > 0) {
+        _pagesController.text = fileInfo.pageCount.toString();
+      }
     });
 
     final res = await ApiService.uploadFile(
@@ -160,6 +151,7 @@ class _AdminBookDialogState extends State<AdminBookDialog> {
     );
 
     if (mounted) {
+      final sizeMB = (fileInfo.size / (1024 * 1024)).toStringAsFixed(1);
       setState(() {
         _isUploadingPdf = false;
         _pdfUploadProgress = 1.0;
@@ -170,11 +162,10 @@ class _AdminBookDialogState extends State<AdminBookDialog> {
         }
       });
 
-      final sizeMB = (fileInfo.size / (1024 * 1024)).toStringAsFixed(2);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(res['success'] == true
-              ? 'ອັບໂຫຼດ PDF "${fileInfo.name}" (${sizeMB}MB) ສຳເລັດ'
+              ? 'ອັບໂຫຼດ PDF "${fileInfo.name}" (${sizeMB}MB, ${fileInfo.pageCount} ໜ້າ) ສຳເລັດ'
               : 'ເລືອກ PDF "${fileInfo.name}" ແລ້ວ'),
           backgroundColor: Colors.green,
         ),
@@ -216,8 +207,56 @@ class _AdminBookDialogState extends State<AdminBookDialog> {
     }
   }
 
+  void _openQuickAddAuthorModal() {
+    final nameCtrl = TextEditingController();
+    final bioCtrl = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('ເພີ່ມນັກຂຽນໃໝ່ (Quick Add Author)'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'ຊື່ນັກຂຽນ *')),
+            const SizedBox(height: 8),
+            TextField(controller: bioCtrl, maxLines: 2, decoration: const InputDecoration(labelText: 'ປະຫວັດຫຍໍ້ (Biography)')),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('ຍົກເລີກ')),
+          ElevatedButton(
+            onPressed: () async {
+              final name = nameCtrl.text.trim();
+              if (name.isNotEmpty) {
+                Navigator.pop(ctx);
+                final success = await ApiService.createAuthor(name, bio: bioCtrl.text.trim());
+                if (mounted && success) {
+                  await _fetchFormData();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('ເພີ່ມນັກຂຽນ "$name" ສຳເລັດ'), backgroundColor: AppColors.primary),
+                  );
+                }
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
+            child: const Text('ເພີ່ມໃສ່ MySQL'),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _onSave() async {
     if (_formKey.currentState!.validate()) {
+      if (_selectedCategoryIds.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('ກະລຸນາເລືອກຢ່າງໜ້ອຍ 1 ໝວດໝູ່'), backgroundColor: Colors.deepOrange),
+        );
+        return;
+      }
+
       showDialog(
         context: context,
         barrierDismissible: false,
@@ -228,17 +267,19 @@ class _AdminBookDialogState extends State<AdminBookDialog> {
       final description = _descriptionController.text.trim();
       final coverUrl = _coverUrlController.text.trim();
       final pdfUrl = _pdfUrlController.text.trim();
+      final categoryIdsList = _selectedCategoryIds.toList();
 
       if (widget.book != null) {
         // Edit existing book
         await ApiService.updateBook(widget.book!.id, {
           'title': title,
           'author_id': _selectedAuthorId,
-          'category_id': _selectedCategoryId,
-          'category_ids': _selectedCategoryId != null ? [_selectedCategoryId] : [],
+          'category_ids': categoryIdsList,
+          'category_id': categoryIdsList.first,
           'description': description,
           'language': _selectedLanguage,
           'page_count': int.tryParse(_pagesController.text.trim()) ?? 320,
+          'file_size_bytes': _fileSizeBytes,
           'cover_image_url': coverUrl.isNotEmpty ? coverUrl : null,
           'file_pdf_url': pdfUrl.isNotEmpty ? pdfUrl : null,
           'is_free': _isFree,
@@ -254,45 +295,81 @@ class _AdminBookDialogState extends State<AdminBookDialog> {
           'author_id': _selectedAuthorId ?? 1,
           'language': _selectedLanguage,
           'page_count': int.tryParse(_pagesController.text.trim()) ?? 320,
+          'file_size_bytes': _fileSizeBytes,
           'description': description,
           'cover_image_url': coverUrl.isNotEmpty ? coverUrl : 'assets/sample_cover.png',
           'file_pdf_url': pdfUrl.isNotEmpty ? pdfUrl : 'assets/sample_book.pdf',
           'uploaded_by': adminId,
           'is_free': _isFree,
-          'category_ids': _selectedCategoryId != null ? [_selectedCategoryId] : [1],
+          'category_ids': categoryIdsList,
         });
       }
 
       if (!mounted) return;
       Navigator.pop(context); // Dismiss loading
 
-      // Find author name for the returned model
+      // Find author name for model
       String authorName = 'ບໍ່ລະບຸ';
       if (_selectedAuthorId != null) {
         final match = _dbAuthors.where((a) => a['author_id'] == _selectedAuthorId);
         if (match.isNotEmpty) authorName = match.first['name'] ?? '';
       }
 
-      String categoryName = 'ທົ່ວໄປ';
-      if (_selectedCategoryId != null) {
-        final match = _dbCategories.where((c) => c['category_id'] == _selectedCategoryId);
-        if (match.isNotEmpty) categoryName = match.first['name'] ?? '';
-      }
-
       final savedBook = BookModel(
         id: widget.book?.id ?? DateTime.now().millisecondsSinceEpoch.toString(),
         title: title,
         author: authorName,
+        authorId: _selectedAuthorId,
+        categoryIds: categoryIdsList,
         rating: widget.book?.rating ?? 5.0,
         ratingText: widget.book?.ratingText ?? 'New',
-        tags: [categoryName],
-        imagePath: coverUrl.isNotEmpty ? coverUrl : (widget.book?.imagePath ?? 'assets/sample_cover.png'),
-        pdfUrl: pdfUrl.isNotEmpty ? pdfUrl : widget.book?.pdfUrl,
+        imagePath: coverUrl.isNotEmpty ? coverUrl : 'assets/sample_cover.png',
+        pdfUrl: pdfUrl.isNotEmpty ? pdfUrl : 'assets/sample_book.pdf',
+        tags: _dbCategories.where((c) => _selectedCategoryIds.contains(c['category_id'])).map((c) => c['name'].toString()).toList(),
         description: description,
         isFree: _isFree,
       );
+
       Navigator.pop(context, savedBook);
     }
+  }
+
+  Widget _buildCoverPreview(String coverUrl) {
+    if (coverUrl.isEmpty) {
+      return Container(
+        width: 70,
+        height: 95,
+        decoration: BoxDecoration(
+          color: Colors.grey.shade200,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: const Icon(Icons.image_outlined, color: Colors.grey),
+      );
+    }
+
+    if (coverUrl.startsWith('http://') || coverUrl.startsWith('https://')) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(8),
+        child: Image.network(
+          coverUrl,
+          width: 70,
+          height: 95,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => Container(width: 70, height: 95, color: Colors.amber.shade100, child: const Icon(Icons.broken_image)),
+        ),
+      );
+    }
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(8),
+      child: Image.asset(
+        coverUrl,
+        width: 70,
+        height: 95,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => Container(width: 70, height: 95, color: Colors.blue.shade100, child: const Icon(Icons.book_rounded, color: AppColors.primary)),
+      ),
+    );
   }
 
   @override
@@ -302,18 +379,18 @@ class _AdminBookDialogState extends State<AdminBookDialog> {
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       child: Container(
-        padding: const EdgeInsets.all(20),
-        constraints: const BoxConstraints(maxWidth: 560),
+        padding: const EdgeInsets.all(22),
+        constraints: const BoxConstraints(maxWidth: 640),
         child: _isLoadingData
             ? SizedBox(
-                height: 200,
+                height: 220,
                 child: Center(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: const [
-                      CircularProgressIndicator(),
-                      SizedBox(height: 12),
-                      Text('ກຳລັງດຶງຂໍ້ມູນໝວດໝູ່ ແລະ ນັກຂຽນ...'),
+                      CircularProgressIndicator(color: AppColors.primary),
+                      SizedBox(height: 14),
+                      Text('ກຳລັງດຶງຂໍ້ມູນໝວດໝູ່ ແລະ ນັກຂຽນຈາກ MySQL...', style: TextStyle(fontWeight: FontWeight.bold)),
                     ],
                   ),
                 ),
@@ -323,23 +400,40 @@ class _AdminBookDialogState extends State<AdminBookDialog> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // Header Bar
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Expanded(
                           child: Row(
                             children: [
-                              Icon(
-                                isEditing ? Icons.edit_note_rounded : Icons.add_box_rounded,
-                                color: AppColors.primary,
-                                size: 26,
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primary.withOpacity(0.12),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Icon(
+                                  isEditing ? Icons.edit_note_rounded : Icons.add_box_rounded,
+                                  color: AppColors.primary,
+                                  size: 24,
+                                ),
                               ),
-                              const SizedBox(width: 8),
+                              const SizedBox(width: 10),
                               Flexible(
-                                child: Text(
-                                  isEditing ? 'ແກ້ໄຂຂໍ້ມູນປຶ້ມ (Edit Book)' : 'ເພີ່ມປຶ້ມໃໝ່ (Add Book)',
-                                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
-                                  overflow: TextOverflow.ellipsis,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      isEditing ? 'ແກ້ໄຂຂໍ້ມູນປຶ້ມ (Edit Book)' : 'ເພີ່ມປຶ້ມໃໝ່ເຂົ້າ MySQL (Add Book)',
+                                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    const Text(
+                                      'ກໍານົດລາຍລະອຽດ, ໝວດໝູ່, ນັກຂຽນ ແລະ ໄຟລ໌ PDF',
+                                      style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ],
@@ -351,17 +445,27 @@ class _AdminBookDialogState extends State<AdminBookDialog> {
                         ),
                       ],
                     ),
-                    const Divider(height: 20),
+                    const Divider(height: 24),
 
                     Form(
                       key: _formKey,
                       child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Book Title
+                          // SECTION 1: BASIC INFORMATION
+                          Row(
+                            children: const [
+                              Icon(Icons.info_outline_rounded, color: AppColors.primary, size: 18),
+                              SizedBox(width: 6),
+                              Text('1. ຂໍ້ມູນພື້ນຖານຂອງປຶ້ມ (Basic Information)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.primary)),
+                            ],
+                          ),
+                          const SizedBox(height: 10),
+
                           TextFormField(
                             controller: _titleController,
                             decoration: const InputDecoration(
-                              labelText: 'ຊື່ປຶ້ມ *',
+                              labelText: 'ຊື່ປຶ້ມ (Book Title) *',
                               hintText: 'ປ້ອນຊື່ປຶ້ມ...',
                               prefixIcon: Icon(Icons.book_rounded, color: AppColors.primary),
                             ),
@@ -369,45 +473,54 @@ class _AdminBookDialogState extends State<AdminBookDialog> {
                           ),
                           const SizedBox(height: 12),
 
-                          // Author Dropdown (from MySQL DB)
-                          DropdownButtonFormField<int>(
-                            value: _dbAuthors.any((a) => a['author_id'] == _selectedAuthorId) ? _selectedAuthorId : (_dbAuthors.isNotEmpty ? _dbAuthors.first['author_id'] : null),
-                            decoration: const InputDecoration(
-                              labelText: 'ນັກຂຽນ (Author - ຈາກຖານຂໍ້ມູນ) *',
-                              prefixIcon: Icon(Icons.person_outline_rounded, color: AppColors.primary),
-                            ),
-                            items: _dbAuthors.map((a) {
-                              return DropdownMenuItem<int>(
-                                value: a['author_id'],
-                                child: Text('${a['name']} (ID: ${a['author_id']})', style: const TextStyle(fontSize: 13)),
-                              );
-                            }).toList(),
-                            onChanged: (val) {
-                              if (val != null) setState(() => _selectedAuthorId = val);
-                            },
-                            validator: (val) => val == null ? 'ກະລຸນາເລືອກນັກຂຽນ' : null,
+                          // Author Dropdown + Quick Add Button
+                          Row(
+                            children: [
+                              Expanded(
+                                child: DropdownButtonFormField<int>(
+                                  value: _dbAuthors.any((a) => a['author_id'] == _selectedAuthorId) ? _selectedAuthorId : (_dbAuthors.isNotEmpty ? _dbAuthors.first['author_id'] : null),
+                                  decoration: const InputDecoration(
+                                    labelText: 'ນັກຂຽນ (Author - MySQL) *',
+                                    prefixIcon: Icon(Icons.person_outline_rounded, color: AppColors.primary),
+                                  ),
+                                  items: _dbAuthors.map((a) {
+                                    return DropdownMenuItem<int>(
+                                      value: a['author_id'],
+                                      child: Text('${a['name']} (ID: ${a['author_id']})', style: const TextStyle(fontSize: 13)),
+                                    );
+                                  }).toList(),
+                                  onChanged: (val) {
+                                    if (val != null) setState(() => _selectedAuthorId = val);
+                                  },
+                                  validator: (val) => val == null ? 'ກະລຸນາເລືອກນັກຂຽນ' : null,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              IconButton(
+                                icon: const Icon(Icons.person_add_alt_1_rounded, color: AppColors.primary),
+                                tooltip: 'ເພີ່ມນັກຂຽນໃໝ່',
+                                onPressed: _openQuickAddAuthorModal,
+                              ),
+                            ],
                           ),
                           const SizedBox(height: 12),
 
-                          // Category Dropdown (from MySQL DB)
+                          // Language Selection & Page Count Row
                           Row(
                             children: [
                               Expanded(
                                 flex: 3,
-                                child: DropdownButtonFormField<int>(
-                                  value: _dbCategories.any((c) => c['category_id'] == _selectedCategoryId) ? _selectedCategoryId : (_dbCategories.isNotEmpty ? _dbCategories.first['category_id'] : null),
+                                child: DropdownButtonFormField<String>(
+                                  value: _selectedLanguage,
                                   decoration: const InputDecoration(
-                                    labelText: 'ໝວດໝູ່ (Category - DB)',
-                                    contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                                    labelText: 'ພາສາ (Language - ENUM)',
+                                    prefixIcon: Icon(Icons.language_rounded, color: AppColors.primary),
                                   ),
-                                  items: _dbCategories.map((cat) {
-                                    return DropdownMenuItem<int>(
-                                      value: cat['category_id'],
-                                      child: Text('${cat['name']}', style: const TextStyle(fontSize: 13)),
-                                    );
+                                  items: _languages.map((lang) {
+                                    return DropdownMenuItem(value: lang['code'], child: Text(lang['name']!, style: const TextStyle(fontSize: 12)));
                                   }).toList(),
                                   onChanged: (val) {
-                                    if (val != null) setState(() => _selectedCategoryId = val);
+                                    if (val != null) setState(() => _selectedLanguage = val);
                                   },
                                 ),
                               ),
@@ -418,43 +531,90 @@ class _AdminBookDialogState extends State<AdminBookDialog> {
                                   controller: _pagesController,
                                   keyboardType: TextInputType.number,
                                   decoration: const InputDecoration(
-                                    labelText: 'ຈຳນວນໜ້າ',
-                                    contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                                    labelText: 'ຈຳນວນໜ້າ (Pages)',
+                                    prefixIcon: Icon(Icons.auto_stories_rounded, color: AppColors.primary),
                                   ),
                                 ),
                               ),
                             ],
                           ),
-                          const SizedBox(height: 12),
+                          const SizedBox(height: 16),
 
-                          // Language Selection
-                          DropdownButtonFormField<String>(
-                            value: _selectedLanguage,
-                            decoration: const InputDecoration(
-                              labelText: 'ພາສາຂອງປຶ້ມ (Language)',
-                              prefixIcon: Icon(Icons.language_rounded, color: AppColors.primary),
-                            ),
-                            items: _languages.map((lang) {
-                              return DropdownMenuItem(value: lang['code'], child: Text(lang['name']!));
-                            }).toList(),
-                            onChanged: (val) {
-                              if (val != null) setState(() => _selectedLanguage = val);
-                            },
+                          // SECTION 2: CATEGORY SELECTION (Multi-Select FilterChips)
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Row(
+                                children: const [
+                                  Icon(Icons.category_rounded, color: AppColors.primary, size: 18),
+                                  SizedBox(width: 6),
+                                  Text('2. ໝວດໝູ່ປຶ້ມ (Categories - ເລືອກໄດ້หลายໝວດໝູ່)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.primary)),
+                                ],
+                              ),
+                              Text('${_selectedCategoryIds.length} ໝວດໝູ່', style: const TextStyle(fontSize: 11, color: AppColors.primary, fontWeight: FontWeight.bold)),
+                            ],
                           ),
-                          const SizedBox(height: 12),
+                          const SizedBox(height: 8),
 
-                          // Description
+                          Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF8FAFC),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: const Color(0xFFE2E8F0)),
+                            ),
+                            child: _dbCategories.isEmpty
+                                ? const Text('ບໍ່ມີໝວດໝູ່ໃນ MySQL')
+                                : Wrap(
+                                    spacing: 8,
+                                    runSpacing: 6,
+                                    children: _dbCategories.map((cat) {
+                                      final catId = cat['category_id'] as int;
+                                      final isSelected = _selectedCategoryIds.contains(catId);
+                                      return FilterChip(
+                                        selected: isSelected,
+                                        label: Text(cat['name'].toString(), style: TextStyle(fontSize: 12, color: isSelected ? Colors.white : AppColors.textPrimary)),
+                                        selectedColor: AppColors.primary,
+                                        checkmarkColor: Colors.white,
+                                        backgroundColor: Colors.white,
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: BorderSide(color: isSelected ? AppColors.primary : Colors.grey.shade300)),
+                                        onSelected: (selected) {
+                                          setState(() {
+                                            if (selected) {
+                                              _selectedCategoryIds.add(catId);
+                                            } else if (_selectedCategoryIds.length > 1) {
+                                              _selectedCategoryIds.remove(catId);
+                                            }
+                                          });
+                                        },
+                                      );
+                                    }).toList(),
+                                  ),
+                          ),
+                          const SizedBox(height: 16),
+
+                          // Synopsis Description
                           TextFormField(
                             controller: _descriptionController,
                             maxLines: 3,
                             decoration: const InputDecoration(
                               labelText: 'ເນື້ອເລື່ອງ / ລາຍລະອຽດ (Description)',
-                              hintText: 'ປ້ອນເນື້ອເລື່ອງ...',
+                              hintText: 'ປ້ອນເນື້ອເລື່ອງหຍໍ້...',
                             ),
                           ),
-                          const SizedBox(height: 14),
+                          const SizedBox(height: 16),
 
-                          // PDF Upload
+                          // SECTION 3: FILES & MEDIA (PDF & COVER)
+                          Row(
+                            children: const [
+                              Icon(Icons.folder_zip_rounded, color: AppColors.primary, size: 18),
+                              SizedBox(width: 6),
+                              Text('3. ໄຟລ໌ PDF & ຮູບປົກ (PDF Document & Cover)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.primary)),
+                            ],
+                          ),
+                          const SizedBox(height: 10),
+
+                          // PDF Upload Box
                           Container(
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
@@ -480,8 +640,8 @@ class _AdminBookDialogState extends State<AdminBookDialog> {
                                       child: Column(
                                         crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
-                                          const Text('ອັບໂຫຼດໄຟລ໌ PDF', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.primary)),
-                                          Text(_pdfFileName ?? 'ເລືອກໄຟລ໌ .pdf ຈາກເຄື່ອງ (ສູງສຸດ 100MB)', style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+                                          const Text('ອັບໂຫຼດໄຟລ໌ PDF ຈາກເຄື່ອງ', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.primary)),
+                                          Text(_pdfFileName ?? 'ເລືອກໄຟລ໌ .pdf ຈາກ Disk (Auto count pages)', style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
                                         ],
                                       ),
                                     ),
@@ -490,7 +650,7 @@ class _AdminBookDialogState extends State<AdminBookDialog> {
                                       icon: _isUploadingPdf
                                           ? const SizedBox(width: 12, height: 12, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                                           : const Icon(Icons.folder_open_rounded, size: 14),
-                                      label: Text(_isUploadingPdf ? 'ກຳລັງອັບໂຫຼດ...' : 'ເລືອກ PDF', style: const TextStyle(fontSize: 11)),
+                                      label: Text(_isUploadingPdf ? 'ອັບໂຫຼດ...' : 'ເລືອກ PDF', style: const TextStyle(fontSize: 11)),
                                       style: ElevatedButton.styleFrom(
                                         backgroundColor: AppColors.primary,
                                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
@@ -505,7 +665,7 @@ class _AdminBookDialogState extends State<AdminBookDialog> {
                               ],
                             ),
                           ),
-                          const SizedBox(height: 10),
+                          const SizedBox(height: 8),
 
                           TextFormField(
                             controller: _pdfUrlController,
@@ -516,7 +676,7 @@ class _AdminBookDialogState extends State<AdminBookDialog> {
                           ),
                           const SizedBox(height: 14),
 
-                          // Cover Image Upload
+                          // Cover Upload Box with Live Preview
                           Container(
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
@@ -526,52 +686,53 @@ class _AdminBookDialogState extends State<AdminBookDialog> {
                             ),
                             child: Row(
                               children: [
-                                Container(
-                                  width: 44,
-                                  height: 44,
-                                  decoration: BoxDecoration(
-                                    color: AppColors.primary.withOpacity(0.1),
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: _isUploadingCover
-                                      ? const Center(child: SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)))
-                                      : const Icon(Icons.image_outlined, color: AppColors.primary),
-                                ),
-                                const SizedBox(width: 12),
+                                _buildCoverPreview(_coverUrlController.text.trim()),
+                                const SizedBox(width: 14),
                                 Expanded(
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: const [
-                                      Text('ອັບໂຫຼດຮູບປົກ', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
-                                      Text('ເລືອກ JPG, PNG ຈາກເຄື່ອງ', style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+                                    children: [
+                                      const Text('ຮູບປົກ (Cover Image Live Preview)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                                      const Text('ເລືອກ JPG, PNG ຈາກເຄື່ອງ', style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+                                      const SizedBox(height: 8),
+                                      OutlinedButton.icon(
+                                        onPressed: _isUploadingCover ? null : _pickCoverImage,
+                                        icon: const Icon(Icons.photo_library_rounded, size: 14),
+                                        label: const Text('ເລືອກຮູບປົກ', style: TextStyle(fontSize: 11)),
+                                        style: OutlinedButton.styleFrom(
+                                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                        ),
+                                      ),
                                     ],
-                                  ),
-                                ),
-                                OutlinedButton.icon(
-                                  onPressed: _isUploadingCover ? null : _pickCoverImage,
-                                  icon: const Icon(Icons.photo_library_rounded, size: 14),
-                                  label: const Text('ເລືອກຮູບປົກ', style: TextStyle(fontSize: 11)),
-                                  style: OutlinedButton.styleFrom(
-                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                                   ),
                                 ),
                               ],
                             ),
                           ),
-                          const SizedBox(height: 10),
+                          const SizedBox(height: 8),
 
                           TextFormField(
                             controller: _coverUrlController,
+                            onChanged: (_) => setState(() {}),
                             decoration: const InputDecoration(
                               labelText: 'ເສັ້ນທາງຮູບປົກ (Cover Image Path/URL)',
                               prefixIcon: Icon(Icons.image_search_rounded, color: AppColors.primary),
                             ),
                           ),
-                          const SizedBox(height: 14),
+                          const SizedBox(height: 16),
 
-                          // Toggles
+                          // SECTION 4: PERMISSIONS & VISIBILITY
+                          Row(
+                            children: const [
+                              Icon(Icons.tune_rounded, color: AppColors.primary, size: 18),
+                              SizedBox(width: 6),
+                              Text('4. ຕັ້ງຄ່າສิทธิ์ & ການສະແດງຜົນ (Permissions & Visibility)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.primary)),
+                            ],
+                          ),
+                          const SizedBox(height: 10),
+
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                             decoration: BoxDecoration(
                               color: const Color(0xFFF8FAFC),
                               borderRadius: BorderRadius.circular(12),
@@ -582,7 +743,7 @@ class _AdminBookDialogState extends State<AdminBookDialog> {
                                 SwitchListTile(
                                   dense: true,
                                   title: const Text('ອ່ານຟຣີ (Free Access)', style: TextStyle(fontWeight: FontWeight.bold)),
-                                  subtitle: const Text('ເປີດໃຫ້ສະມາຊິກທົ່ວໄປອ່ານໄດ້'),
+                                  subtitle: const Text('ເປີດໃຫ້ສະມາຊິກທົ່ວໄປອ່ານໄດ້ໂດຍບໍ່ຕ້ອງสมัครสมาชิก'),
                                   value: _isFree,
                                   activeColor: Colors.green,
                                   onChanged: (val) => setState(() => _isFree = val),
@@ -591,7 +752,7 @@ class _AdminBookDialogState extends State<AdminBookDialog> {
                                 SwitchListTile(
                                   dense: true,
                                   title: const Text('ເຊື່ອງປຶ້ມ (Hide Book)', style: TextStyle(fontWeight: FontWeight.bold)),
-                                  subtitle: const Text('ເຊື່ອງປຶ້ມບໍ່ໃຫ້ແສດງໃນໜ້າຫຼັກ'),
+                                  subtitle: const Text('ເຊື່ອງປຶ້ມບໍ່ໃຫ້ສະແດງໃນໜ້າຫຼັກ (is_hidden = TRUE)'),
                                   value: _isHidden,
                                   activeColor: Colors.redAccent,
                                   onChanged: (val) => setState(() => _isHidden = val),
@@ -599,9 +760,9 @@ class _AdminBookDialogState extends State<AdminBookDialog> {
                               ],
                             ),
                           ),
-                          const SizedBox(height: 20),
+                          const SizedBox(height: 22),
 
-                          // Action Buttons
+                          // Save & Cancel Action Buttons
                           Row(
                             children: [
                               Expanded(

@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import '../models/book_model.dart';
+import 'pdf_viewer_screen.dart';
 
 class BookDetailScreen extends StatefulWidget {
   final BookModel? book;
@@ -218,7 +219,22 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                                 child: SizedBox(
                                   height: 48,
                                   child: ElevatedButton.icon(
-                                    onPressed: () {},
+                                    onPressed: () {
+                                      String pdfUrl = widget.book?.pdfUrl ?? '';
+                                      if (pdfUrl.isEmpty) {
+                                        pdfUrl = 'assets/sample_book.pdf';
+                                      }
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) => PdfViewerScreen(
+                                            pdfUrl: pdfUrl,
+                                            bookTitle: _title,
+                                            author: _author,
+                                          ),
+                                        ),
+                                      );
+                                    },
                                     icon: const Icon(Icons.menu_book_rounded, size: 20),
                                     label: const Text(
                                       'ອ່ານເລີຍ',
