@@ -22,6 +22,7 @@ class UserHomeScreen extends StatefulWidget {
 class _UserHomeScreenState extends State<UserHomeScreen> {
   int _selectedCategoryIndex = 0;
   int _currentBottomNavIndex = 0;
+  String _searchQuery = '';
   List<BookModel> _fetchedBooks = [];
   bool _isLoadingBooks = true;
 
@@ -45,7 +46,10 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
   Future<void> _loadBackendData() async {
     setState(() => _isLoadingBooks = true);
     final selectedCat = _selectedCategoryIndex == 0 ? null : _categories[_selectedCategoryIndex];
-    final books = await ApiService.getBooks(categoryId: selectedCat);
+    final books = await ApiService.getBooks(
+      search: _searchQuery.trim().isEmpty ? null : _searchQuery.trim(),
+      categoryId: selectedCat,
+    );
     if (mounted) {
       setState(() {
         _fetchedBooks = books;
@@ -54,7 +58,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
     }
   }
 
-  void _toggleBookmark(String bookId) {
+  void _toggleBookmark(String bookId) async {
     setState(() {
       if (_bookmarkedIds.contains(bookId)) {
         _bookmarkedIds.remove(bookId);
@@ -62,6 +66,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
         _bookmarkedIds.add(bookId);
       }
     });
+    await ApiService.toggleBookmark(bookId);
   }
 
   Widget _buildImage(String path, {double? width, double? height, BoxFit fit = BoxFit.cover}) {
@@ -119,45 +124,50 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
         return const ProfileScreen();
       case 0:
       default:
-        return SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 18.0, vertical: 12.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // 1. User Header Profile Bar
-              _buildHeaderBar(),
-              const SizedBox(height: 16),
+        return RefreshIndicator(
+          onRefresh: _loadBackendData,
+          color: AppColors.primary,
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.symmetric(horizontal: 18.0, vertical: 12.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // 1. User Header Profile Bar
+                _buildHeaderBar(),
+                const SizedBox(height: 16),
 
-              // 2. Search Bar
-              _buildSearchBar(),
-              const SizedBox(height: 16),
+                // 2. Search Bar
+                _buildSearchBar(),
+                const SizedBox(height: 16),
 
-              // 3. Category Horizontal Chips
-              _buildCategoryChips(),
-              const SizedBox(height: 16),
+                // 3. Category Horizontal Chips
+                _buildCategoryChips(),
+                const SizedBox(height: 16),
 
-              // KYC Identity Banner Prompt
-              _buildKycPromptBanner(),
-              const SizedBox(height: 20),
+                // KYC Identity Banner Prompt
+                _buildKycPromptBanner(),
+                const SizedBox(height: 20),
 
-              // 4. Section 1: Popular
-              _buildSectionHeader('ຍອດນິຍົມ', onSeeAll: () {}),
-              const SizedBox(height: 12),
-              _buildPopularBooksList(),
-              const SizedBox(height: 24),
+                // 4. Section 1: Popular
+                _buildSectionHeader('ຍອດນິຍົມ', onSeeAll: () {}),
+                const SizedBox(height: 12),
+                _buildPopularBooksList(),
+                const SizedBox(height: 24),
 
-              // 5. Section 2: New Books
-              _buildSectionHeader('ປຶ້ມໃໝ່', onSeeAll: () {}),
-              const SizedBox(height: 12),
-              _buildNewBooksList(),
-              const SizedBox(height: 24),
+                // 5. Section 2: New Books
+                _buildSectionHeader('ປຶ້ມໃໝ່', onSeeAll: () {}),
+                const SizedBox(height: 12),
+                _buildNewBooksList(),
+                const SizedBox(height: 24),
 
-              // 6. Section 3: Recommended
-              _buildSectionHeader('ແນະນຳ', onSeeAll: () {}),
-              const SizedBox(height: 12),
-              _buildRecommendedBooksList(),
-              const SizedBox(height: 16),
-            ],
+                // 6. Section 3: Recommended
+                _buildSectionHeader('ແນະນຳ', onSeeAll: () {}),
+                const SizedBox(height: 12),
+                _buildRecommendedBooksList(),
+                const SizedBox(height: 16),
+              ],
+            ),
           ),
         );
     }
@@ -333,8 +343,14 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: const Color(0xFFE2E8F0)),
       ),
-      child: const TextField(
-        decoration: InputDecoration(
+      child: TextField(
+        onChanged: (val) {
+          setState(() {
+            _searchQuery = val;
+          });
+          _loadBackendData();
+        },
+        decoration: const InputDecoration(
           hintText: 'ຄົ້ນຫາປຶ້ມ ຫຼື ຊື່ຜູ້ແຕ່ງ...',
           hintStyle: TextStyle(color: AppColors.textSecondary, fontSize: 14),
           prefixIcon: Icon(Icons.search_rounded, color: AppColors.textSecondary),
@@ -376,6 +392,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
               setState(() {
                 _selectedCategoryIndex = index;
               });
+              _loadBackendData();
             },
           );
         },

@@ -3,9 +3,35 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import '../models/history_model.dart';
+import '../services/api_service.dart';
 
-class HistoryScreen extends StatelessWidget {
+class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
+
+  @override
+  State<HistoryScreen> createState() => _HistoryScreenState();
+}
+
+class _HistoryScreenState extends State<HistoryScreen> {
+  List<HistoryBookItem> _historyItems = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchHistory();
+  }
+
+  Future<void> _fetchHistory() async {
+    setState(() => _isLoading = true);
+    final list = await ApiService.getHistory();
+    if (mounted) {
+      setState(() {
+        _historyItems = list;
+        _isLoading = false;
+      });
+    }
+  }
 
   Widget _buildImage(String path, {double? width, double? height}) {
     if (path.startsWith('http://') || path.startsWith('https://')) {
@@ -34,33 +60,55 @@ class HistoryScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final historyList = MockHistoryData.historyItems;
-
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 18.0, vertical: 16.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Header Title
-          const Text(
-            'ປະຫວັດການອ່ານ',
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'ປະຫວັດການອ່ານ',
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.refresh_rounded, color: AppColors.primary),
+                onPressed: _fetchHistory,
+                tooltip: 'ຣີເຟຣຊ',
+              ),
+            ],
           ),
-          const SizedBox(height: 18),
+          const SizedBox(height: 14),
 
           // History List Cards
           Expanded(
-            child: ListView.separated(
-              itemCount: historyList.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 16),
-              itemBuilder: (context, index) {
-                return _buildHistoryCard(historyList[index]);
-              },
-            ),
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : _historyItems.isEmpty
+                    ? const Center(
+                        child: Text(
+                          'ບໍ່ມີປະຫວັດການອ່ານ',
+                          style: TextStyle(fontSize: 15, color: AppColors.textSecondary),
+                        ),
+                      )
+                    : RefreshIndicator(
+                        onRefresh: _fetchHistory,
+                        color: AppColors.primary,
+                        child: ListView.separated(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          itemCount: _historyItems.length,
+                          separatorBuilder: (_, __) => const SizedBox(height: 16),
+                          itemBuilder: (context, index) {
+                            return _buildHistoryCard(_historyItems[index]);
+                          },
+                        ),
+                      ),
           ),
         ],
       ),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import '../services/api_service.dart';
 import 'user_home_screen.dart';
+import 'register_screen.dart';
 import 'admin/admin_dashboard_screen.dart';
 import 'employee/employee_dashboard_screen.dart';
 
@@ -253,7 +254,35 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: const Text('ເຂົ້າສູ່ລະບົບ'),
                   ),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 16),
+
+                // Register Link Row
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text(
+                      'ຍັງບໍ່ມີບັນຊີຜູ້ໃຊ້?',
+                      style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const RegisterScreen()),
+                        );
+                      },
+                      child: const Text(
+                        'ລົງທະບຽນຜູ້ໃຊ້ໃໝ່',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
 
                 // Mock Accounts Reference Helper Box
                 Container(

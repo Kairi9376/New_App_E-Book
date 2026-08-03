@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import '../models/downloads_model.dart';
+import '../services/api_service.dart';
 
 class DownloadsScreen extends StatefulWidget {
   const DownloadsScreen({super.key});
@@ -15,7 +16,25 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
   int _selectedCategoryIndex = 0;
   final List<String> _categories = ['ທັງໝົດ', 'ວິທະຍາສາດ', 'ສິນລະປະ', 'ສຸຂະພາບ'];
 
-  final List<DownloadedBookItem> _downloadList = List.from(MockDownloadsData.downloadedItems);
+  List<DownloadedBookItem> _downloadList = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchDownloads();
+  }
+
+  Future<void> _fetchDownloads() async {
+    setState(() => _isLoading = true);
+    final items = await ApiService.getDownloads();
+    if (mounted) {
+      setState(() {
+        _downloadList = items;
+        _isLoading = false;
+      });
+    }
+  }
 
   void _removeItem(int index) {
     final removed = _downloadList[index];
@@ -64,15 +83,25 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Header Title
-          const Text(
-            'ດາວໂຫຼດ',
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'ດາວໂຫຼດ',
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.refresh_rounded, color: AppColors.primary),
+                onPressed: _fetchDownloads,
+                tooltip: 'ຣີເຟຣຊ',
+              ),
+            ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
 
           // Category Chips Bar
           SizedBox(

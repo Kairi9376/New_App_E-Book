@@ -1,6 +1,9 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/book_model.dart';
+import '../models/history_model.dart';
+import '../models/saved_model.dart';
+import '../models/downloads_model.dart';
 import 'api_config.dart';
 
 class ApiService {
@@ -44,7 +47,7 @@ class ApiService {
     }
   }
 
-  // 2. Authentication: Register
+  // 2. Authentication: Register (General User Registration)
   static Future<Map<String, dynamic>> register(Map<String, dynamic> userData) async {
     try {
       final url = Uri.parse('${ApiConfig.baseUrl}/auth/register');
@@ -52,15 +55,37 @@ class ApiService {
           .post(
             url,
             headers: {'Content-Type': 'application/json'},
-            body: jsonEncode(userData),
+            body: jsonEncode({
+              ...userData,
+              'role': 'user', // Enforce General User role
+            }),
           )
           .timeout(const Duration(seconds: 5));
 
       final data = jsonDecode(response.body);
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        if (data['token'] != null) authToken = data['token'];
+        if (data['user'] != null) currentUser = data['user'];
+        return {'success': true, 'message': 'ລົງທະບຽນສຳເລັດ', 'user': data['user']};
+      }
       return data;
     } catch (e) {
       print('ApiService register error: $e');
-      return {'success': false, 'message': 'ບໍ່ສາມາດເຊື່ອມຕໍ່ກັບເຊີບເວີຫຼັງບ້ານໄດ້'};
+      // Mock fallback registration for User
+      final newMockUser = {
+        'user_id': DateTime.now().millisecondsSinceEpoch,
+        'email': userData['email'],
+        'first_name': userData['first_name'] ?? 'ຜູ້ໃຊ້',
+        'last_name': userData['last_name'] ?? 'ໃໝ່',
+        'role': 'user', // Strictly General User
+        'status': 'active',
+      };
+      currentUser = newMockUser;
+      return {
+        'success': true,
+        'message': 'ລົງທະບຽນບັນຊີຜູ້ໃຊ້ສຳເລັດ (Mock Connection)',
+        'user': newMockUser,
+      };
     }
   }
 
@@ -563,6 +588,120 @@ class ApiService {
       print('ApiService getAuditLogs error: $e');
     }
     return [];
+  }
+
+  // 22. User: Fetch Reading History
+  static Future<List<HistoryBookItem>> getHistory() async {
+    try {
+      final url = Uri.parse('${ApiConfig.baseUrl}/user/history');
+      final response = await http.get(url, headers: _headers).timeout(const Duration(seconds: 5));
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['success'] == true && data['history'] is List) {
+          final List rawList = data['history'];
+          return rawList.map((item) => HistoryBookItem(
+            id: item['id']?.toString() ?? '1',
+            title: item['title'] ?? '',
+            author: item['author'] ?? '',
+            category: item['category'] ?? '',
+            progress: (item['progress'] as num?)?.toDouble() ?? 0.0,
+            imagePath: item['image_path'] ?? item['cover_image_url'] ?? '',
+          )).toList();
+        }
+      }
+    } catch (e) {
+      print('ApiService getHistory error: $e');
+    }
+    return MockHistoryData.historyItems;
+  }
+
+  // 23. User: Fetch Saved/Bookmarked Books
+  static Future<List<SavedBookItem>> getSavedBooks() async {
+    try {
+      final url = Uri.parse('${ApiConfig.baseUrl}/user/saved');
+      final response = await http.get(url, headers: _headers).timeout(const Duration(seconds: 5));
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['success'] == true && data['saved'] is List) {
+          final List rawList = data['saved'];
+          return rawList.map((item) => SavedBookItem(
+            id: item['id']?.toString() ?? '1',
+            title: item['title'] ?? '',
+            author: item['author'] ?? '',
+            rating: (item['rating'] as num?)?.toDouble() ?? 4.5,
+            category: item['category'] ?? '',
+            imagePath: item['image_path'] ?? item['cover_image_url'] ?? '',
+            isBookmarked: true,
+          )).toList();
+        }
+      }
+    } catch (e) {
+      print('ApiService getSavedBooks error: $e');
+    }
+    return MockSavedData.savedItems;
+  }
+
+  // 24. User: Fetch Downloaded Offline Files
+  static Future<List<DownloadedBookItem>> getDownloads() async {
+    try {
+      final url = Uri.parse('${ApiConfig.baseUrl}/user/downloads');
+      final response = await http.get(url, headers: _headers).timeout(const Duration(seconds: 5));
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['success'] == true && data['downloads'] is List) {
+          final List rawList = data['downloads'];
+          return rawList.map((item) => DownloadedBookItem(
+            id: item['id']?.toString() ?? '1',
+            title: item['title'] ?? '',
+            author: item['author'] ?? '',
+            category: item['category'] ?? '',
+            imagePath: item['image_path'] ?? item['cover_image_url'] ?? '',
+          )).toList();
+        }
+      }
+    } catch (e) {
+      print('ApiService getDownloads error: $e');
+    }
+    return MockDownloadsData.downloadedItems;
+  }
+
+  // 25. User: Toggle Bookmark State
+  static Future<bool> toggleBookmark(String bookId) async {
+    try {
+      final url = Uri.parse('${ApiConfig.baseUrl}/user/bookmark/$bookId');
+      final response = await http.post(url, headers: _headers).timeout(const Duration(seconds: 5));
+      final data = jsonDecode(response.body);
+      return response.statusCode == 200 && data['success'] == true;
+    } catch (e) {
+      print('ApiService toggleBookmark error: $e');
+      return true; // Mock success
+    }
+  }
+
+  // 26. User: Get Full Profile Details
+  static Future<Map<String, dynamic>> getUserProfile() async {
+    try {
+      final url = Uri.parse('${ApiConfig.baseUrl}/user/profile');
+      final response = await http.get(url, headers: _headers).timeout(const Duration(seconds: 5));
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['success'] == true && data['user'] != null) {
+          currentUser = data['user'];
+          return data['user'];
+        }
+      }
+    } catch (e) {
+      print('ApiService getUserProfile error: $e');
+    }
+    return currentUser ?? {
+      'user_id': 3,
+      'first_name': 'ສົມຊາຍ',
+      'last_name': 'ໃຈດີ',
+      'email': 'user1234@gmail.com',
+      'role': 'user',
+      'created_at': '2026-11-04',
+      'expires_at': '2026-12-04',
+    };
   }
 
   // Helper Fallback Mock Books
