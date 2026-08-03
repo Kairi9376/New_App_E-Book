@@ -1,10 +1,10 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
-import '../theme/app_theme.dart';
-import '../models/kyc_model.dart';
-import '../services/api_service.dart';
-import 'login_screen.dart';
+import '../../theme/app_theme.dart';
+import '../../models/kyc_model.dart';
+import '../../services/api_service.dart';
+import '../login_screen.dart';
 import 'kyc_submission_screen.dart';
 import 'membership_package_screen.dart';
 

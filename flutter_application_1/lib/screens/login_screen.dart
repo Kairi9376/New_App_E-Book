@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import '../services/api_service.dart';
-import 'user_home_screen.dart';
-import 'register_screen.dart';
+import 'User/user_home_screen.dart';
+import 'User/register_screen.dart';
 import 'admin/admin_dashboard_screen.dart';
 import 'employee/employee_dashboard_screen.dart';
 

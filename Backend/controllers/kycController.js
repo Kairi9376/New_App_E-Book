@@ -1,4 +1,5 @@
 const { pool } = require('../config/db');
+const { deleteOldFile } = require('../utils/fileUtils');
 
 // GET /api/kyc
 exports.getAllKyc = async (req, res) => {
@@ -24,6 +25,19 @@ exports.submitKyc = async (req, res) => {
 
     if (!user_id || !document_type || !document_number || !document_image_url) {
       return res.status(400).json({ success: false, message: 'Please provide required KYC document details' });
+    }
+
+    // Check if user already submitted a KYC record previously and clean up old files
+    const [existingRows] = await pool.query('SELECT document_image_url, selfie_image_url FROM kyc_verifications WHERE user_id = ?', [user_id]);
+    if (existingRows.length > 0) {
+      for (const row of existingRows) {
+        if (document_image_url && document_image_url !== row.document_image_url) {
+          deleteOldFile(row.document_image_url);
+        }
+        if (selfie_image_url && selfie_image_url !== row.selfie_image_url) {
+          deleteOldFile(row.selfie_image_url);
+        }
+      }
     }
 
     const [result] = await pool.query(

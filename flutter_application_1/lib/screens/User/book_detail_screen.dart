@@ -1,8 +1,9 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
-import '../theme/app_theme.dart';
-import '../models/book_model.dart';
+import '../../theme/app_theme.dart';
+import '../../models/book_model.dart';
+import '../../services/api_service.dart';
 import 'pdf_viewer_screen.dart';
 
 class BookDetailScreen extends StatefulWidget {
@@ -228,9 +229,12 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                                         context,
                                         MaterialPageRoute(
                                           builder: (_) => PdfViewerScreen(
+                                            bookId: widget.book?.id ?? '1',
                                             pdfUrl: pdfUrl,
                                             bookTitle: _title,
                                             author: _author,
+                                            description: widget.book?.description,
+                                            pageCount: widget.book?.pageCount,
                                           ),
                                         ),
                                       );
@@ -259,7 +263,20 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                                 child: SizedBox(
                                   height: 48,
                                   child: OutlinedButton.icon(
-                                    onPressed: () {},
+                                    onPressed: () async {
+                                      final bookId = widget.book?.id ?? '1';
+                                      final success = await ApiService.recordDownload(bookId);
+                                      if (mounted) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(
+                                            content: Text(success
+                                                ? 'ດາວໂຫຼດ "$_title" ເຂົ້າຄັງອອບໄລນ໌ສຳເລັດແລ້ວ!'
+                                                : 'ບັນທຶກລາຍການດາວໂຫຼດສຳເລັດ'),
+                                            backgroundColor: const Color(0xFF10B981),
+                                          ),
+                                        );
+                                      }
+                                    },
                                     icon: const Icon(Icons.file_download_outlined, size: 20),
                                     label: const Text(
                                       'ດາວໂຫຼດ',

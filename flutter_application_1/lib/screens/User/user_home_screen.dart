@@ -1,16 +1,17 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
-import '../theme/app_theme.dart';
-import '../models/book_model.dart';
-import '../models/kyc_model.dart';
-import '../services/api_service.dart';
+import '../../theme/app_theme.dart';
+import '../../models/book_model.dart';
+import '../../models/kyc_model.dart';
+import '../../services/api_service.dart';
 import 'history_screen.dart';
 import 'saved_screen.dart';
 import 'downloads_screen.dart';
 import 'profile_screen.dart';
 import 'book_detail_screen.dart';
 import 'kyc_submission_screen.dart';
+import 'pdf_viewer_screen.dart';
 
 class UserHomeScreen extends StatefulWidget {
   const UserHomeScreen({super.key});
@@ -26,13 +27,8 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
   List<BookModel> _fetchedBooks = [];
   bool _isLoadingBooks = true;
 
-  final List<String> _categories = [
-    'ທັງໝົດ',
-    'ວິທະຍາສາດ',
-    'ສິນລະປະ',
-    'ສຸຂະພາບ',
-    'ຜະຈົນໄພ',
-    'ເຕັກໂນໂລຊີ',
+  List<Map<String, dynamic>> _fetchedCategories = [
+    {'category_id': null, 'name': 'ທັງໝົດ'}
   ];
 
   final Set<String> _bookmarkedIds = {};
@@ -45,10 +41,28 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
 
   Future<void> _loadBackendData() async {
     setState(() => _isLoadingBooks = true);
-    final selectedCat = _selectedCategoryIndex == 0 ? null : _categories[_selectedCategoryIndex];
+
+    if (_fetchedCategories.length <= 1) {
+      final cats = await ApiService.getCategories();
+      if (cats.isNotEmpty) {
+        _fetchedCategories = [
+          {'category_id': null, 'name': 'ທັງໝົດ'},
+          ...cats,
+        ];
+      }
+    }
+
+    String? selectedCatId;
+    if (_selectedCategoryIndex > 0 && _selectedCategoryIndex < _fetchedCategories.length) {
+      final catItem = _fetchedCategories[_selectedCategoryIndex];
+      if (catItem['category_id'] != null) {
+        selectedCatId = catItem['category_id'].toString();
+      }
+    }
+
     final books = await ApiService.getBooks(
       search: _searchQuery.trim().isEmpty ? null : _searchQuery.trim(),
-      categoryId: selectedCat,
+      categoryId: selectedCatId,
     );
     if (mounted) {
       setState(() {
@@ -369,12 +383,13 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
       height: 38,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
-        itemCount: _categories.length,
+        itemCount: _fetchedCategories.length,
         separatorBuilder: (_, __) => const SizedBox(width: 10),
         itemBuilder: (context, index) {
           final isSelected = _selectedCategoryIndex == index;
+          final catName = _fetchedCategories[index]['name']?.toString() ?? 'ທັງໝົດ';
           return ChoiceChip(
-            label: Text(_categories[index]),
+            label: Text(catName),
             selected: isSelected,
             selectedColor: AppColors.primary,
             backgroundColor: const Color(0xFFEFF3F8),

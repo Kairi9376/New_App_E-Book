@@ -1,4 +1,5 @@
 const { pool } = require('../config/db');
+const { deleteOldFile, isSameFilePath } = require('../utils/fileUtils');
 
 // GET /api/books
 exports.getAllBooks = async (req, res) => {
@@ -89,7 +90,7 @@ exports.createBook = async (req, res) => {
     const {
       title, author_id, language, page_count, file_size_bytes,
       description, cover_image_url, file_pdf_url, uploaded_by,
-      is_free, category_ids, category_id
+      is_free, category_ids, category_id, readers_count, likes_count
     } = req.body;
 
     if (!title) {
@@ -101,9 +102,9 @@ exports.createBook = async (req, res) => {
     const finalPdfUrl = file_pdf_url || 'assets/sample_book.pdf';
 
     const [result] = await pool.query(
-      `INSERT INTO books (title, author_id, language, page_count, file_size_bytes, description, cover_image_url, file_pdf_url, uploaded_by, is_free, is_hidden)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, FALSE)`,
-      [title, finalAuthorId, language || 'LA', page_count || 0, file_size_bytes || 0, description || null, cover_image_url || null, finalPdfUrl, finalUploadedBy, is_free ? 1 : 0]
+      `INSERT INTO books (title, author_id, language, page_count, file_size_bytes, description, cover_image_url, file_pdf_url, uploaded_by, is_free, is_hidden, readers_count, likes_count)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, FALSE, ?, ?)`,
+      [title, finalAuthorId, language || 'LA', page_count || 0, file_size_bytes || 0, description || null, cover_image_url || null, finalPdfUrl, finalUploadedBy, is_free ? 1 : 0, readers_count || 0, likes_count || 0]
     );
 
     const book_id = result.insertId;
@@ -128,8 +129,28 @@ exports.createBook = async (req, res) => {
 exports.updateBook = async (req, res) => {
   try {
     const { id } = req.params;
-    const { title, author_id, language, page_count, description, cover_image_url, file_pdf_url, is_free, is_hidden, category_ids, category_id } = req.body;
+    const { title, author_id, language, page_count, description, cover_image_url, file_pdf_url, is_free, is_hidden, category_ids, category_id, readers_count, likes_count } = req.body;
 
+    // 1. Fetch current book record to check existing files
+    const [existingRows] = await pool.query('SELECT cover_image_url, file_pdf_url FROM books WHERE book_id = ?', [id]);
+    if (existingRows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Book not found' });
+    }
+    const currentBook = existingRows[0];
+
+    // 2. If new cover_image_url is provided and points to a different file, delete the old cover file
+    if (cover_image_url && !isSameFilePath(cover_image_url, currentBook.cover_image_url)) {
+      console.log(`🔍 Cover file changed for book_id ${id}. Deleting old cover: ${currentBook.cover_image_url}`);
+      deleteOldFile(currentBook.cover_image_url);
+    }
+
+    // 3. If new file_pdf_url is provided and points to a different file, delete the old PDF file
+    if (file_pdf_url && !isSameFilePath(file_pdf_url, currentBook.file_pdf_url)) {
+      console.log(`🔍 PDF file changed for book_id ${id}. Deleting old PDF: ${currentBook.file_pdf_url}`);
+      deleteOldFile(currentBook.file_pdf_url);
+    }
+
+    // 4. Perform database update
     await pool.query(
       `UPDATE books 
        SET title = COALESCE(?, title),
@@ -140,12 +161,22 @@ exports.updateBook = async (req, res) => {
            cover_image_url = COALESCE(?, cover_image_url),
            file_pdf_url = COALESCE(?, file_pdf_url),
            is_free = COALESCE(?, is_free),
-           is_hidden = COALESCE(?, is_hidden)
+           is_hidden = COALESCE(?, is_hidden),
+           readers_count = COALESCE(?, readers_count),
+           likes_count = COALESCE(?, likes_count)
        WHERE book_id = ?`,
-      [title || null, author_id || null, language || null, page_count || null, description || null, cover_image_url || null, file_pdf_url || null, is_free !== undefined ? (is_free ? 1 : 0) : null, is_hidden !== undefined ? (is_hidden ? 1 : 0) : null, id]
+      [
+        title || null, author_id || null, language || null, page_count || null,
+        description || null, cover_image_url || null, file_pdf_url || null,
+        is_free !== undefined ? (is_free ? 1 : 0) : null,
+        is_hidden !== undefined ? (is_hidden ? 1 : 0) : null,
+        readers_count !== undefined ? readers_count : null,
+        likes_count !== undefined ? likes_count : null,
+        id
+      ]
     );
 
-    // Update book_categories mapping if provided
+    // 5. Update book_categories mapping if provided
     const targetCategories = category_ids || (category_id ? [category_id] : null);
     if (targetCategories && Array.isArray(targetCategories) && targetCategories.length > 0) {
       await pool.query('DELETE FROM book_categories WHERE book_id = ?', [id]);
@@ -163,19 +194,38 @@ exports.updateBook = async (req, res) => {
   }
 };
 
+// POST /api/books/:id/increment-readers
+exports.incrementReadersCount = async (req, res) => {
+  try {
+    const { id } = req.params;
+    await pool.query('UPDATE books SET readers_count = readers_count + 1 WHERE book_id = ?', [id]);
+    res.json({ success: true, message: 'Readers count incremented' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 // DELETE /api/books/:id
 exports.deleteBook = async (req, res) => {
   try {
     const { id } = req.params;
+
+    // 1. Fetch current book record to delete physical files
+    const [existingRows] = await pool.query('SELECT cover_image_url, file_pdf_url FROM books WHERE book_id = ?', [id]);
+    if (existingRows.length > 0) {
+      const currentBook = existingRows[0];
+      deleteOldFile(currentBook.cover_image_url);
+      deleteOldFile(currentBook.file_pdf_url);
+    }
     
-    // Safely cleanup foreign key dependencies first
+    // 2. Safely cleanup foreign key dependencies and delete DB record
     await pool.query('DELETE FROM book_categories WHERE book_id = ?', [id]);
     await pool.query('DELETE FROM bookmarks WHERE book_id = ?', [id]);
     await pool.query('DELETE FROM reading_history WHERE book_id = ?', [id]);
     await pool.query('DELETE FROM downloads WHERE book_id = ?', [id]);
     await pool.query('DELETE FROM books WHERE book_id = ?', [id]);
 
-    res.json({ success: true, message: 'Book deleted successfully' });
+    res.json({ success: true, message: 'Book and associated files deleted successfully' });
   } catch (error) {
     console.error('Delete Book Error:', error);
     res.status(500).json({ success: false, message: error.message });

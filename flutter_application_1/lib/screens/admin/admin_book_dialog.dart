@@ -148,6 +148,7 @@ class _AdminBookDialogState extends State<AdminBookDialog> {
       bytes: fileInfo.bytes,
       filename: fileInfo.name,
       fieldName: 'pdf',
+      oldFileUrl: _pdfUrlController.text.isNotEmpty ? _pdfUrlController.text : null,
     );
 
     if (mounted) {
@@ -156,9 +157,9 @@ class _AdminBookDialogState extends State<AdminBookDialog> {
         _isUploadingPdf = false;
         _pdfUploadProgress = 1.0;
         if (res['success'] == true) {
-          _pdfUrlController.text = res['url'] ?? res['path'] ?? 'uploads/pdf/${fileInfo.name}';
+          _pdfUrlController.text = res['url'] ?? res['path'] ?? 'uploads/pdfs/${fileInfo.name}';
         } else {
-          _pdfUrlController.text = 'uploads/pdf/${fileInfo.name}';
+          _pdfUrlController.text = 'uploads/pdfs/${fileInfo.name}';
         }
       });
 
@@ -184,6 +185,7 @@ class _AdminBookDialogState extends State<AdminBookDialog> {
       bytes: fileInfo.bytes,
       filename: fileInfo.name,
       fieldName: 'cover',
+      oldFileUrl: _coverUrlController.text.isNotEmpty ? _coverUrlController.text : null,
     );
 
     if (mounted) {

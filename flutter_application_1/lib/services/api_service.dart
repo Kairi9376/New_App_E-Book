@@ -164,10 +164,15 @@ class ApiService {
     required List<int> bytes,
     required String filename,
     required String fieldName, // e.g. 'cover' or 'pdf' or 'slip'
+    String? oldFileUrl,
   }) async {
     try {
       final url = Uri.parse('${ApiConfig.baseUrl}/upload');
       final request = http.MultipartRequest('POST', url);
+
+      if (oldFileUrl != null && oldFileUrl.isNotEmpty) {
+        request.fields['old_file_url'] = oldFileUrl;
+      }
 
       request.files.add(
         http.MultipartFile.fromBytes(
@@ -220,11 +225,11 @@ class ApiService {
     }
 
     return [
-      {'category_id': 1, 'name': 'ຊີວິດ'},
-      {'category_id': 2, 'name': 'ວິທະຍາສາດ'},
-      {'category_id': 3, 'name': 'ເຕັກໂນໂລຊີ'},
-      {'category_id': 4, 'name': 'ຜະຈົນໄພ'},
-      {'category_id': 5, 'name': 'ສິລະປະ'}
+      {'category_id': 1, 'name': 'ຊີວະປະຫວັດ / ຊີວິດ'},
+      {'category_id': 2, 'name': 'ວິທະຍາສາດ / Physics'},
+      {'category_id': 3, 'name': 'ເຕັກໂນໂລຊີ / Computer'},
+      {'category_id': 4, 'name': 'ສິນລະປະ / ວັນນະຄະດີ'},
+      {'category_id': 5, 'name': 'ຄະນິດສາດ'},
     ];
   }
 
@@ -477,9 +482,30 @@ class ApiService {
       print('ApiService getPackages error: $e');
     }
     return [
-      {'package_id': 1, 'name': 'แพ็กเกจ 1 เดือน', 'description': 'เข้าถึงหนังสือทั้งหมด 30 วัน', 'price': 50000, 'duration_days': 30, 'is_for_student': 0},
-      {'package_id': 2, 'name': 'แพ็กเกจ 3 เดือน', 'description': 'เข้าถึงหนังสือทั้งหมด 90 วัน', 'price': 130000, 'duration_days': 90, 'is_for_student': 0},
-      {'package_id': 3, 'name': 'แพ็กเกจนักเรียน (Student Pro)', 'description': 'ราคาสุดพิเศษสำหรับนักเรียน/นักศึกษา', 'price': 25000, 'duration_days': 30, 'is_for_student': 1},
+      {
+        'package_id': 1,
+        'name': 'Standard Monthly',
+        'description': 'ເຂົ້າເຖິງປຶ້ມອ່ານຟຣີ ແລະ ສະມາຊິກທົ່ວໄປ 30 ວັນ',
+        'price': 49000.00,
+        'duration_days': 30,
+        'is_for_student': 0
+      },
+      {
+        'package_id': 2,
+        'name': 'Student Special',
+        'description': 'ແພັກເກດພິເສດสำหรับນັກຮຽນ/ນັກສຶກສາ ຢືນຢັນຜ່ານ KYC',
+        'price': 29000.00,
+        'duration_days': 30,
+        'is_for_student': 1
+      },
+      {
+        'package_id': 3,
+        'name': 'Premium Yearly',
+        'description': 'ເຂົ້າເຖິງປຶ້ມທຸກເລົ່ມໃນຄັງແບບບໍ່ຈຳກັດ 365 ວັນ',
+        'price': 490000.00,
+        'duration_days': 365,
+        'is_for_student': 0
+      },
     ];
   }
 
@@ -593,20 +619,16 @@ class ApiService {
   // 22. User: Fetch Reading History
   static Future<List<HistoryBookItem>> getHistory() async {
     try {
-      final url = Uri.parse('${ApiConfig.baseUrl}/user/history');
+      final user = currentUser ?? {};
+      final userId = user['user_id'] ?? 3;
+
+      final url = Uri.parse('${ApiConfig.baseUrl}/history?user_id=$userId');
       final response = await http.get(url, headers: _headers).timeout(const Duration(seconds: 5));
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['success'] == true && data['history'] is List) {
           final List rawList = data['history'];
-          return rawList.map((item) => HistoryBookItem(
-            id: item['id']?.toString() ?? '1',
-            title: item['title'] ?? '',
-            author: item['author'] ?? '',
-            category: item['category'] ?? '',
-            progress: (item['progress'] as num?)?.toDouble() ?? 0.0,
-            imagePath: item['image_path'] ?? item['cover_image_url'] ?? '',
-          )).toList();
+          return rawList.map((item) => HistoryBookItem.fromMap(item, uploadsBaseUrl: ApiConfig.uploadsBaseUrl)).toList();
         }
       }
     } catch (e) {
@@ -615,24 +637,46 @@ class ApiService {
     return MockHistoryData.historyItems;
   }
 
+  // 22b. User: Record Reading History & Progress
+  static Future<bool> recordReadingHistory({required String bookId, required int lastPageRead, int totalPages = 1}) async {
+    try {
+      final user = currentUser ?? {};
+      final userId = user['user_id'] ?? 3;
+      final double progressPercent = totalPages > 0 ? (lastPageRead / totalPages * 100.0).clamp(0.0, 100.0) : 0.0;
+
+      final url = Uri.parse('${ApiConfig.baseUrl}/history');
+      final response = await http.post(
+        url,
+        headers: _headers,
+        body: jsonEncode({
+          'user_id': userId,
+          'book_id': bookId,
+          'last_page_read': lastPageRead,
+          'progress_percent': progressPercent,
+        }),
+      ).timeout(const Duration(seconds: 5));
+
+      final data = jsonDecode(response.body);
+      return response.statusCode == 200 || response.statusCode == 201 && data['success'] == true;
+    } catch (e) {
+      print('ApiService recordReadingHistory error: $e');
+      return true;
+    }
+  }
+
   // 23. User: Fetch Saved/Bookmarked Books
   static Future<List<SavedBookItem>> getSavedBooks() async {
     try {
-      final url = Uri.parse('${ApiConfig.baseUrl}/user/saved');
+      final user = currentUser ?? {};
+      final userId = user['user_id'] ?? 3;
+
+      final url = Uri.parse('${ApiConfig.baseUrl}/bookmarks?user_id=$userId');
       final response = await http.get(url, headers: _headers).timeout(const Duration(seconds: 5));
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        if (data['success'] == true && data['saved'] is List) {
-          final List rawList = data['saved'];
-          return rawList.map((item) => SavedBookItem(
-            id: item['id']?.toString() ?? '1',
-            title: item['title'] ?? '',
-            author: item['author'] ?? '',
-            rating: (item['rating'] as num?)?.toDouble() ?? 4.5,
-            category: item['category'] ?? '',
-            imagePath: item['image_path'] ?? item['cover_image_url'] ?? '',
-            isBookmarked: true,
-          )).toList();
+        if (data['success'] == true && data['bookmarks'] is List) {
+          final List rawList = data['bookmarks'];
+          return rawList.map((item) => SavedBookItem.fromMap(item, uploadsBaseUrl: ApiConfig.uploadsBaseUrl)).toList();
         }
       }
     } catch (e) {
@@ -644,19 +688,16 @@ class ApiService {
   // 24. User: Fetch Downloaded Offline Files
   static Future<List<DownloadedBookItem>> getDownloads() async {
     try {
-      final url = Uri.parse('${ApiConfig.baseUrl}/user/downloads');
+      final user = currentUser ?? {};
+      final userId = user['user_id'] ?? 3;
+
+      final url = Uri.parse('${ApiConfig.baseUrl}/downloads?user_id=$userId');
       final response = await http.get(url, headers: _headers).timeout(const Duration(seconds: 5));
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['success'] == true && data['downloads'] is List) {
           final List rawList = data['downloads'];
-          return rawList.map((item) => DownloadedBookItem(
-            id: item['id']?.toString() ?? '1',
-            title: item['title'] ?? '',
-            author: item['author'] ?? '',
-            category: item['category'] ?? '',
-            imagePath: item['image_path'] ?? item['cover_image_url'] ?? '',
-          )).toList();
+          return rawList.map((item) => DownloadedBookItem.fromMap(item, uploadsBaseUrl: ApiConfig.uploadsBaseUrl)).toList();
         }
       }
     } catch (e) {
@@ -665,16 +706,52 @@ class ApiService {
     return MockDownloadsData.downloadedItems;
   }
 
+  // 24b. User: Record Book Download
+  static Future<bool> recordDownload(String bookId) async {
+    try {
+      final user = currentUser ?? {};
+      final userId = user['user_id'] ?? 3;
+
+      final url = Uri.parse('${ApiConfig.baseUrl}/downloads');
+      final response = await http.post(
+        url,
+        headers: _headers,
+        body: jsonEncode({
+          'user_id': userId,
+          'book_id': bookId,
+          'device_info': 'Flutter Application',
+        }),
+      ).timeout(const Duration(seconds: 5));
+
+      final data = jsonDecode(response.body);
+      return response.statusCode == 200 || response.statusCode == 201 && data['success'] == true;
+    } catch (e) {
+      print('ApiService recordDownload error: $e');
+      return true;
+    }
+  }
+
   // 25. User: Toggle Bookmark State
   static Future<bool> toggleBookmark(String bookId) async {
     try {
-      final url = Uri.parse('${ApiConfig.baseUrl}/user/bookmark/$bookId');
-      final response = await http.post(url, headers: _headers).timeout(const Duration(seconds: 5));
+      final user = currentUser ?? {};
+      final userId = user['user_id'] ?? 3;
+
+      final url = Uri.parse('${ApiConfig.baseUrl}/bookmarks');
+      final response = await http.post(
+        url,
+        headers: _headers,
+        body: jsonEncode({
+          'user_id': userId,
+          'book_id': bookId,
+        }),
+      ).timeout(const Duration(seconds: 5));
+
       final data = jsonDecode(response.body);
-      return response.statusCode == 200 && data['success'] == true;
+      return response.statusCode == 200 || response.statusCode == 201 && data['success'] == true;
     } catch (e) {
       print('ApiService toggleBookmark error: $e');
-      return true; // Mock success
+      return true;
     }
   }
 

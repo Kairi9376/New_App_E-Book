@@ -1,9 +1,10 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
-import '../theme/app_theme.dart';
-import '../models/downloads_model.dart';
-import '../services/api_service.dart';
+import '../../theme/app_theme.dart';
+import '../../models/downloads_model.dart';
+import '../../services/api_service.dart';
+import 'pdf_viewer_screen.dart';
 
 class DownloadsScreen extends StatefulWidget {
   const DownloadsScreen({super.key});
@@ -259,7 +260,19 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
                   height: 34,
                   width: 110,
                   child: ElevatedButton(
-                    onPressed: () {},
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => PdfViewerScreen(
+                            bookId: item.bookId?.toString() ?? item.id,
+                            pdfUrl: item.pdfUrl ?? 'assets/sample_book.pdf',
+                            bookTitle: item.title,
+                            author: item.author,
+                          ),
+                        ),
+                      );
+                    },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
                       padding: EdgeInsets.zero,

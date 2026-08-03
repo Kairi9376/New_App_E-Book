@@ -4,6 +4,7 @@ const dotenv = require('dotenv');
 const path = require('path');
 const { testConnection } = require('./config/db');
 const upload = require('./middleware/upload');
+const { deleteOldFile } = require('./utils/fileUtils');
 
 // Load environment variables
 dotenv.config();
@@ -12,12 +13,7 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Enable Middlewares
-app.use(cors({
-  origin: '*',
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
-app.options('*', cors());
+app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -42,36 +38,7 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', uptime: process.uptime() });
 });
 
-// Helper to parse actual total pages from a PDF file
-function getPdfPageCount(filePath) {
-  try {
-    const fs = require('fs');
-    const buffer = fs.readFileSync(filePath);
-    const content = buffer.toString('latin1');
-    
-    // Method 1: Search for /Count N in catalog
-    const matches = content.match(/\/Count\s+(\d+)/g);
-    if (matches && matches.length > 0) {
-      let maxCount = 0;
-      for (const m of matches) {
-        const num = parseInt(m.replace(/\/Count\s+/, ''), 10);
-        if (!isNaN(num) && num > maxCount) maxCount = num;
-      }
-      if (maxCount > 0) return maxCount;
-    }
-    
-    // Method 2: Count /Type /Page
-    const pageMatches = content.match(/\/Type\s*\/Page\b/g);
-    if (pageMatches && pageMatches.length > 0) {
-      return pageMatches.length;
-    }
-  } catch (err) {
-    console.error('Error counting PDF pages:', err);
-  }
-  return 1;
-}
-
-// Single & Multiple File Upload Endpoint
+// Single & Multiple File Upload Endpoint (with automatic old file cleanup)
 app.post('/api/upload', upload.fields([
   { name: 'cover', maxCount: 1 },
   { name: 'pdf', maxCount: 1 },
@@ -82,6 +49,13 @@ app.post('/api/upload', upload.fields([
 ]), (req, res) => {
   try {
     const files = req.files;
+    const { old_file_url, old_cover_url, old_pdf_url } = req.body;
+
+    // Delete old files if passed in request body
+    if (old_file_url) deleteOldFile(old_file_url);
+    if (old_cover_url) deleteOldFile(old_cover_url);
+    if (old_pdf_url) deleteOldFile(old_pdf_url);
+
     const responseData = {};
 
     for (const key in files) {
@@ -89,18 +63,11 @@ app.post('/api/upload', upload.fields([
         const file = files[key][0];
         // Create relative URL path
         const relativePath = path.relative(__dirname, file.path).replace(/\\/g, '/');
-        
-        let detectedPageCount = null;
-        if (key === 'pdf' || file.mimetype === 'application/pdf') {
-          detectedPageCount = getPdfPageCount(file.path);
-        }
-
         responseData[key] = {
           filename: file.filename,
           url: `http://localhost:${PORT}/${relativePath}`,
           path: relativePath,
-          size: file.size,
-          page_count: detectedPageCount
+          size: file.size
         };
       }
     }

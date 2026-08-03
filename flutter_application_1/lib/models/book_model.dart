@@ -2,19 +2,25 @@ class BookModel {
   final String id;
   final String title;
   final String author;
+  final int? authorId;
+  final List<int> categoryIds;
+  final String language; // ENUM('LA', 'TH', 'EN', 'JP', 'CN')
+  final int pageCount;
+  final int fileSizeBytes;
   final double rating;
   final String ratingText;
   final List<String> tags;
   final String imagePath;
   final String? pdfUrl;
   final String? description;
+  final int? uploadedBy;
   final bool isPopular;
   final bool isNew;
   final bool isRecommended;
   final bool isBookmarked;
   final bool isFree;
-  final int? authorId;
-  final List<int> categoryIds;
+  final bool isHidden;
+  final String? createdAt;
 
   BookModel({
     required this.id,
@@ -22,17 +28,23 @@ class BookModel {
     required this.author,
     this.authorId,
     this.categoryIds = const [],
+    this.language = 'LA',
+    this.pageCount = 0,
+    this.fileSizeBytes = 0,
     required this.rating,
     this.ratingText = '',
     required this.tags,
     required this.imagePath,
     this.pdfUrl,
     this.description,
+    this.uploadedBy,
     this.isPopular = false,
     this.isNew = false,
     this.isRecommended = false,
     this.isBookmarked = false,
     this.isFree = true,
+    this.isHidden = false,
+    this.createdAt,
   });
 
   factory BookModel.fromMap(Map<String, dynamic> map, {String uploadsBaseUrl = 'http://localhost:5000/uploads'}) {
@@ -77,42 +89,63 @@ class BookModel {
       parsedRating = double.tryParse(map['rating'].toString()) ?? 4.5;
     }
 
+    int parsedPages = int.tryParse(map['page_count']?.toString() ?? map['pageCount']?.toString() ?? '0') ?? 0;
+    int parsedSizeBytes = int.tryParse(map['file_size_bytes']?.toString() ?? map['fileSizeBytes']?.toString() ?? '0') ?? 0;
+    int? parsedUploadedBy = int.tryParse(map['uploaded_by']?.toString() ?? map['uploadedBy']?.toString() ?? '');
+
     return BookModel(
       id: (map['book_id'] ?? map['id'] ?? '').toString(),
       title: map['title'] ?? '',
       author: map['author_name'] ?? map['author'] ?? 'ບໍ່ລະບຸຜູ້ແຕ່ງ',
       authorId: parsedAuthorId,
       categoryIds: parsedCategoryIds,
+      language: map['language']?.toString() ?? 'LA',
+      pageCount: parsedPages,
+      fileSizeBytes: parsedSizeBytes,
       rating: parsedRating,
       ratingText: map['ratingText'] ?? (parsedRating == 0.0 ? 'New' : parsedRating.toStringAsFixed(1)),
       tags: parsedTags.isEmpty ? ['ທົ່ວໄປ'] : parsedTags,
       imagePath: cover,
       pdfUrl: pdf,
       description: map['description'] ?? '',
+      uploadedBy: parsedUploadedBy,
       isPopular: map['is_popular'] == 1 || map['is_popular'] == true || map['isPopular'] == true,
       isNew: map['is_new'] == 1 || map['is_new'] == true || map['isNew'] == true,
       isRecommended: map['is_recommended'] == 1 || map['is_recommended'] == true || map['isRecommended'] == true,
       isBookmarked: map['is_bookmarked'] == 1 || map['is_bookmarked'] == true || map['isBookmarked'] == true,
       isFree: map['is_free'] == 1 || map['is_free'] == true || map['isFree'] == true,
+      isHidden: map['is_hidden'] == 1 || map['is_hidden'] == true || map['isHidden'] == true,
+      createdAt: map['created_at']?.toString(),
     );
   }
 
   Map<String, dynamic> toMap() {
     return {
+      'book_id': id,
       'id': id,
       'title': title,
       'author': author,
+      'author_id': authorId,
+      'category_ids': categoryIds,
+      'language': language,
+      'page_count': pageCount,
+      'file_size_bytes': fileSizeBytes,
       'rating': rating,
       'ratingText': ratingText,
       'tags': tags,
+      'cover_image_url': imagePath,
       'imagePath': imagePath,
+      'file_pdf_url': pdfUrl,
       'pdfUrl': pdfUrl,
       'description': description,
+      'uploaded_by': uploadedBy,
       'isPopular': isPopular,
       'isNew': isNew,
       'isRecommended': isRecommended,
       'isBookmarked': isBookmarked,
-      'isFree': isFree,
+      'is_free': isFree,
+      'is_hidden': isHidden,
+      'created_at': createdAt,
     };
   }
 }
@@ -126,7 +159,8 @@ class MockBookData {
       rating: 4.9,
       ratingText: '4.9',
       tags: ['ຊີວິດ'],
-      imagePath: '/Users/intern/.gemini/antigravity/brain/c8a3c47e-e27f-493b-ba56-c3f80ddc659c/happiness_cover_1785383965921.jpg',
+      imagePath: 'assets/sample_cover.png',
+      pdfUrl: 'assets/sample_book.pdf',
       isPopular: true,
     ),
     BookModel(
@@ -136,7 +170,8 @@ class MockBookData {
       rating: 3.7,
       ratingText: '3.7',
       tags: ['ວິທະຍາສາດ'],
-      imagePath: '/Users/intern/.gemini/antigravity/brain/c8a3c47e-e27f-493b-ba56-c3f80ddc659c/science_cover_1785383980996.jpg',
+      imagePath: 'assets/sample_cover.png',
+      pdfUrl: 'assets/sample_book.pdf',
       isPopular: true,
     ),
   ];
@@ -149,7 +184,8 @@ class MockBookData {
       rating: 0.0,
       ratingText: 'New',
       tags: ['ສິລະປະ'],
-      imagePath: '/Users/intern/.gemini/antigravity/brain/c8a3c47e-e27f-493b-ba56-c3f80ddc659c/quantum_cover_1785383995867.jpg',
+      imagePath: 'assets/sample_cover.png',
+      pdfUrl: 'assets/sample_book.pdf',
       isNew: true,
     ),
     BookModel(
@@ -159,17 +195,8 @@ class MockBookData {
       rating: 0.0,
       ratingText: 'New',
       tags: ['ຜະຈົນໄພ'],
-      imagePath: '/Users/intern/.gemini/antigravity/brain/c8a3c47e-e27f-493b-ba56-c3f80ddc659c/quantum_cover_1785383995867.jpg',
-      isNew: true,
-    ),
-    BookModel(
-      id: '5',
-      title: 'Modern Science & Tech',
-      author: 'Dr. Elias Thorne',
-      rating: 0.0,
-      ratingText: 'New',
-      tags: ['ວິທະຍາສາດ', 'ເຕັກໂນໂລຊີ'],
-      imagePath: '/Users/intern/.gemini/antigravity/brain/c8a3c47e-e27f-493b-ba56-c3f80ddc659c/science_cover_1785383980996.jpg',
+      imagePath: 'assets/sample_cover.png',
+      pdfUrl: 'assets/sample_book.pdf',
       isNew: true,
     ),
   ];
@@ -182,7 +209,8 @@ class MockBookData {
       rating: 4.9,
       ratingText: '4.9',
       tags: ['ພາສາອັງກິດ'],
-      imagePath: '/Users/intern/.gemini/antigravity/brain/c8a3c47e-e27f-493b-ba56-c3f80ddc659c/happiness_cover_1785383965921.jpg',
+      imagePath: 'assets/sample_cover.png',
+      pdfUrl: 'assets/sample_book.pdf',
       isRecommended: true,
     ),
     BookModel(
@@ -192,7 +220,8 @@ class MockBookData {
       rating: 5.0,
       ratingText: '5.0',
       tags: ['ຄະນິດສາດ'],
-      imagePath: '/Users/intern/.gemini/antigravity/brain/c8a3c47e-e27f-493b-ba56-c3f80ddc659c/science_cover_1785383980996.jpg',
+      imagePath: 'assets/sample_cover.png',
+      pdfUrl: 'assets/sample_book.pdf',
       isRecommended: true,
     ),
   ];

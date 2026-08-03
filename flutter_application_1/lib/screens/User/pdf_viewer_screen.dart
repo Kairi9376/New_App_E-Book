@@ -2,14 +2,16 @@ import 'dart:async';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../theme/app_theme.dart';
-import '../services/api_config.dart';
+import '../../theme/app_theme.dart';
+import '../../services/api_config.dart';
+import '../../services/api_service.dart';
 
 // Conditional imports for Web platform view registration
 import 'dart:html' as html;
 import 'dart:ui' as ui;
 
 class PdfViewerScreen extends StatefulWidget {
+  final String? bookId;
   final String pdfUrl;
   final String bookTitle;
   final String? author;
@@ -18,6 +20,7 @@ class PdfViewerScreen extends StatefulWidget {
 
   const PdfViewerScreen({
     super.key,
+    this.bookId,
     required this.pdfUrl,
     required this.bookTitle,
     this.author,
@@ -281,6 +284,14 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
         _isLoading = true;
         _registerWebIframe();
       });
+
+      // Record reading history in MySQL backend
+      final targetBookId = widget.bookId ?? '1';
+      ApiService.recordReadingHistory(
+        bookId: targetBookId,
+        lastPageRead: newPage,
+        totalPages: _totalPages,
+      );
 
       // Auto-scroll chip bar to current page
       if (_pageChipsScrollController.hasClients) {

@@ -1,9 +1,10 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
-import '../theme/app_theme.dart';
-import '../models/history_model.dart';
-import '../services/api_service.dart';
+import '../../theme/app_theme.dart';
+import '../../models/history_model.dart';
+import '../../services/api_service.dart';
+import 'pdf_viewer_screen.dart';
 
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
@@ -116,21 +117,37 @@ class _HistoryScreenState extends State<HistoryScreen> {
   }
 
   Widget _buildHistoryCard(HistoryBookItem item) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.02),
-            blurRadius: 8,
-            offset: const Offset(0, 3),
+    return InkWell(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => PdfViewerScreen(
+              bookId: item.bookId?.toString() ?? item.id,
+              pdfUrl: item.pdfUrl ?? 'assets/sample_book.pdf',
+              bookTitle: item.title,
+              author: item.author,
+              description: item.description,
+            ),
           ),
-        ],
-      ),
-      child: Row(
+        ).then((_) => _fetchHistory());
+      },
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFFE2E8F0)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.02),
+              blurRadius: 8,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           // Book Thumbnail Container
@@ -217,6 +234,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
           ),
         ],
       ),
+    ),
     );
   }
 }
