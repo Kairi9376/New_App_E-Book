@@ -18,6 +18,29 @@ exports.getAllSubscriptions = async (req, res) => {
   }
 };
 
+// GET /api/subscriptions/user/:userId
+exports.getUserSubscription = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const [rows] = await pool.query(`
+      SELECT s.*, p.name AS package_name, p.duration_days, p.price
+      FROM subscriptions s
+      JOIN packages p ON s.package_id = p.package_id
+      WHERE s.user_id = ?
+      ORDER BY s.created_at DESC
+      LIMIT 1
+    `, [userId]);
+
+    if (rows.length === 0) {
+      return res.json({ success: true, subscription: null, message: 'No subscription found' });
+    }
+
+    res.json({ success: true, subscription: rows[0] });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 // POST /api/subscriptions
 exports.createSubscription = async (req, res) => {
   try {

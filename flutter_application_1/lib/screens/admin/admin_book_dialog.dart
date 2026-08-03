@@ -53,7 +53,7 @@ class _AdminBookDialogState extends State<AdminBookDialog> {
   void initState() {
     super.initState();
     _titleController = TextEditingController(text: widget.book?.title ?? '');
-    _pagesController = TextEditingController(text: '320');
+    _pagesController = TextEditingController(text: (widget.book?.pageCount ?? 0).toString());
     _descriptionController = TextEditingController(text: widget.book?.description ?? '');
     _coverUrlController = TextEditingController(text: widget.book?.imagePath ?? '');
     _pdfUrlController = TextEditingController(text: widget.book?.pdfUrl ?? '');
@@ -280,7 +280,7 @@ class _AdminBookDialogState extends State<AdminBookDialog> {
           'category_id': categoryIdsList.first,
           'description': description,
           'language': _selectedLanguage,
-          'page_count': int.tryParse(_pagesController.text.trim()) ?? 320,
+          'page_count': int.tryParse(_pagesController.text.trim()) ?? (widget.book?.pageCount ?? 0),
           'file_size_bytes': _fileSizeBytes,
           'cover_image_url': coverUrl.isNotEmpty ? coverUrl : null,
           'file_pdf_url': pdfUrl.isNotEmpty ? pdfUrl : null,
@@ -296,7 +296,7 @@ class _AdminBookDialogState extends State<AdminBookDialog> {
           'title': title,
           'author_id': _selectedAuthorId ?? 1,
           'language': _selectedLanguage,
-          'page_count': int.tryParse(_pagesController.text.trim()) ?? 320,
+          'page_count': int.tryParse(_pagesController.text.trim()) ?? 0,
           'file_size_bytes': _fileSizeBytes,
           'description': description,
           'cover_image_url': coverUrl.isNotEmpty ? coverUrl : 'assets/sample_cover.png',
@@ -531,10 +531,15 @@ class _AdminBookDialogState extends State<AdminBookDialog> {
                                 flex: 2,
                                 child: TextFormField(
                                   controller: _pagesController,
+                                  readOnly: true,
                                   keyboardType: TextInputType.number,
                                   decoration: const InputDecoration(
-                                    labelText: 'ຈຳນວນໜ້າ (Pages)',
+                                    labelText: 'ຈຳນວນໜ້າ (Auto PDF Pages)',
                                     prefixIcon: Icon(Icons.auto_stories_rounded, color: AppColors.primary),
+                                    filled: true,
+                                    fillColor: Color(0xFFF8FAFC),
+                                    helperText: 'ອ່ານຈຳນວນໜ້າຈາກ PDF ໂດຍອັດໂນມັດ',
+                                    helperStyle: TextStyle(fontSize: 10, color: AppColors.textSecondary),
                                   ),
                                 ),
                               ),

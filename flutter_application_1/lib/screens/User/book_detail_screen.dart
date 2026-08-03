@@ -3,8 +3,13 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import '../../theme/app_theme.dart';
 import '../../models/book_model.dart';
+import '../../models/history_model.dart';
 import '../../services/api_service.dart';
+import '../../utils/image_helper.dart';
+import '../../models/kyc_model.dart';
 import 'pdf_viewer_screen.dart';
+import 'kyc_submission_screen.dart';
+import 'membership_package_screen.dart';
 
 class BookDetailScreen extends StatefulWidget {
   final BookModel? book;
@@ -17,12 +22,14 @@ class BookDetailScreen extends StatefulWidget {
 
 class _BookDetailScreenState extends State<BookDetailScreen> {
   bool _isBookmarked = false;
-  bool _isExpanded = false;
 
   late String _title;
   late String _author;
   late String _ratingText;
   late String _imagePath;
+  int _totalPageCount = 20;
+  int _lastPageRead = 0;
+  int _selectedPageChunk = 0;
 
   @override
   void initState() {
@@ -33,29 +40,117 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
       _ratingText = widget.book!.ratingText;
       _imagePath = widget.book!.imagePath;
       _isBookmarked = widget.book!.isBookmarked;
+      _totalPageCount = widget.book!.pageCount > 0 ? widget.book!.pageCount : 20;
     } else {
       _title = 'The Happiness Effect';
       _author = 'Stephen T. Radentz';
       _ratingText = '4.9';
-      _imagePath =
-          '/Users/intern/.gemini/antigravity/brain/c8a3c47e-e27f-493b-ba56-c3f80ddc659c/happiness_cover_1785383965921.jpg';
+      _imagePath = 'assets/sample_book.pdf';
     }
+
+    _fetchReadingHistory();
+  }
+
+  bool get _isMember {
+    final user = ApiService.currentUser ?? {};
+    final role = user['role'] ?? 'user';
+    final email = user['email'] ?? '';
+    return role == 'admin' || role == 'employee' || email == 'member@gmail.com';
+  }
+
+  void _showMembershipRequiredDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (ctx) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Container(
+          padding: const EdgeInsets.all(28),
+          constraints: const BoxConstraints(maxWidth: 420),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFF7ED),
+                  shape: BoxShape.circle,
+                  border: Border.all(color: const Color(0xFFFDE68A), width: 2),
+                ),
+                child: const Icon(Icons.workspace_premium_rounded, size: 48, color: Color(0xFFF59E0B)),
+              ),
+              const SizedBox(height: 18),
+              const Text(
+                'ຕ້ອງເປັນສະມາຊິກ Premiere',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 10),
+              const Text(
+                'ການດາວໂຫຼດໜັງສືສະຫງວນໄວ້ສຳລັບສະມາຊິກ Premiere Member ເທົ່ານັ້ນ\n\nກະລຸນາຢືນຢັນຕົວຕົນ (KYC) ແລະ ສະໝັກແພັກເກັດສະມາຊິກເພື່ອເຂົ້າເຖິງການດາວໂຫຼດ',
+                style: TextStyle(fontSize: 13, color: AppColors.textSecondary, height: 1.5),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                height: 46,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const MembershipPackageScreen()),
+                    );
+                  },
+                  icon: const Icon(Icons.star_rounded, color: Colors.white, size: 20),
+                  label: const Text('ສະໝັກສະມາຊິກ Premiere', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFF59E0B),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
+              SizedBox(
+                width: double.infinity,
+                height: 42,
+                child: TextButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: const Text('ໄວ້ທີຫຼັງ', style: TextStyle(color: AppColors.textSecondary, fontWeight: FontWeight.bold)),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _fetchReadingHistory() async {
+    if (widget.book == null) return;
+    try {
+      final historyList = await ApiService.getHistory();
+      final targetId = widget.book!.id;
+      final match = historyList.firstWhere(
+        (h) => (h.bookId?.toString() == targetId || h.id == targetId || h.title == _title),
+        orElse: () => HistoryBookItem(id: '', title: '', author: '', category: '', progress: 0.0, imagePath: ''),
+      );
+
+      if (match.id.isNotEmpty && match.lastPageRead > 0) {
+        if (mounted) {
+          setState(() {
+            _lastPageRead = match.lastPageRead;
+            _selectedPageChunk = ((_lastPageRead - 1) ~/ 50).clamp(0, ((_totalPageCount - 1) ~/ 50));
+          });
+        }
+      }
+    } catch (_) {}
   }
 
   Widget _buildImage(String path, {double? width, double? height}) {
-    if (path.startsWith('http://') || path.startsWith('https://')) {
-      return Image.network(path, width: width, height: height, fit: BoxFit.cover, errorBuilder: (_, __, ___) => _buildPlaceholder(width, height));
-    }
-    if (path.startsWith('assets/')) {
-      return Image.asset(path, width: width, height: height, fit: BoxFit.cover, errorBuilder: (_, __, ___) => _buildPlaceholder(width, height));
-    }
-    if (!kIsWeb) {
-      final file = File(path);
-      if (file.existsSync()) {
-        return Image.file(file, width: width, height: height, fit: BoxFit.cover);
-      }
-    }
-    return _buildPlaceholder(width, height);
+    return ImageHelper.buildImage(path, width: width, height: height, fit: BoxFit.cover);
   }
 
   Widget _buildPlaceholder(double? width, double? height) {
@@ -67,9 +162,30 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
     );
   }
 
+  void _openReader({int initialPage = 1}) {
+    String pdfUrl = widget.book?.pdfUrl ?? '';
+    if (pdfUrl.isEmpty) {
+      pdfUrl = 'assets/sample_book.pdf';
+    }
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => PdfViewerScreen(
+          bookId: widget.book?.id ?? '1',
+          pdfUrl: pdfUrl,
+          bookTitle: _title,
+          author: _author,
+          description: widget.book?.description,
+          pageCount: _totalPageCount,
+          initialPage: initialPage,
+        ),
+      ),
+    ).then((_) => _fetchReadingHistory());
+  }
+
   @override
   Widget build(BuildContext context) {
-    const synopsisFullText =
+    final String synopsisFullText = widget.book?.description ??
         "In a world where memories can be harvested and sold like currency, Silas Thorne is a simple collector with a dangerous secret. When he discovers a memory that doesn't belong to any living human, he is thrust into a conspiracy that reaches the highest levels of the Neo-Veridian government. \"Echoes of the Void\" is a gripping exploration of identity, loss, and the price of progress in a dystopian future where even our dreams are no longer private property.";
 
     return Scaffold(
@@ -113,16 +229,23 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                                         ? Icons.bookmark_rounded
                                         : Icons.bookmark_outline_rounded,
                                     iconColor: AppColors.primary,
-                                    onTap: () {
+                                    onTap: () async {
                                       setState(() {
                                         _isBookmarked = !_isBookmarked;
                                       });
+                                      if (widget.book != null) {
+                                        await ApiService.toggleBookmark(widget.book!.id);
+                                      }
                                     },
                                   ),
                                   const SizedBox(width: 10),
                                   _buildCircularIconButton(
                                     icon: Icons.share_outlined,
-                                    onTap: () {},
+                                    onTap: () {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(content: Text('ແບ່ງປັນໜັງສືນີ້ສຳເລັດ')),
+                                      );
+                                    },
                                   ),
                                 ],
                               ),
@@ -130,38 +253,44 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                           ),
                           const SizedBox(height: 16),
 
-                          // Large Centered Book Cover Image
-                          Container(
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(16),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.12),
-                                  blurRadius: 20,
-                                  offset: const Offset(0, 10),
+                          // Large Center Book Cover with Shadow
+                          Center(
+                            child: GestureDetector(
+                              onTap: () => ImageHelper.showPreviewModal(context, path: _imagePath, title: _title),
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(16),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.blue.withOpacity(0.2),
+                                      blurRadius: 20,
+                                      offset: const Offset(0, 10),
+                                    ),
+                                  ],
                                 ),
-                              ],
-                            ),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(16),
-                              child: _buildImage(
-                                _imagePath,
-                                width: 200,
-                                height: 260,
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(16),
+                                  child: SizedBox(
+                                    width: 160,
+                                    height: 230,
+                                    child: _buildImage(_imagePath),
+                                  ),
+                                ),
                               ),
                             ),
                           ),
-                          const SizedBox(height: 12),
                         ],
                       ),
                     ),
 
-                    // Book Info Section
+                    // Book Details Section
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 20.0),
                       child: Column(
                         children: [
-                          // Title
+                          const SizedBox(height: 12),
+
+                          // Book Title
                           Text(
                             _title,
                             textAlign: TextAlign.center,
@@ -173,13 +302,14 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                           ),
                           const SizedBox(height: 6),
 
-                          // Author
+                          // Author Name
                           Text(
                             _author,
                             textAlign: TextAlign.center,
                             style: const TextStyle(
                               fontSize: 14,
                               color: AppColors.textSecondary,
+                              fontWeight: FontWeight.w500,
                             ),
                           ),
                           const SizedBox(height: 16),
@@ -190,22 +320,22 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                             children: [
                               _buildInfoBadge(
                                 icon: Icons.star_rounded,
-                                iconColor: Colors.amber,
+                                iconColor: const Color(0xFFF59E0B),
                                 text: _ratingText,
-                                bgColor: const Color(0xFFFEF9C3),
+                                bgColor: const Color(0xFFFEF3C7),
                               ),
                               const SizedBox(width: 10),
                               _buildInfoBadge(
-                                icon: Icons.menu_book_rounded,
+                                icon: Icons.auto_stories_rounded,
                                 iconColor: AppColors.primary,
-                                text: '342 Pages',
+                                text: '$_totalPageCount ໜ້າ',
                                 bgColor: const Color(0xFFE2EDFF),
                               ),
                               const SizedBox(width: 10),
                               _buildInfoBadge(
                                 icon: Icons.language_rounded,
                                 iconColor: const Color(0xFF7C3AED),
-                                text: 'Laos',
+                                text: widget.book?.language ?? 'Laos',
                                 bgColor: const Color(0xFFF3E8FF),
                               ),
                             ],
@@ -220,30 +350,12 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                                 child: SizedBox(
                                   height: 48,
                                   child: ElevatedButton.icon(
-                                    onPressed: () {
-                                      String pdfUrl = widget.book?.pdfUrl ?? '';
-                                      if (pdfUrl.isEmpty) {
-                                        pdfUrl = 'assets/sample_book.pdf';
-                                      }
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (_) => PdfViewerScreen(
-                                            bookId: widget.book?.id ?? '1',
-                                            pdfUrl: pdfUrl,
-                                            bookTitle: _title,
-                                            author: _author,
-                                            description: widget.book?.description,
-                                            pageCount: widget.book?.pageCount,
-                                          ),
-                                        ),
-                                      );
-                                    },
+                                    onPressed: () => _openReader(initialPage: _lastPageRead > 0 ? _lastPageRead : 1),
                                     icon: const Icon(Icons.menu_book_rounded, size: 20),
-                                    label: const Text(
-                                      'ອ່ານເລີຍ',
-                                      style: TextStyle(
-                                        fontSize: 15,
+                                    label: Text(
+                                      _lastPageRead > 0 ? 'ອ່ານຕໍ່ (ໜ້າ $_lastPageRead)' : 'ອ່ານເລີຍ',
+                                      style: const TextStyle(
+                                        fontSize: 14,
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),
@@ -264,6 +376,10 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                                   height: 48,
                                   child: OutlinedButton.icon(
                                     onPressed: () async {
+                                      if (!_isMember) {
+                                        _showMembershipRequiredDialog();
+                                        return;
+                                      }
                                       final bookId = widget.book?.id ?? '1';
                                       final success = await ApiService.recordDownload(bookId);
                                       if (mounted) {
@@ -299,6 +415,9 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                           ),
                           const SizedBox(height: 24),
 
+                          // Reading Progress Header Card
+                          _buildReadingProgressHeaderCard(),
+
                           // Synopsis Section
                           const Align(
                             alignment: Alignment.centerLeft,
@@ -315,46 +434,18 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
 
                           Text(
                             synopsisFullText,
-                            maxLines: _isExpanded ? 100 : 4,
-                            overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
                               fontSize: 14,
                               height: 1.5,
                               color: AppColors.textSecondary,
                             ),
                           ),
+                          const SizedBox(height: 24),
 
-                          GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                _isExpanded = !_isExpanded;
-                              });
-                            },
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 8.0),
-                              child: Row(
-                                children: [
-                                  Text(
-                                    _isExpanded ? 'ຊ່ອນຂໍ້ຄວາມ' : 'ອ່ານເພີ່ມເຕີມ',
-                                    style: const TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.bold,
-                                      color: AppColors.primary,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Icon(
-                                    _isExpanded
-                                        ? Icons.keyboard_arrow_up_rounded
-                                        : Icons.keyboard_arrow_down_rounded,
-                                    color: AppColors.primary,
-                                    size: 18,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 20),
+                          // Table of Contents Section (สารบัญ / รายการหน้า PDF)
+                          _buildTableOfContentsSection(),
+
+                          const SizedBox(height: 30),
                         ],
                       ),
                     ),
@@ -371,6 +462,297 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
     );
   }
 
+  Widget _buildTableOfContentsSection() {
+    final int totalChunks = ((_totalPageCount - 1) ~/ 50) + 1;
+    final int currentChunk = _selectedPageChunk.clamp(0, totalChunks - 1);
+    final int startPage = (currentChunk * 50) + 1;
+    final int endPage = ((currentChunk + 1) * 50) > _totalPageCount ? _totalPageCount : ((currentChunk + 1) * 50);
+    final int itemsInCurrentChunk = endPage - startPage + 1;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header Row
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: const [
+                  Icon(Icons.format_list_bulleted_rounded, color: AppColors.primary, size: 22),
+                  SizedBox(width: 8),
+                  Text(
+                    'ສາລະບານ / ລາຍການໜ້າ',
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                  ),
+                ],
+              ),
+              Row(
+                children: [
+                  InkWell(
+                    onTap: _showDirectJumpDialog,
+                    borderRadius: BorderRadius.circular(8),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEFF6FF),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: const Color(0xFFBFDBFE)),
+                      ),
+                      child: Row(
+                        children: const [
+                          Icon(Icons.near_me_rounded, size: 14, color: AppColors.primary),
+                          SizedBox(width: 4),
+                          Text('ຂ້າມໄປໜ້າ...', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.primary)),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      'ທັງໝົດ $_totalPageCount ໜ້າ',
+                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.primary),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+
+          // Range Selector Chips (for books > 50 pages)
+          if (totalChunks > 1) ...[
+            SizedBox(
+              height: 36,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: totalChunks,
+                itemBuilder: (context, cIndex) {
+                  final cStart = (cIndex * 50) + 1;
+                  final cEnd = ((cIndex + 1) * 50) > _totalPageCount ? _totalPageCount : ((cIndex + 1) * 50);
+                  final isSelected = cIndex == currentChunk;
+
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 6),
+                    child: ChoiceChip(
+                      selected: isSelected,
+                      label: Text('ໜ້າ $cStart-$cEnd'),
+                      labelStyle: TextStyle(
+                        fontSize: 11,
+                        fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                        color: isSelected ? Colors.white : AppColors.textPrimary,
+                      ),
+                      selectedColor: AppColors.primary,
+                      backgroundColor: Colors.white,
+                      side: BorderSide(color: isSelected ? AppColors.primary : const Color(0xFFCBD5E1)),
+                      onSelected: (selected) {
+                        if (selected) {
+                          setState(() {
+                            _selectedPageChunk = cIndex;
+                          });
+                        }
+                      },
+                    ),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 12),
+          ],
+
+          // Last Read Highlight Banner
+          if (_lastPageRead > 0)
+            Container(
+              margin: const EdgeInsets.only(bottom: 14),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                color: const Color(0xFFEFF6FF),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFFBFDBFE)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.bookmark_added_rounded, color: Color(0xFF2563EB), size: 20),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'ອ່ານລ່າສຸດເຖິງ: ໜ້າທີ $_lastPageRead',
+                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF1E40AF)),
+                    ),
+                  ),
+                  InkWell(
+                    onTap: () => _openReader(initialPage: _lastPageRead),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF2563EB),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Text('ອ່ານຕໍ່', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+          // PDF Pages List for Selected Range (startPage .. endPage)
+          ListView.separated(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: itemsInCurrentChunk,
+            separatorBuilder: (_, __) => const SizedBox(height: 8),
+            itemBuilder: (context, index) {
+              final int pageNum = startPage + index;
+              final bool isLastReadPage = pageNum == _lastPageRead;
+              final bool isReadPage = _lastPageRead > 0 && pageNum <= _lastPageRead;
+
+              return InkWell(
+                onTap: () => _openReader(initialPage: pageNum),
+                borderRadius: BorderRadius.circular(10),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: isLastReadPage ? const Color(0xFFFEF3C7) : Colors.white,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: isLastReadPage
+                          ? const Color(0xFFF59E0B)
+                          : (isReadPage ? const Color(0xFFCBD5E1) : const Color(0xFFE2E8F0)),
+                      width: isLastReadPage ? 1.8 : 1,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 28,
+                        height: 28,
+                        decoration: BoxDecoration(
+                          color: isLastReadPage
+                              ? const Color(0xFFF59E0B)
+                              : (isReadPage ? const Color(0xFF10B981) : const Color(0xFFF1F5F9)),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Center(
+                          child: Text(
+                            '$pageNum',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: (isLastReadPage || isReadPage) ? Colors.white : AppColors.textSecondary,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          'ໜ້າທີ $pageNum',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: isLastReadPage ? FontWeight.bold : FontWeight.w500,
+                            color: isLastReadPage ? const Color(0xFFB45309) : AppColors.textPrimary,
+                          ),
+                        ),
+                      ),
+                      if (isLastReadPage)
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF59E0B),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: const [
+                              Icon(Icons.push_pin_rounded, size: 12, color: Colors.white),
+                              SizedBox(width: 4),
+                              Text(
+                                'ອ່ານລ່າສຸດ',
+                                style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white),
+                              ),
+                            ],
+                          ),
+                        )
+                      else if (isReadPage)
+                        const Icon(Icons.check_circle_rounded, color: Color(0xFF10B981), size: 18)
+                      else
+                        const Icon(Icons.arrow_forward_ios_rounded, color: Color(0xFF94A3B8), size: 14),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showDirectJumpDialog() {
+    final controller = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('ຂ້າມໄປໜ້າທີ່ຕ້ອງການ', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('ກະລຸນາປ້ອນໝາຍເລກໜ້າ (1 ถึง $_totalPageCount):', style: const TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+            const SizedBox(height: 12),
+            TextField(
+              controller: controller,
+              keyboardType: TextInputType.number,
+              autofocus: true,
+              decoration: InputDecoration(
+                hintText: 'ตัวอย่าง: 45',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('ຍົກເລີກ'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              final target = int.tryParse(controller.text.trim());
+              if (target != null && target >= 1 && target <= _totalPageCount) {
+                Navigator.pop(ctx);
+                _openReader(initialPage: target);
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('ກະລຸນາປ້ອນตัวเลขระหว่าง 1 ถึง $_totalPageCount'),
+                    backgroundColor: Colors.redAccent,
+                  ),
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
+            child: const Text('ໄປທີ່ໜ້ານີ້'),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildCircularIconButton({
     required IconData icon,
     Color iconColor = AppColors.textPrimary,
@@ -381,18 +763,93 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
       borderRadius: BorderRadius.circular(20),
       child: Container(
         padding: const EdgeInsets.all(10),
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           color: Colors.white,
           shape: BoxShape.circle,
           boxShadow: [
             BoxShadow(
-              color: Colors.black12,
-              blurRadius: 6,
-              offset: Offset(0, 2),
+              color: Colors.black.withOpacity(0.06),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
             ),
           ],
         ),
-        child: Icon(icon, size: 20, color: iconColor),
+        child: Icon(icon, color: iconColor, size: 20),
+      ),
+    );
+  }
+
+  Widget _buildReadingProgressHeaderCard() {
+    if (_lastPageRead <= 0) return const SizedBox.shrink();
+    final double percent = (_lastPageRead / (_totalPageCount > 0 ? _totalPageCount : 1)).clamp(0.0, 1.0);
+    final int percentInt = (percent * 100).round();
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 20),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFFEFF6FF), Color(0xFFDBEAFE)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFBFDBFE)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: const BoxDecoration(
+                  color: Color(0xFF2563EB),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.bookmark_added_rounded, color: Colors.white, size: 18),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'ຄວາມຄືບໜ້າການອ່ານ (Reading Progress)',
+                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF1E40AF)),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'ອ່ານເຖິງໜ້າທີ $_lastPageRead ຈາກທັງໝົດ $_totalPageCount ໜ້າ',
+                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF2563EB),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  '$percentInt%',
+                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: LinearProgressIndicator(
+              value: percent,
+              minHeight: 8,
+              backgroundColor: const Color(0xFFBFDBFE),
+              valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF2563EB)),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -407,19 +864,19 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
         color: bgColor,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: iconColor),
+          Icon(icon, color: iconColor, size: 16),
           const SizedBox(width: 4),
           Text(
             text,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
+              color: iconColor,
             ),
           ),
         ],
@@ -428,65 +885,32 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
   }
 
   Widget _buildBottomNavigationBar() {
-    final navItems = [
-      {'icon': Icons.home_rounded, 'label': 'หน้าหลัก'},
-      {'icon': Icons.history_rounded, 'label': 'ประวัติ'},
-      {'icon': Icons.bookmark_outline_rounded, 'label': 'บันทึก'},
-      {'icon': Icons.file_download_outlined, 'label': 'ดาวน์โหลด'},
-      {'icon': Icons.person_outline_rounded, 'label': 'โปรไฟล์'},
-    ];
-
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-      decoration: const BoxDecoration(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      decoration: BoxDecoration(
         color: Colors.white,
-        border: Border(
-          top: BorderSide(color: Color(0xFFF1F5F9)),
-        ),
+        border: Border(top: BorderSide(color: Colors.grey.shade200)),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: List.generate(navItems.length, (index) {
-          final isSelected = index == 0;
-          final item = navItems[index];
-
-          return GestureDetector(
-            onTap: () {
-              Navigator.pop(context);
-            },
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              padding: EdgeInsets.symmetric(
-                horizontal: isSelected ? 16 : 8,
-                vertical: 6,
-              ),
-              decoration: BoxDecoration(
-                color: isSelected ? const Color(0xFFE2EDFF) : Colors.transparent,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    item['icon'] as IconData,
-                    size: 22,
-                    color: isSelected ? AppColors.primary : const Color(0xFF94A3B8),
-                  ),
-                  if (isSelected) ...[
-                    const SizedBox(width: 6),
-                    Text(
-                      item['label'] as String,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.primary,
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          );
-        }),
+        children: [
+          IconButton(
+            icon: const Icon(Icons.home_outlined, color: AppColors.textSecondary),
+            onPressed: () => Navigator.pop(context),
+          ),
+          IconButton(
+            icon: const Icon(Icons.bookmark_outline_rounded, color: AppColors.textSecondary),
+            onPressed: () {},
+          ),
+          IconButton(
+            icon: const Icon(Icons.history_rounded, color: AppColors.textSecondary),
+            onPressed: () {},
+          ),
+          IconButton(
+            icon: const Icon(Icons.person_outline_rounded, color: AppColors.textSecondary),
+            onPressed: () {},
+          ),
+        ],
       ),
     );
   }

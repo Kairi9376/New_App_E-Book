@@ -265,11 +265,25 @@ class _LoginScreenState extends State<LoginScreen> {
                       style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
                     ),
                     TextButton(
-                      onPressed: () {
-                        Navigator.push(
+                      onPressed: () async {
+                        final registeredEmail = await Navigator.push<String>(
                           context,
                           MaterialPageRoute(builder: (context) => const RegisterScreen()),
                         );
+                        if (registeredEmail != null && registeredEmail.isNotEmpty) {
+                          setState(() {
+                            _emailController.text = registeredEmail;
+                            _passwordController.clear();
+                          });
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('ກະລຸນາປ້ອນລະຫັດຜ່ານຂອງ "$registeredEmail" ເພື່ອເຂົ້າสู่ระบบ'),
+                                backgroundColor: AppColors.primary,
+                              ),
+                            );
+                          }
+                        }
                       },
                       child: const Text(
                         'ລົງທະບຽນຜູ້ໃຊ້ໃໝ່',

@@ -50,18 +50,79 @@ class _RegisterScreenState extends State<RegisterScreen> {
       setState(() => _isLoading = false);
 
       if (res['success'] == true) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('ລົງທະບຽນບັນຊີຜູ້ໃຊ້ "${_emailController.text.trim()}" ສຳເລັດ! ຍິນດີຕ້ອນຮັບ'),
-            backgroundColor: AppColors.primary,
-          ),
-        );
+        final String registeredEmail = _emailController.text.trim().toLowerCase();
 
-        // Auto-navigate to User Home Screen as General User
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (context) => const UserHomeScreen()),
-          (route) => false,
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (dialogCtx) => AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            backgroundColor: Colors.white,
+            contentPadding: const EdgeInsets.all(24),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 72,
+                  height: 72,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFDCFCE7),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.check_circle_rounded,
+                    color: Color(0xFF10B981),
+                    size: 48,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'ລົງທະບຽນສຳເລັດແລ້ວ! 🎉',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  'ບັນຊີຜູ້ໃຊ້ "$registeredEmail" ຖືກສ້າງຮຽບຮ້ອຍແລ້ວ!\nກະລຸນາເຂົ້າสู่ระบบດ້ວຍອີເມວ ແລະ ລະຫັດຜ່ານຂອງທ່ານ',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    height: 1.5,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  height: 46,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.pop(dialogCtx);
+                      Navigator.pop(context, registeredEmail);
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Text(
+                      'ໄປທີ່ໜ້າເຂົ້າสู่ระบบ (Go to Login)',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(

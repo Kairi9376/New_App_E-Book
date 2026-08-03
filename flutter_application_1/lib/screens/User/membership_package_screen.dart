@@ -1,7 +1,11 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import '../../theme/app_theme.dart';
 import '../../models/kyc_model.dart';
 import '../../services/api_service.dart';
+import '../../services/file_picker_helper.dart';
+import '../../utils/image_helper.dart';
 import 'kyc_submission_screen.dart';
 
 class MembershipPackageScreen extends StatefulWidget {
@@ -21,21 +25,35 @@ class MembershipPackageScreen extends StatefulWidget {
 class _MembershipPackageScreenState extends State<MembershipPackageScreen> {
   int _selectedPackageIndex = 0;
   List<Map<String, dynamic>> _fetchedPackages = [];
-  bool _isLoadingPackages = true;
+  bool _isLoading = true;
+
+  KycStatus _liveKycStatus = KycStatus.notSubmitted;
+  Map<String, dynamic>? _liveSubscription;
+  bool _isResubmitMode = false;
 
   @override
   void initState() {
     super.initState();
-    _loadBackendPackages();
+    _loadBackendData();
   }
 
-  Future<void> _loadBackendPackages() async {
-    setState(() => _isLoadingPackages = true);
+  Future<void> _loadBackendData() async {
+    setState(() => _isLoading = true);
+
+    final user = ApiService.currentUser ?? {};
+    final rawUserId = user['user_id'] ?? user['id'];
+    final int userId = rawUserId != null ? (int.tryParse(rawUserId.toString()) ?? 3) : 3;
+
     final packages = await ApiService.getPackages();
+    final kycModel = await ApiService.getUserKycStatus(userId);
+    final subData = await ApiService.getUserSubscriptionStatus(userId);
+
     if (mounted) {
       setState(() {
         _fetchedPackages = packages;
-        _isLoadingPackages = false;
+        _liveKycStatus = kycModel?.status ?? widget.kycStatus;
+        _liveSubscription = subData;
+        _isLoading = false;
       });
     }
   }
@@ -50,77 +68,321 @@ class _MembershipPackageScreenState extends State<MembershipPackageScreen> {
     return '$formatted ກີບ';
   }
 
-  void _onSubscribe(int index) {
-    if (widget.kycStatus != KycStatus.approved) {
+  void _onSubscribeClicked(int index) {
+    if (_liveKycStatus != KycStatus.approved) {
       _showKycRequiredDialog();
       return;
     }
 
     if (index < 0 || index >= _fetchedPackages.length) return;
     final pkg = _fetchedPackages[index];
+    _openPaymentDialog(pkg);
+  }
 
-    final String pkgName = pkg['name'] ?? 'Package';
-    final String pkgPriceFormatted = _formatKipPrice(pkg['price']);
-    final int durationDays = int.tryParse(pkg['duration_days']?.toString() ?? '30') ?? 30;
+  // --- Payment Modal Dialog with Real Transfer Slip Upload ---
+  void _openPaymentDialog(Map<String, dynamic> pkg) {
+    Uint8List? slipBytes;
+    String? slipPath;
+    String? slipUrl;
+    bool isUploading = false;
+    bool isSubmitting = false;
 
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Row(
-          children: const [
-            Icon(Icons.workspace_premium_rounded, color: Color(0xFFF59E0B), size: 28),
-            SizedBox(width: 8),
-            Text('ຢືນຢັນສະໝັກແພັກເກັດ'),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('ທ່ານກຳລັງເລືອກສະໝັກ: $pkgName', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-            const SizedBox(height: 6),
-            Text('ລາຄາ: $pkgPriceFormatted / $durationDays ວັນ', style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: const Color(0xFFECFDF5),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Row(
+      barrierDismissible: false,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (dialogContext, setDialogState) {
+            final String pkgName = pkg['name'] ?? 'Package';
+            final String pkgPriceFormatted = _formatKipPrice(pkg['price']);
+            final int durationDays = int.tryParse(pkg['duration_days']?.toString() ?? '30') ?? 30;
+            final int packageId = pkg['package_id'] ?? 1;
+            final double amount = double.tryParse(pkg['price']?.toString() ?? '0') ?? 0.0;
+
+            Future<void> pickAndUploadSlip() async {
+              setDialogState(() => isUploading = true);
+              try {
+                final picked = await FilePickerHelper.pickFile(accept: 'image/*');
+                if (picked != null) {
+                  final bytes = Uint8List.fromList(picked.bytes);
+                  final result = await ApiService.uploadFile(
+                    bytes: picked.bytes,
+                    filename: picked.name,
+                    fieldName: 'slip',
+                  );
+
+                  if (result['success'] == true && result['path'] != null) {
+                    setDialogState(() {
+                      slipBytes = bytes;
+                      slipPath = result['path'];
+                      slipUrl = result['url'] ?? result['path'];
+                    });
+                  } else {
+                    setDialogState(() => slipBytes = bytes);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('ອັບໂຫຼດສະລິບລົ້ມເຫຼວ: ${result['message'] ?? 'Unknown error'}'),
+                        backgroundColor: Colors.redAccent,
+                      ),
+                    );
+                  }
+                }
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('เกิดข้อผิดพลาดในการอัปโหลด: $e'), backgroundColor: Colors.redAccent),
+                );
+              } finally {
+                setDialogState(() => isUploading = false);
+              }
+            }
+
+            Future<void> submitPayment() async {
+              if (slipUrl == null || slipUrl!.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('ກະລຸນາອັບໂຫຼດຫຼັກຖານການໂອນເງິນ (ສະລິບ) ก่อนยืนยัน'),
+                    backgroundColor: Colors.redAccent,
+                  ),
+                );
+                return;
+              }
+
+              setDialogState(() => isSubmitting = true);
+
+              final user = ApiService.currentUser ?? {};
+              final rawUserId = user['user_id'] ?? user['id'];
+              final int userId = rawUserId != null ? (int.tryParse(rawUserId.toString()) ?? 3) : 3;
+
+              final success = await ApiService.createSubscription({
+                'user_id': userId,
+                'package_id': packageId,
+                'amount': amount,
+                'slip_image_url': slipUrl,
+                'payment_method': 'bank_transfer',
+              });
+
+              setDialogState(() => isSubmitting = false);
+
+              if (success) {
+                Navigator.pop(ctx);
+                _loadBackendData();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('ສົ່ງຂໍ້ມູນການຊຳລະເງິນສຳເລັດ! ກະລຸນາລໍຖ້າແອດມິນກວດສອບ ແລະ ອະນຸມັດ'),
+                    backgroundColor: Color(0xFF10B981),
+                  ),
+                );
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('เกิดข้อผิดพลาดในการบันทึกข้อมูลการชำระเงิน'),
+                    backgroundColor: Colors.redAccent,
+                  ),
+                );
+              }
+            }
+
+            return AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              title: Row(
                 children: const [
-                  Icon(Icons.verified_user_rounded, color: Color(0xFF10B981), size: 18),
-                  SizedBox(width: 6),
-                  Text('ກວດສອບ KYC ອະນຸມັດແລ້ວ', style: TextStyle(fontSize: 12, color: Color(0xFF065F46), fontWeight: FontWeight.bold)),
+                  Icon(Icons.account_balance_wallet_rounded, color: AppColors.primary, size: 28),
+                  SizedBox(width: 10),
+                  Text('ຊຳລະເງິນສະໝັກສະມາຊິກ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17)),
                 ],
               ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('ຍົກເລີກ', style: TextStyle(color: AppColors.textSecondary)),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('ສະໝັກ $pkgName ($pkgPriceFormatted) ສຳເລັດຮຽບຮ້ອຍແລ້ວ!'),
-                  backgroundColor: const Color(0xFF10B981),
+              content: SingleChildScrollView(
+                child: Container(
+                  constraints: const BoxConstraints(maxWidth: 450),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Package info box
+                      Container(
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFEFF6FF),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFFBFDBFE)),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              pkgName,
+                              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF1E40AF)),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'ລາຄາ: $pkgPriceFormatted / $durationDays ວັນ',
+                              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: AppColors.primary),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Bank Details Section
+                      const Text(
+                        '1. ໂອນເງິນເຂົ້າบัญชีธนาคาร (BCEL One)',
+                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                      ),
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF8FAFC),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFFE2E8F0)),
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: const [
+                                  Text('🏛️ ธนาคารการค้าต่างประเทศลาว (BCEL)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                                  SizedBox(height: 6),
+                                  SelectableText('เลขบัญชี: 160-12-00-01234567-001', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.primary)),
+                                  SizedBox(height: 4),
+                                  Text('ชื่อบัญชี: E-Book Application Co., Ltd.', style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+                                  SizedBox(height: 6),
+                                  Text('สแกน QR Code ผ่าน BCEL One', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFFD97706))),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(color: const Color(0xFFCBD5E1)),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.04),
+                                    blurRadius: 6,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: SvgPicture.asset(
+                                'assets/QRcodeDemo.svg',
+                                width: 95,
+                                height: 95,
+                                fit: BoxFit.contain,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Upload Slip Section
+                      const Text(
+                        '2. ແນບຫຼັກຖານການໂອນເງິນ (Upload Payment Slip)',
+                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                      ),
+                      const SizedBox(height: 8),
+
+                      InkWell(
+                        onTap: isUploading ? null : pickAndUploadSlip,
+                        borderRadius: BorderRadius.circular(12),
+                        child: Container(
+                          height: 130,
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF8FAFC),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: slipUrl != null ? const Color(0xFF10B981) : const Color(0xFFCBD5E1),
+                              width: slipUrl != null ? 2 : 1,
+                            ),
+                          ),
+                          child: isUploading
+                              ? Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: const [
+                                    CircularProgressIndicator(color: AppColors.primary),
+                                    SizedBox(height: 8),
+                                    Text('ກຳລັງອັບໂຫຼດສະລິບ...', style: TextStyle(fontSize: 12, color: AppColors.primary)),
+                                  ],
+                                )
+                              : (slipBytes != null || (slipUrl != null && slipUrl!.isNotEmpty))
+                                  ? SizedBox.expand(
+                                      child: Stack(
+                                        fit: StackFit.expand,
+                                        children: [
+                                          ClipRRect(
+                                            borderRadius: BorderRadius.circular(10),
+                                            child: ImageHelper.buildImage(
+                                              slipUrl,
+                                              bytes: slipBytes,
+                                              fit: BoxFit.cover,
+                                              width: double.infinity,
+                                              height: 130,
+                                            ),
+                                          ),
+                                          Positioned(
+                                            right: 8,
+                                            top: 8,
+                                            child: GestureDetector(
+                                              onTap: () => ImageHelper.showPreviewModal(
+                                                context,
+                                                path: slipUrl,
+                                                bytes: slipBytes,
+                                                title: 'ຮູບສະລິບການໂອນເງິນ',
+                                              ),
+                                              child: Container(
+                                                width: 28,
+                                                height: 28,
+                                                decoration: const BoxDecoration(
+                                                  color: Colors.black54,
+                                                  shape: BoxShape.circle,
+                                                ),
+                                                child: const Icon(Icons.zoom_in_rounded, size: 16, color: Colors.white),
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    )
+                                  : Column(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: const [
+                                        Icon(Icons.add_photo_alternate_outlined, size: 36, color: AppColors.primary),
+                                        SizedBox(height: 6),
+                                        Text('ຄລິກເພື່ອເລືອກຮູບສະລິບການໂອນເງິນ', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.primary)),
+                                      ],
+                                    ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              );
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-            ),
-            child: const Text('ຢືນຢັນຊຳລະເງິນ'),
-          ),
-        ],
-      ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: isSubmitting ? null : () => Navigator.pop(ctx),
+                  child: const Text('ຍົກເລີກ', style: TextStyle(color: AppColors.textSecondary)),
+                ),
+                ElevatedButton.icon(
+                  onPressed: isSubmitting || isUploading ? null : submitPayment,
+                  icon: isSubmitting
+                      ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                      : const Icon(Icons.send_rounded, size: 18, color: Colors.white),
+                  label: Text(isSubmitting ? 'ກຳລັງສົ່ງข้อมูล...' : 'ຢືນຢັນການຊຳລະເງິນ'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
   }
 
@@ -178,6 +440,8 @@ class _MembershipPackageScreenState extends State<MembershipPackageScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final subStatus = _liveSubscription?['payment_status'] ?? 'none';
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
@@ -190,24 +454,379 @@ class _MembershipPackageScreenState extends State<MembershipPackageScreen> {
           child: Container(
             constraints: const BoxConstraints(maxWidth: 850),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildHeaderBanner(),
                 const SizedBox(height: 24),
 
-                if (_isLoadingPackages)
+                if (_isLoading) ...[
                   const Padding(
-                    padding: EdgeInsets.all(40.0),
-                    child: CircularProgressIndicator(color: AppColors.primary),
-                  )
-                else
+                    padding: EdgeInsets.all(60.0),
+                    child: Center(child: CircularProgressIndicator(color: AppColors.primary)),
+                  ),
+                ] else if (subStatus == 'active') ...[
+                  _buildActiveSubscriptionCard(),
+                ] else if (subStatus == 'pending') ...[
+                  _buildPendingSubscriptionCard(),
+                ] else if (subStatus == 'rejected' && !_isResubmitMode) ...[
+                  _buildRejectedSubscriptionCard(),
+                ] else ...[
+                  if (_liveKycStatus != KycStatus.approved) _buildKycWarningBanner(),
+                  const SizedBox(height: 16),
                   _buildPackageCardsGrid(),
-                
-                const SizedBox(height: 32),
-                _buildFaqSection(),
+                  const SizedBox(height: 32),
+                  _buildFaqSection(),
+                ],
               ],
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildKycWarningBanner() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFFBEB),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFFDE68A)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.warning_amber_rounded, color: Color(0xFFD97706), size: 28),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: const [
+                Text(
+                  'ກະລຸນາຢືນຢັນຕົວຕົນ (KYC) ກ່ອນສະໝັກ',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF92400E)),
+                ),
+                SizedBox(height: 2),
+                Text(
+                  'ບັນຊີຂອງທ່ານຕ້ອງได้รับการອະນຸມັດ KYC จากแอดมินก่อนจึงจะสามารถทำรายการชำระเงินได้',
+                  style: TextStyle(fontSize: 12, color: Color(0xFFB45309)),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          ElevatedButton(
+            onPressed: _showKycRequiredDialog,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFD97706),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            child: const Text('ยื่น KYC', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // --- Active Subscription View ---
+  Widget _buildActiveSubscriptionCard() {
+    final pkgName = _liveSubscription?['package_name'] ?? 'Premiere Member';
+    final price = _formatKipPrice(_liveSubscription?['amount'] ?? _liveSubscription?['price']);
+    final startDateStr = _liveSubscription?['start_date'] != null
+        ? DateTime.tryParse(_liveSubscription!['start_date'].toString())?.toLocal().toString().split(' ')[0] ?? ''
+        : '';
+    final endDateStr = _liveSubscription?['end_date'] != null
+        ? DateTime.tryParse(_liveSubscription!['end_date'].toString())?.toLocal().toString().split(' ')[0] ?? ''
+        : '';
+
+    return Container(
+      padding: const EdgeInsets.all(28),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFF10B981), width: 2),
+        boxShadow: [
+          BoxShadow(color: const Color(0xFF10B981).withOpacity(0.12), blurRadius: 16, offset: const Offset(0, 4)),
+        ],
+      ),
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(18),
+            decoration: const BoxDecoration(
+              color: Color(0xFFECFDF5),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.stars_rounded, size: 54, color: Color(0xFF10B981)),
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'ທ່ານເປັນສະມາຊິກ Premiere Member ແລ້ວ!',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'ແພັກເກັດປັດຈຸບັນ: $pkgName ($price)',
+            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.primary),
+          ),
+          const SizedBox(height: 16),
+          if (startDateStr.isNotEmpty || endDateStr.isNotEmpty)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.calendar_today_rounded, size: 16, color: AppColors.primary),
+                  const SizedBox(width: 8),
+                  Text('ระยะเวลาใช้งาน: $startDateStr ถึง $endDateStr', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+                ],
+              ),
+            ),
+          const SizedBox(height: 24),
+          SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: ElevatedButton.icon(
+              onPressed: () => Navigator.pop(context),
+              icon: const Icon(Icons.menu_book_rounded, color: Colors.white),
+              label: const Text('เริ่มอ่าน e-Book PDF ได้ทันที', style: TextStyle(fontWeight: FontWeight.bold)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // --- Pending Subscription View ---
+  Widget _buildPendingSubscriptionCard() {
+    final pkgName = _liveSubscription?['package_name'] ?? 'Premiere Package';
+    final amountFormatted = _formatKipPrice(_liveSubscription?['amount']);
+    final slipUrl = _liveSubscription?['slip_image_url'] ?? '';
+
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFFDE68A), width: 2),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 4)),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Center(
+            child: Container(
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFFBEB),
+                shape: BoxShape.circle,
+                border: Border.all(color: const Color(0xFFFDE68A), width: 2),
+              ),
+              child: const Icon(Icons.hourglass_top_rounded, size: 48, color: Color(0xFFF59E0B)),
+            ),
+          ),
+          const SizedBox(height: 16),
+          const Center(
+            child: Text(
+              'ລໍຖ້າແອດມິນກວດສອບການຊຳລະເງິນ (Pending)',
+              style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+              textAlign: TextAlign.center,
+            ),
+          ),
+          const SizedBox(height: 6),
+          const Center(
+            child: Text(
+              'ແອດມິນກຳລັງກວດສອບສະລິບການໂອນເງິນຂອງທ່ານ ໂດຍປົກກະຕິໃຊ້ເວລາ 1-24 ຊົ່ວໂມງ\nທ່ານບໍ່ສາມາດສົ່ງຄຳຂໍໃໝ່ໄດ້ໃນລະຫວ່າງນີ້',
+              style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+              textAlign: TextAlign.center,
+            ),
+          ),
+          const SizedBox(height: 24),
+          const Divider(color: Color(0xFFE2E8F0)),
+          const SizedBox(height: 16),
+
+          const Text('ຂໍ້ມູນການຊຳລະເງິນທີ່ສົ່ງໄປ:', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+          const SizedBox(height: 10),
+          _buildInfoTile(Icons.workspace_premium_rounded, 'ແພັກເກັດ', pkgName),
+          const SizedBox(height: 8),
+          _buildInfoTile(Icons.payments_rounded, 'จำนวนเงิน', amountFormatted),
+          const SizedBox(height: 14),
+
+          if (slipUrl.isNotEmpty) ...[
+            const Text('ສະລິບການໂອນເງິນ:', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+            const SizedBox(height: 8),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: InkWell(
+                onTap: () => ImageHelper.showPreviewModal(context, path: slipUrl, title: 'ສະລິບການໂອນເງິນ'),
+                child: Container(
+                  height: 150,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFCBD5E1)),
+                  ),
+                  child: ImageHelper.buildImage(slipUrl, fit: BoxFit.cover, width: double.infinity, height: 150),
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+          ],
+
+          SizedBox(
+            width: double.infinity,
+            height: 46,
+            child: OutlinedButton.icon(
+              onPressed: () => Navigator.pop(context),
+              icon: const Icon(Icons.arrow_back_rounded),
+              label: const Text('ກັບສູ່ໜ້າຫຼັກ', style: TextStyle(fontWeight: FontWeight.bold)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // --- Rejected Subscription View ---
+  Widget _buildRejectedSubscriptionCard() {
+    final pkgName = _liveSubscription?['package_name'] ?? 'Premiere Package';
+    final amountFormatted = _formatKipPrice(_liveSubscription?['amount']);
+    final rejectReason = _liveSubscription?['rejected_reason'] ?? 'ສະລິບການໂອນເງິນບໍ່ຊັດເຈນ ຫຼື ຈຳນວນເງິນບໍ່ກົງກັນ';
+    final slipUrl = _liveSubscription?['slip_image_url'] ?? '';
+
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFFCA5A5), width: 2),
+        boxShadow: [
+          BoxShadow(color: Colors.red.withOpacity(0.06), blurRadius: 12, offset: const Offset(0, 4)),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Center(
+            child: Container(
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFEF2F2),
+                shape: BoxShape.circle,
+                border: Border.all(color: const Color(0xFFFCA5A5), width: 2),
+              ),
+              child: const Icon(Icons.gpp_bad_rounded, size: 48, color: Color(0xFFDC2626)),
+            ),
+          ),
+          const SizedBox(height: 16),
+          const Center(
+            child: Text(
+              'ການຊຳລະເງິນຖືກປະຕິເສດ (Rejected)',
+              style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: Color(0xFF991B1B)),
+              textAlign: TextAlign.center,
+            ),
+          ),
+          const SizedBox(height: 18),
+
+          // Reason card
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFEF2F2),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFFCA5A5)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: const [
+                    Icon(Icons.info_outline_rounded, color: Color(0xFFDC2626), size: 20),
+                    SizedBox(width: 8),
+                    Text('ເຫດຜົນທີ່ຖືກປະຕິເສດ:', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF991B1B))),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Text(rejectReason, style: const TextStyle(fontSize: 13, color: Color(0xFF7F1D1D), fontWeight: FontWeight.w600)),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          const Text('ຂໍ້ມູນທີ່ສົ່ງກ່ອນໜ້ານີ້:', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+          const SizedBox(height: 8),
+          _buildInfoTile(Icons.workspace_premium_rounded, 'ແພັກເກັດ', pkgName),
+          const SizedBox(height: 6),
+          _buildInfoTile(Icons.payments_rounded, '<ctrl42>ຈຳນວນເງິນ', amountFormatted),
+          const SizedBox(height: 12),
+
+          if (slipUrl.isNotEmpty) ...[
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Container(
+                height: 120,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFCBD5E1)),
+                ),
+                child: ImageHelper.buildImage(slipUrl, fit: BoxFit.cover, width: double.infinity, height: 120),
+              ),
+            ),
+            const SizedBox(height: 24),
+          ],
+
+          SizedBox(
+            width: double.infinity,
+            height: 50,
+            child: ElevatedButton.icon(
+              onPressed: () {
+                setState(() => _isResubmitMode = true);
+              },
+              icon: const Icon(Icons.refresh_rounded, color: Colors.white),
+              label: const Text('ເລືອກແພັກເກັດ ແລະ ຊຳລະເງິນໃໝ່ (Re-submit)', style: TextStyle(fontWeight: FontWeight.bold)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFDC2626),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoTile(IconData icon, String label, String value) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 18, color: AppColors.primary),
+          const SizedBox(width: 10),
+          Text('$label: ', style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+          Expanded(
+            child: Text(value, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+          ),
+        ],
       ),
     );
   }
@@ -395,7 +1014,7 @@ class _MembershipPackageScreenState extends State<MembershipPackageScreen> {
                   child: ElevatedButton(
                     onPressed: () {
                       setState(() => _selectedPackageIndex = index);
-                      _onSubscribe(index);
+                      _onSubscribeClicked(index);
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: primaryColor,

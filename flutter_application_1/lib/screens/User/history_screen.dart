@@ -3,8 +3,10 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import '../../theme/app_theme.dart';
 import '../../models/history_model.dart';
+import '../../models/book_model.dart';
 import '../../services/api_service.dart';
-import 'pdf_viewer_screen.dart';
+import '../../utils/image_helper.dart';
+import 'book_detail_screen.dart';
 
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
@@ -35,19 +37,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
   }
 
   Widget _buildImage(String path, {double? width, double? height}) {
-    if (path.startsWith('http://') || path.startsWith('https://')) {
-      return Image.network(path, width: width, height: height, fit: BoxFit.cover, errorBuilder: (_, __, ___) => _buildPlaceholder(width, height));
-    }
-    if (path.startsWith('assets/')) {
-      return Image.asset(path, width: width, height: height, fit: BoxFit.cover, errorBuilder: (_, __, ___) => _buildPlaceholder(width, height));
-    }
-    if (!kIsWeb) {
-      final file = File(path);
-      if (file.existsSync()) {
-        return Image.file(file, width: width, height: height, fit: BoxFit.cover);
-      }
-    }
-    return _buildPlaceholder(width, height);
+    return ImageHelper.buildImage(path, width: width, height: height, fit: BoxFit.cover);
   }
 
   Widget _buildPlaceholder(double? width, double? height) {
@@ -119,16 +109,22 @@ class _HistoryScreenState extends State<HistoryScreen> {
   Widget _buildHistoryCard(HistoryBookItem item) {
     return InkWell(
       onTap: () {
+        final bookModel = BookModel(
+          id: item.bookId?.toString() ?? item.id,
+          title: item.title,
+          author: item.author,
+          rating: 4.8,
+          ratingText: '4.8',
+          tags: item.category.isNotEmpty ? [item.category] : ['ທັງໝົດ'],
+          imagePath: item.imagePath,
+          pdfUrl: item.pdfUrl ?? 'assets/sample_book.pdf',
+          description: item.description,
+        );
+
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => PdfViewerScreen(
-              bookId: item.bookId?.toString() ?? item.id,
-              pdfUrl: item.pdfUrl ?? 'assets/sample_book.pdf',
-              bookTitle: item.title,
-              author: item.author,
-              description: item.description,
-            ),
+            builder: (_) => BookDetailScreen(book: bookModel),
           ),
         ).then((_) => _fetchHistory());
       },

@@ -5,6 +5,7 @@ import '../../theme/app_theme.dart';
 import '../../models/kyc_model.dart';
 import '../../services/api_service.dart';
 import '../../services/file_picker_helper.dart';
+import '../../utils/image_helper.dart';
 import 'membership_package_screen.dart';
 
 class KycSubmissionScreen extends StatefulWidget {
@@ -42,6 +43,8 @@ class _KycSubmissionScreenState extends State<KycSubmissionScreen> {
   String? _rejectReason;
   bool _isSubmitting = false;
 
+  bool _isLoadingLiveKyc = true;
+
   @override
   void initState() {
     super.initState();
@@ -56,6 +59,36 @@ class _KycSubmissionScreenState extends State<KycSubmissionScreen> {
     _idCardImagePath = widget.currentKyc.idCardImagePath.isNotEmpty ? widget.currentKyc.idCardImagePath : null;
     _selfieImagePath = widget.currentKyc.selfieImagePath.isNotEmpty ? widget.currentKyc.selfieImagePath : null;
     _rejectReason = widget.currentKyc.rejectReason;
+
+    _fetchLiveKycFromBackend();
+  }
+
+  Future<void> _fetchLiveKycFromBackend() async {
+    final user = ApiService.currentUser ?? {};
+    final rawUserId = user['user_id'] ?? user['id'];
+    final int userId = rawUserId != null ? (int.tryParse(rawUserId.toString()) ?? 3) : 3;
+
+    final liveKyc = await ApiService.getUserKycStatus(userId);
+    if (mounted && liveKyc != null) {
+      setState(() {
+        _currentStatus = liveKyc.status;
+        if (liveKyc.fullName.isNotEmpty) _fullNameController.text = liveKyc.fullName;
+        if (liveKyc.idCardNumber.isNotEmpty) _idCardController.text = liveKyc.idCardNumber;
+        if (liveKyc.schoolName != null && liveKyc.schoolName!.isNotEmpty) _schoolNameController.text = liveKyc.schoolName!;
+        if (liveKyc.documentType.isNotEmpty) _selectedDocumentType = liveKyc.documentType;
+        _isStudent = liveKyc.isStudent || _selectedDocumentType == 'student_card';
+        if (liveKyc.idCardImagePath.isNotEmpty) _idCardImagePath = liveKyc.idCardImagePath;
+        if (liveKyc.selfieImagePath.isNotEmpty) _selfieImagePath = liveKyc.selfieImagePath;
+        _rejectReason = liveKyc.rejectReason;
+        _isLoadingLiveKyc = false;
+      });
+
+      if (widget.onKycUpdated != null) {
+        widget.onKycUpdated!(liveKyc);
+      }
+    } else {
+      if (mounted) setState(() => _isLoadingLiveKyc = false);
+    }
   }
 
   @override
@@ -77,18 +110,22 @@ class _KycSubmissionScreenState extends State<KycSubmissionScreen> {
         final result = await ApiService.uploadFile(
           bytes: picked.bytes,
           filename: picked.name,
-          fieldName: 'document_image',
+          fieldName: 'kyc_doc',
         );
 
         if (mounted) {
-          setState(() {
-            _idCardBytes = bytes;
-            if (result['success'] == true && result['path'] != null) {
-              _idCardImagePath = result['path'];
-            } else {
-              _idCardImagePath = 'uploads/kyc_doc_${DateTime.now().millisecondsSinceEpoch}.jpg';
-            }
-          });
+          if (result['success'] == true && result['path'] != null) {
+            setState(() {
+              _idCardBytes = bytes;
+              _idCardImagePath = result['url'] ?? result['path'];
+            });
+          } else {
+            setState(() => _idCardBytes = bytes);
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('ອັບໂຫຼດລົ້ມເຫຼວ: ${result['message'] ?? 'Unknown error'}'), backgroundColor: Colors.redAccent),
+            );
+            return;
+          }
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('ອັບໂຫຼດຮູບເອກະສານສຳເລັດ!'),
@@ -119,18 +156,22 @@ class _KycSubmissionScreenState extends State<KycSubmissionScreen> {
         final result = await ApiService.uploadFile(
           bytes: picked.bytes,
           filename: picked.name,
-          fieldName: 'selfie_image',
+          fieldName: 'selfie',
         );
 
         if (mounted) {
-          setState(() {
-            _selfieBytes = bytes;
-            if (result['success'] == true && result['path'] != null) {
-              _selfieImagePath = result['path'];
-            } else {
-              _selfieImagePath = 'uploads/kyc_selfie_${DateTime.now().millisecondsSinceEpoch}.jpg';
-            }
-          });
+          if (result['success'] == true && result['path'] != null) {
+            setState(() {
+              _selfieBytes = bytes;
+              _selfieImagePath = result['url'] ?? result['path'];
+            });
+          } else {
+            setState(() => _selfieBytes = bytes);
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('ອັບໂຫຼດລົ້ມເຫຼວ: ${result['message'] ?? 'Unknown error'}'), backgroundColor: Colors.redAccent),
+            );
+            return;
+          }
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('ອັບໂຫຼດຮູບຖ່າຍເຊວຟີສຳເລັດ!'),
@@ -180,6 +221,13 @@ class _KycSubmissionScreenState extends State<KycSubmissionScreen> {
     });
 
     final updatedKyc = widget.currentKyc.copyWith(
+      fullName: _fullNameController.text.trim(),
+      idCardNumber: _idCardController.text.trim(),
+      documentType: _selectedDocumentType,
+      idCardImagePath: _idCardImagePath ?? '',
+      selfieImagePath: _selfieImagePath ?? '',
+      isStudent: _isStudent,
+      schoolName: _isStudent ? _schoolNameController.text.trim() : null,
       status: KycStatus.pending,
       rejectReason: null,
       reviewedAt: null,
@@ -224,31 +272,23 @@ class _KycSubmissionScreenState extends State<KycSubmissionScreen> {
           Text('ກຳລັງອັບໂຫຼດຮູບພາບ...', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.primary)),
         ],
       );
-    } else if (imageBytes != null) {
-      // Live thumbnail of newly picked file
+    } else if (imageBytes != null || (imagePath != null && imagePath.isNotEmpty)) {
       contentWidget = ClipRRect(
         borderRadius: BorderRadius.circular(12),
-        child: Image.memory(imageBytes, fit: BoxFit.cover, width: double.infinity, height: double.infinity),
+        child: ImageHelper.buildImage(
+          imagePath,
+          bytes: imageBytes,
+          fit: BoxFit.cover,
+          width: double.infinity,
+          height: double.infinity,
+          placeholder: _buildImagePlaceholder(hint),
+        ),
       );
-    } else if (imagePath != null && imagePath.isNotEmpty) {
-      if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
-        contentWidget = ClipRRect(
-          borderRadius: BorderRadius.circular(12),
-          child: Image.network(imagePath, fit: BoxFit.cover, width: double.infinity, height: double.infinity,
-              errorBuilder: (_, __, ___) => _buildImagePlaceholder(hint)),
-        );
-      } else if (imagePath.startsWith('assets/')) {
-        contentWidget = ClipRRect(
-          borderRadius: BorderRadius.circular(12),
-          child: Image.asset(imagePath, fit: BoxFit.cover, width: double.infinity, height: double.infinity,
-              errorBuilder: (_, __, ___) => _buildImagePlaceholder(hint)),
-        );
-      } else {
-        contentWidget = _buildUploadedSuccessBadge(title);
-      }
     } else {
       contentWidget = _buildImagePlaceholder(hint);
     }
+
+    final bool hasImage = imageBytes != null || (imagePath != null && imagePath.isNotEmpty);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -256,7 +296,11 @@ class _KycSubmissionScreenState extends State<KycSubmissionScreen> {
         Text(title, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
         const SizedBox(height: 6),
         InkWell(
-          onTap: isUploading ? null : onPick,
+          onTap: isUploading
+              ? null
+              : (hasImage
+                  ? () => ImageHelper.showPreviewModal(context, path: imagePath, bytes: imageBytes, title: title)
+                  : onPick),
           borderRadius: BorderRadius.circular(14),
           child: Container(
             height: 150,
@@ -265,24 +309,40 @@ class _KycSubmissionScreenState extends State<KycSubmissionScreen> {
               color: const Color(0xFFF8FAFC),
               borderRadius: BorderRadius.circular(14),
               border: Border.all(
-                color: (imageBytes != null || imagePath != null) ? const Color(0xFF10B981) : const Color(0xFFCBD5E1),
-                width: (imageBytes != null || imagePath != null) ? 2 : 1,
+                color: hasImage ? const Color(0xFF10B981) : const Color(0xFFCBD5E1),
+                width: hasImage ? 2 : 1,
               ),
             ),
             child: Stack(
               children: [
                 Positioned.fill(child: contentWidget),
-                if (imageBytes != null || imagePath != null)
+                if (hasImage)
                   Positioned(
                     right: 8,
                     top: 8,
-                    child: CircleAvatar(
-                      radius: 16,
-                      backgroundColor: Colors.black54,
-                      child: IconButton(
-                        icon: const Icon(Icons.edit_rounded, size: 16, color: Colors.white),
-                        onPressed: onPick,
-                      ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        CircleAvatar(
+                          radius: 16,
+                          backgroundColor: Colors.black54,
+                          child: IconButton(
+                            icon: const Icon(Icons.zoom_in_rounded, size: 16, color: Colors.white),
+                            onPressed: () => ImageHelper.showPreviewModal(context, path: imagePath, bytes: imageBytes, title: title),
+                            tooltip: 'ເບິ່ງຮູບຂະຫຍາຍ',
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        CircleAvatar(
+                          radius: 16,
+                          backgroundColor: Colors.black54,
+                          child: IconButton(
+                            icon: const Icon(Icons.edit_rounded, size: 16, color: Colors.white),
+                            onPressed: onPick,
+                            tooltip: 'ປ່ຽນຮູບພາບ',
+                          ),
+                        ),
+                      ],
                     ),
                   ),
               ],
@@ -340,15 +400,25 @@ class _KycSubmissionScreenState extends State<KycSubmissionScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildStatusHeaderBanner(),
-                const SizedBox(height: 20),
-
-                if (_currentStatus == KycStatus.approved) ...[
-                  _buildApprovedCard(),
-                ] else if (_currentStatus == KycStatus.pending) ...[
-                  _buildPendingCard(),
+                // Loading indicator while fetching live KYC status
+                if (_isLoadingLiveKyc) ...[
+                  const SizedBox(height: 60),
+                  const Center(child: CircularProgressIndicator(color: AppColors.primary)),
+                  const SizedBox(height: 16),
+                  const Center(child: Text('ກຳລັງໂຫຼດຂໍ້ມູນສະຖານະ KYC...', style: TextStyle(color: AppColors.textSecondary))),
                 ] else ...[
-                  _buildKycFormCard(),
+                  _buildStatusHeaderBanner(),
+                  const SizedBox(height: 20),
+
+                  if (_currentStatus == KycStatus.approved) ...[
+                    _buildApprovedCard(),
+                  ] else if (_currentStatus == KycStatus.pending) ...[
+                    _buildPendingCard(),
+                  ] else if (_currentStatus == KycStatus.rejected) ...[
+                    _buildRejectedCard(),
+                  ] else ...[
+                    _buildKycFormCard(),
+                  ],
                 ],
               ],
             ),
@@ -501,31 +571,326 @@ class _KycSubmissionScreenState extends State<KycSubmissionScreen> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 4)),
+        ],
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const CircularProgressIndicator(color: Color(0xFFF59E0B)),
+          // Animated pending icon
+          Center(
+            child: Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFFBEB),
+                shape: BoxShape.circle,
+                border: Border.all(color: const Color(0xFFFDE68A), width: 2),
+              ),
+              child: const Icon(Icons.hourglass_top_rounded, size: 48, color: Color(0xFFF59E0B)),
+            ),
+          ),
+          const SizedBox(height: 18),
+          const Center(
+            child: Text(
+              'ເອກະສານຂອງທ່ານຢູ່ລະຫວ່າງການກວດສອບ',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+              textAlign: TextAlign.center,
+            ),
+          ),
+          const SizedBox(height: 6),
+          const Center(
+            child: Text(
+              'ແອດມິນກຳລັງພິຈາລະນາເອກະສານຂອງທ່ານ ໂດຍປົກກະຕິໃຊ້ເວລາ 1-24 ຊົ່ວໂມງ\nທ່ານບໍ່ສາມາດສົ່ງຄຳຂໍໃໝ່ໄດ້ໃນລະຫວ່າງນີ້',
+              style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+              textAlign: TextAlign.center,
+            ),
+          ),
+          const SizedBox(height: 24),
+          // Divider with label
+          Row(
+            children: [
+              const Expanded(child: Divider(color: Color(0xFFE2E8F0))),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: Text('ຂໍ້ມູນທີ່ສົ່ງໄປ', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey.shade500)),
+              ),
+              const Expanded(child: Divider(color: Color(0xFFE2E8F0))),
+            ],
+          ),
           const SizedBox(height: 16),
-          const Text(
-            'ເອກະສານຂອງທ່ານຢູ່ລະຫວ່າງການກວດສອບໂດຍແອດມິນ',
-            style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            'ເມື່ອແອດມິນດຳເນີນການອະນຸມັດແລ້ວ ທ່ານຈະໄດ້ຮັບແຈ້ງເຕືອນ ແລະ ສາມາດກົດສະໝັກແພັກເກັດສະມາຊິກໄດ້ທັນທີ',
-            style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 20),
-          OutlinedButton.icon(
-            onPressed: () => Navigator.pop(context),
-            icon: const Icon(Icons.arrow_back_rounded),
-            label: const Text('ກັບສູ່ໜ້າຫຼັກ'),
+          // Previously submitted data
+          _buildSubmittedDataSummary(),
+          const SizedBox(height: 24),
+          // Back button
+          SizedBox(
+            width: double.infinity,
+            height: 46,
+            child: OutlinedButton.icon(
+              onPressed: () => Navigator.pop(context),
+              icon: const Icon(Icons.arrow_back_rounded),
+              label: const Text('ກັບສູ່ໜ້າຫຼັກ', style: TextStyle(fontWeight: FontWeight.bold)),
+              style: OutlinedButton.styleFrom(
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
           ),
         ],
       ),
     );
   }
+
+  // --- Dedicated Rejected Card with Previous Data & Re-submit ---
+  bool _isResubmitMode = false;
+
+  Widget _buildRejectedCard() {
+    if (_isResubmitMode) {
+      return _buildKycFormCard();
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFFFCA5A5)),
+        boxShadow: [
+          BoxShadow(color: Colors.red.withOpacity(0.06), blurRadius: 12, offset: const Offset(0, 4)),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Rejection header icon
+          Center(
+            child: Container(
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFEF2F2),
+                shape: BoxShape.circle,
+                border: Border.all(color: const Color(0xFFFCA5A5), width: 2),
+              ),
+              child: const Icon(Icons.gpp_bad_rounded, size: 48, color: Color(0xFFDC2626)),
+            ),
+          ),
+          const SizedBox(height: 16),
+          const Center(
+            child: Text(
+              'ການຢືນຢັນຕົວຕົນຖືກປະຕິເສດ',
+              style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: Color(0xFF991B1B)),
+              textAlign: TextAlign.center,
+            ),
+          ),
+          const SizedBox(height: 18),
+
+          // Rejection reason card (prominent)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFFFEF2F2), Color(0xFFFEE2E2)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: const Color(0xFFFCA5A5)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: const [
+                    Icon(Icons.info_outline_rounded, color: Color(0xFFDC2626), size: 20),
+                    SizedBox(width: 8),
+                    Text(
+                      'ເຫດຜົນທີ່ຖືກປະຕິເສດ',
+                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF991B1B)),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: const Color(0xFFFCA5A5).withOpacity(0.5)),
+                  ),
+                  child: Text(
+                    _rejectReason ?? 'ເອກະສານບໍ່ຊັດເຈນ ຫຼື ຂໍ້ມູນບໍ່ກົງກັນ',
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: Color(0xFF7F1D1D),
+                      fontWeight: FontWeight.w600,
+                      height: 1.5,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          // Divider with label
+          Row(
+            children: [
+              const Expanded(child: Divider(color: Color(0xFFE2E8F0))),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: Text('ຂໍ້ມູນທີ່ສົ່ງກ່ອນໜ້ານີ້', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey.shade500)),
+              ),
+              const Expanded(child: Divider(color: Color(0xFFE2E8F0))),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          // Previously submitted data
+          _buildSubmittedDataSummary(),
+          const SizedBox(height: 28),
+
+          // Re-submit button
+          SizedBox(
+            width: double.infinity,
+            height: 52,
+            child: ElevatedButton.icon(
+              onPressed: () {
+                setState(() => _isResubmitMode = true);
+              },
+              icon: const Icon(Icons.refresh_rounded, color: Colors.white, size: 22),
+              label: const Text(
+                'ແກ້ໄຂ ແລະ ສົ່ງຂໍ້ມູນໃໝ່ (Re-submit)',
+                style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFDC2626),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                elevation: 2,
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            height: 44,
+            child: OutlinedButton.icon(
+              onPressed: () => Navigator.pop(context),
+              icon: const Icon(Icons.arrow_back_rounded),
+              label: const Text('ກັບສູ່ໜ້າຫຼັກ', style: TextStyle(fontWeight: FontWeight.bold)),
+              style: OutlinedButton.styleFrom(
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // --- Reusable summary of previously submitted data ---
+  Widget _buildSubmittedDataSummary() {
+    final docTypeLabel = _selectedDocumentType == 'passport'
+        ? '📕 ໜັງສືຜ່ານແດນ (Passport)'
+        : (_selectedDocumentType == 'student_card'
+            ? '🎓 ບັດນັກຮຽນ (Student Card)'
+            : '🪪 ບັດປະຈຳຕົວ (National ID)');
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Info rows
+        _buildInfoRow(Icons.assignment_ind_outlined, 'ປະເພດເອກະສານ', docTypeLabel),
+        const SizedBox(height: 10),
+        _buildInfoRow(Icons.badge_outlined, 'ຊື່ ແລະ ນາມສະກຸນ', _fullNameController.text.isNotEmpty ? _fullNameController.text : 'ບໍ່ລະບຸ'),
+        const SizedBox(height: 10),
+        _buildInfoRow(Icons.credit_card_rounded, 'ເລກເອກະສານ', _idCardController.text.isNotEmpty ? _idCardController.text : 'ບໍ່ລະບຸ'),
+        if (_isStudent) ...[
+          const SizedBox(height: 10),
+          _buildInfoRow(Icons.school_rounded, 'ໂຮງຮຽນ / ມະຫາວິທະຍາໄລ', _schoolNameController.text.isNotEmpty ? _schoolNameController.text : 'ບໍ່ລະບຸ'),
+        ],
+        const SizedBox(height: 18),
+
+        // Document image preview
+        const Text('ຮູບຖ່າຍເອກະສານ:', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+        const SizedBox(height: 8),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: InkWell(
+            onTap: (_idCardImagePath != null && _idCardImagePath!.isNotEmpty)
+                ? () => ImageHelper.showPreviewModal(context, path: _idCardImagePath, bytes: _idCardBytes, title: 'ຮູບເອກະສານ')
+                : null,
+            child: Container(
+              height: 140,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFFCBD5E1)),
+              ),
+              child: (_idCardBytes != null || (_idCardImagePath != null && _idCardImagePath!.isNotEmpty))
+                  ? ImageHelper.buildImage(_idCardImagePath, bytes: _idCardBytes, fit: BoxFit.cover, width: double.infinity, height: 140)
+                  : const Center(child: Text('ບໍ່ມີຮູບ', style: TextStyle(color: AppColors.textSecondary))),
+            ),
+          ),
+        ),
+        const SizedBox(height: 14),
+
+        // Selfie image preview
+        const Text('ຮູບຖ່າຍເຊວຟີ:', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+        const SizedBox(height: 8),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: InkWell(
+            onTap: (_selfieImagePath != null && _selfieImagePath!.isNotEmpty)
+                ? () => ImageHelper.showPreviewModal(context, path: _selfieImagePath, bytes: _selfieBytes, title: 'ຮູບເຊວຟີ')
+                : null,
+            child: Container(
+              height: 140,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFFCBD5E1)),
+              ),
+              child: (_selfieBytes != null || (_selfieImagePath != null && _selfieImagePath!.isNotEmpty))
+                  ? ImageHelper.buildImage(_selfieImagePath, bytes: _selfieBytes, fit: BoxFit.cover, width: double.infinity, height: 140)
+                  : const Center(child: Text('ບໍ່ມີຮູບ', style: TextStyle(color: AppColors.textSecondary))),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildInfoRow(IconData icon, String label, String value) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 20, color: AppColors.primary),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label, style: TextStyle(fontSize: 11, color: Colors.grey.shade500, fontWeight: FontWeight.w500)),
+                const SizedBox(height: 2),
+                Text(value, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
 
   Widget _buildKycFormCard() {
     String docNumberLabel;
@@ -566,6 +931,46 @@ class _KycSubmissionScreenState extends State<KycSubmissionScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            if (_currentStatus == KycStatus.rejected) ...[
+              Container(
+                padding: const EdgeInsets.all(16),
+                margin: const EdgeInsets.only(bottom: 20),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFEF2F2),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: const Color(0xFFFCA5A5)),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(Icons.warning_amber_rounded, color: Color(0xFFDC2626), size: 24),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'ເອກະສານຂອງທ່ານຖືກປະຕິເສດ! (Rejected Request)',
+                            style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF991B1B)),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'ເຫດຜົນ: ${_rejectReason ?? "ເອກະສານບໍ່ຊັດເຈນ ຫຼື ຂໍ້ມູນບໍ່ກົງກັນ"}',
+                            style: const TextStyle(fontSize: 13, color: Color(0xFF7F1D1D), fontWeight: FontWeight.w600),
+                          ),
+                          const SizedBox(height: 6),
+                          const Text(
+                            'ກະລຸນາກວດສອບ ແກ້ໄຂຂໍ້ມູນ ຫຼື ແນບຮູບພາບເອກະສານໃໝ່ ແລ້ວກົດປຸ່ມ "ສົ່ງຂໍ້ມູນ Re-submit" ດ້ານລຸ່ມເພື່ອໃຫ້ແອດມິນພິຈາລະນາອີກຄັ້ງ',
+                            style: TextStyle(fontSize: 12, color: Color(0xFF991B1B)),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+
             const Text(
               '1. ເລືອກປະເພດເອກະສານຢືນຢັນຕົວຕົນ (Document Type)',
               style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
@@ -742,7 +1147,11 @@ class _KycSubmissionScreenState extends State<KycSubmissionScreen> {
                     ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
                     : const Icon(Icons.send_rounded, color: Colors.white),
                 label: Text(
-                  _isSubmitting ? 'ກຳລັງສົ່ງຂໍ້ມູນ...' : 'ສົ່ງຂໍ້ມູນຍື່ນເລື່ອງໃຫ້ແອດມິນອະນຸມັດ',
+                  _isSubmitting
+                      ? 'ກຳລັງສົ່ງຂໍ້ມູນ...'
+                      : (_currentStatus == KycStatus.rejected
+                          ? 'ສົ່ງຂໍ້ມູນ Re-submit ໃຫ້ແອດມິນພິຈາລະນາອີກຄັ້ງ'
+                          : 'ສົ່ງຂໍ້ມູນຍື່ນເລື່ອງໃຫ້ແອດມິນອະນຸມັດ'),
                   style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
                 ),
                 style: ElevatedButton.styleFrom(

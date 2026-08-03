@@ -52,7 +52,28 @@ exports.submitKyc = async (req, res) => {
   }
 };
 
-// PUT /api/kyc/:id/status
+// GET /api/kyc/user/:userId
+exports.getUserKyc = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const [rows] = await pool.query(`
+      SELECT k.*, u.first_name, u.last_name, u.email
+      FROM kyc_verifications k
+      JOIN users u ON k.user_id = u.user_id
+      WHERE k.user_id = ?
+      ORDER BY k.created_at DESC
+      LIMIT 1
+    `, [userId]);
+
+    if (rows.length === 0) {
+      return res.json({ success: true, kyc: null, message: 'No KYC submission found' });
+    }
+
+    res.json({ success: true, kyc: rows[0] });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
 exports.updateKycStatus = async (req, res) => {
   try {
     const { id } = req.params;

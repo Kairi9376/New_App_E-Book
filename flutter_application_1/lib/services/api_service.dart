@@ -1,15 +1,63 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/book_model.dart';
 import '../models/history_model.dart';
 import '../models/saved_model.dart';
 import '../models/downloads_model.dart';
+import '../models/kyc_model.dart';
 import 'api_config.dart';
 
 class ApiService {
   // Shared token & session data
   static String? authToken;
   static Map<String, dynamic>? currentUser;
+
+  // Persistent Session Management
+  static Future<void> saveSession(Map<String, dynamic> user, String? token) async {
+    currentUser = user;
+    authToken = token;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('currentUser', jsonEncode(user));
+      if (token != null) {
+        await prefs.setString('authToken', token);
+      } else {
+        await prefs.remove('authToken');
+      }
+    } catch (e) {
+      print('ApiService saveSession error: $e');
+    }
+  }
+
+  static Future<bool> loadSession() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final userStr = prefs.getString('currentUser');
+      final token = prefs.getString('authToken');
+
+      if (userStr != null && userStr.isNotEmpty) {
+        currentUser = jsonDecode(userStr);
+        authToken = token;
+        return true;
+      }
+    } catch (e) {
+      print('ApiService loadSession error: $e');
+    }
+    return false;
+  }
+
+  static Future<void> clearSession() async {
+    currentUser = null;
+    authToken = null;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('currentUser');
+      await prefs.remove('authToken');
+    } catch (e) {
+      print('ApiService clearSession error: $e');
+    }
+  }
 
   // Headers helper
   static Map<String, String> get _headers {
@@ -36,6 +84,7 @@ class ApiService {
       if (response.statusCode == 200 && data['success'] == true) {
         authToken = data['token'];
         currentUser = data['user'];
+        await saveSession(currentUser!, authToken);
         return {'success': true, 'token': authToken, 'user': currentUser};
       } else {
         return {'success': false, 'message': data['message'] ?? 'ເຂົ້າສູ່ລະບົບບໍ່ສຳເລັດ'};
@@ -43,7 +92,11 @@ class ApiService {
     } catch (e) {
       print('ApiService login error: $e');
       // Fallback for mock login if server is offline
-      return _mockLoginFallback(email, password);
+      final res = _mockLoginFallback(email, password);
+      if (res['success'] == true && res['user'] != null) {
+        await saveSession(res['user'], res['token']);
+      }
+      return res;
     }
   }
 
@@ -365,10 +418,28 @@ class ApiService {
           .timeout(const Duration(seconds: 8));
 
       final data = jsonDecode(response.body);
-      return response.statusCode == 201 && data['success'] == true;
+      return (response.statusCode == 200 || response.statusCode == 201) && data['success'] == true;
     } catch (e) {
       print('ApiService submitKyc error: $e');
       return false;
+    }
+  }
+
+  // 11.2 KYC: Get User KYC Status (For User)
+  static Future<KycModel?> getUserKycStatus(int userId) async {
+    try {
+      final url = Uri.parse('${ApiConfig.baseUrl}/kyc/user/$userId');
+      final response = await http.get(url, headers: _headers).timeout(const Duration(seconds: 5));
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['success'] == true && data['kyc'] != null) {
+          return KycModel.fromMap(data['kyc']);
+        }
+      }
+      return null;
+    } catch (e) {
+      print('ApiService getUserKycStatus error: $e');
+      return null;
     }
   }
 
@@ -463,6 +534,46 @@ class ApiService {
     } catch (e) {
       print('ApiService updateSubscriptionStatus error: $e');
       return false;
+    }
+  }
+
+  // 17. Subscriptions: Create subscription request (User)
+  static Future<bool> createSubscription(Map<String, dynamic> subData) async {
+    try {
+      final url = Uri.parse('${ApiConfig.baseUrl}/subscriptions');
+      final response = await http.post(
+        url,
+        headers: _headers,
+        body: jsonEncode(subData),
+      ).timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final data = jsonDecode(response.body);
+        return data['success'] == true;
+      }
+      return false;
+    } catch (e) {
+      print('ApiService createSubscription error: $e');
+      return false;
+    }
+  }
+
+  // 18. Subscriptions: Fetch live user subscription status
+  static Future<Map<String, dynamic>?> getUserSubscriptionStatus(int userId) async {
+    try {
+      final url = Uri.parse('${ApiConfig.baseUrl}/subscriptions/user/$userId');
+      final response = await http.get(url, headers: _headers).timeout(const Duration(seconds: 5));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['success'] == true && data['subscription'] != null) {
+          return Map<String, dynamic>.from(data['subscription']);
+        }
+      }
+      return null;
+    } catch (e) {
+      print('ApiService getUserSubscriptionStatus error: $e');
+      return null;
     }
   }
 

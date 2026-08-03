@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../../theme/app_theme.dart';
 import '../../models/kyc_model.dart';
 import '../../services/api_service.dart';
+import '../../utils/image_helper.dart';
 import '../login_screen.dart';
 import 'kyc_submission_screen.dart';
 import 'membership_package_screen.dart';
@@ -17,6 +18,7 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   Map<String, dynamic> _userProfile = {};
+  KycModel? _userKyc;
   bool _isLoading = true;
 
   @override
@@ -28,28 +30,41 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _fetchProfile() async {
     setState(() => _isLoading = true);
     final profile = await ApiService.getUserProfile();
+    final rawUserId = profile['user_id'] ?? profile['id'];
+    final int userId = rawUserId != null ? (int.tryParse(rawUserId.toString()) ?? 3) : 3;
+    final liveKyc = await ApiService.getUserKycStatus(userId);
+
     if (mounted) {
       setState(() {
         _userProfile = profile;
+        _userKyc = liveKyc ?? KycModel(
+          id: 'kyc_$userId',
+          userId: userId.toString(),
+          userName: '${profile['first_name'] ?? ''} ${profile['last_name'] ?? ''}'.trim(),
+          userEmail: profile['email'] ?? '',
+          idCardNumber: profile['id_card_number'] ?? '',
+          fullName: '${profile['first_name'] ?? ''} ${profile['last_name'] ?? ''}'.trim(),
+          idCardImagePath: '',
+          selfieImagePath: '',
+          status: _parseKycStatus(profile['kyc_status']),
+          submittedAt: DateTime.now(),
+        );
         _isLoading = false;
       });
     }
   }
 
+  KycStatus _parseKycStatus(dynamic statusStr) {
+    if (statusStr == null) return KycStatus.notSubmitted;
+    final s = statusStr.toString().toLowerCase();
+    if (s == 'approved') return KycStatus.approved;
+    if (s == 'pending') return KycStatus.pending;
+    if (s == 'rejected') return KycStatus.rejected;
+    return KycStatus.notSubmitted;
+  }
+
   Widget _buildImage(String path, {double? width, double? height}) {
-    if (path.startsWith('http://') || path.startsWith('https://')) {
-      return Image.network(path, width: width, height: height, fit: BoxFit.cover, errorBuilder: (_, __, ___) => _buildPlaceholder(width, height));
-    }
-    if (path.startsWith('assets/')) {
-      return Image.asset(path, width: width, height: height, fit: BoxFit.cover, errorBuilder: (_, __, ___) => _buildPlaceholder(width, height));
-    }
-    if (!kIsWeb) {
-      final file = File(path);
-      if (file.existsSync()) {
-        return Image.file(file, width: width, height: height, fit: BoxFit.cover);
-      }
-    }
-    return _buildPlaceholder(width, height);
+    return ImageHelper.buildImage(path, width: width, height: height, fit: BoxFit.cover);
   }
 
   Widget _buildPlaceholder(double? width, double? height) {
@@ -73,12 +88,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
             child: const Text('ຍົກເລີກ'),
           ),
           ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => const LoginScreen()),
-              );
+            onPressed: () async {
+              await ApiService.clearSession();
+              if (context.mounted) {
+                Navigator.pop(context);
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => const LoginScreen()),
+                );
+              }
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFFDC2626),
@@ -257,16 +275,35 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   _buildMenuItem(
                     icon: Icons.verified_user_rounded,
                     title: 'ຢືນຢັນຕົວຕົນ (KYC Verification)',
-                    subtitle: 'ຍື່ນເອກະສານອະນຸມັດກ່ອນສະໝັກແພັກເກັດ',
-                    onTap: () {
-                      Navigator.push(
+                    subtitle: _userKyc?.statusText ?? 'ຍັງບໍ່ທັນໄດ້ຢືນຢັນຕົວຕົນ',
+                    onTap: () async {
+                      final defaultKyc = _userKyc ?? KycModel(
+                        id: 'kyc_new',
+                        userId: (_userProfile['user_id'] ?? 3).toString(),
+                        userName: '${_userProfile['first_name'] ?? ''} ${_userProfile['last_name'] ?? ''}'.trim(),
+                        userEmail: _userProfile['email'] ?? '',
+                        idCardNumber: '',
+                        fullName: '${_userProfile['first_name'] ?? ''} ${_userProfile['last_name'] ?? ''}'.trim(),
+                        idCardImagePath: '',
+                        selfieImagePath: '',
+                        status: KycStatus.notSubmitted,
+                        submittedAt: DateTime.now(),
+                      );
+
+                      await Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder: (context) => KycSubmissionScreen(
-                            currentKyc: MockKycData.submissions.first,
+                            currentKyc: defaultKyc,
+                            onKycUpdated: (updatedKyc) {
+                              setState(() {
+                                _userKyc = updatedKyc;
+                              });
+                            },
                           ),
                         ),
                       );
+                      _fetchProfile();
                     },
                   ),
                   const Divider(height: 1, thickness: 1, color: Color(0xFFF1F5F9)),
@@ -278,8 +315,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const MembershipPackageScreen(
-                            kycStatus: KycStatus.pending,
+                          builder: (context) => MembershipPackageScreen(
+                            kycStatus: _userKyc?.status ?? KycStatus.notSubmitted,
+                            userKyc: _userKyc,
                           ),
                         ),
                       );

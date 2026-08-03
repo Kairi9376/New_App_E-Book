@@ -5,13 +5,16 @@ import '../../theme/app_theme.dart';
 import '../../models/book_model.dart';
 import '../../models/kyc_model.dart';
 import '../../services/api_service.dart';
+import '../../utils/image_helper.dart';
 import 'history_screen.dart';
 import 'saved_screen.dart';
 import 'downloads_screen.dart';
 import 'profile_screen.dart';
 import 'book_detail_screen.dart';
 import 'kyc_submission_screen.dart';
+import 'membership_package_screen.dart';
 import 'pdf_viewer_screen.dart';
+import 'search_screen.dart';
 
 class UserHomeScreen extends StatefulWidget {
   const UserHomeScreen({super.key});
@@ -26,6 +29,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
   String _searchQuery = '';
   List<BookModel> _fetchedBooks = [];
   bool _isLoadingBooks = true;
+  KycStatus _kycStatus = KycStatus.notSubmitted;
 
   List<Map<String, dynamic>> _fetchedCategories = [
     {'category_id': null, 'name': 'ທັງໝົດ'}
@@ -64,10 +68,20 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
       search: _searchQuery.trim().isEmpty ? null : _searchQuery.trim(),
       categoryId: selectedCatId,
     );
+
+    // Fetch live KYC status
+    final user = ApiService.currentUser ?? {};
+    final rawUserId = user['user_id'] ?? user['id'];
+    final int userId = rawUserId != null ? (int.tryParse(rawUserId.toString()) ?? 3) : 3;
+    final liveKyc = await ApiService.getUserKycStatus(userId);
+
     if (mounted) {
       setState(() {
         _fetchedBooks = books;
         _isLoadingBooks = false;
+        if (liveKyc != null) {
+          _kycStatus = liveKyc.status;
+        }
       });
     }
   }
@@ -84,19 +98,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
   }
 
   Widget _buildImage(String path, {double? width, double? height, BoxFit fit = BoxFit.cover}) {
-    if (path.startsWith('http://') || path.startsWith('https://')) {
-      return Image.network(path, width: width, height: height, fit: fit, errorBuilder: (_, __, ___) => _buildPlaceholder(width, height));
-    }
-    if (path.startsWith('assets/')) {
-      return Image.asset(path, width: width, height: height, fit: fit, errorBuilder: (_, __, ___) => _buildPlaceholder(width, height));
-    }
-    if (!kIsWeb) {
-      final file = File(path);
-      if (file.existsSync()) {
-        return Image.file(file, width: width, height: height, fit: fit);
-      }
-    }
-    return _buildPlaceholder(width, height);
+    return ImageHelper.buildImage(path, width: width, height: height, fit: fit);
   }
 
   Widget _buildPlaceholder(double? width, double? height) {
@@ -105,6 +107,83 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
       height: height,
       color: Colors.blueGrey.shade100,
       child: const Icon(Icons.book, color: AppColors.primary, size: 32),
+    );
+  }
+
+  bool get _isMember {
+    final user = ApiService.currentUser ?? {};
+    final role = user['role'] ?? 'user';
+    final email = user['email'] ?? '';
+    return role == 'admin' || role == 'employee' || email == 'member@gmail.com';
+  }
+
+  void _showMembershipRequiredDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (ctx) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Container(
+          padding: const EdgeInsets.all(28),
+          constraints: const BoxConstraints(maxWidth: 420),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFF7ED),
+                  shape: BoxShape.circle,
+                  border: Border.all(color: const Color(0xFFFDE68A), width: 2),
+                ),
+                child: const Icon(Icons.workspace_premium_rounded, size: 48, color: Color(0xFFF59E0B)),
+              ),
+              const SizedBox(height: 18),
+              const Text(
+                '\u0e95\u0ec9\u0ead\u0e87\u0ec0\u0e9b\u0eb1\u0e99\u0eaa\u0eb0\u0ea1\u0eb2\u0e8a\u0eb4\u0e81 Premiere',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 10),
+              const Text(
+                '\u0e81\u0eb2\u0e99\u0e94\u0eb2\u0ea7\u0ec2\u0eab\u0ebc\u0e94\u0edc\u0eb1\u0e87\u0eaa\u0eb7\u0eaa\u0eb0\u0eab\u0e87\u0ea7\u0e99\u0ec4\u0ea7\u0ec9\u0eaa\u0eb3\u0ea5\u0eb1\u0e9a\u0eaa\u0eb0\u0ea1\u0eb2\u0e8a\u0eb4\u0e81 Premiere Member \u0ec0\u0e97\u0ebb\u0ec8\u0eb2\u0e99\u0eb1\u0ec9\u0e99\n\n\u0e81\u0eb0\u0ea5\u0eb8\u0e99\u0eb2\u0ea2\u0eb7\u0e99\u0ea2\u0eb1\u0e99\u0e95\u0ebb\u0ea7\u0e95\u0ebb\u0e99 (KYC) \u0ec1\u0ea5\u0eb0 \u0eaa\u0eb0\u0edd\u0eb1\u0e81\u0ec1\u0e9e\u0eb1\u0e81\u0ec0\u0e81\u0eb1\u0e94\u0eaa\u0eb0\u0ea1\u0eb2\u0e8a\u0eb4\u0e81\u0ec0\u0e9e\u0eb7\u0ec8\u0ead\u0ec0\u0e82\u0ebb\u0ec9\u0eb2\u0ec0\u0e96\u0eb4\u0e87\u0e81\u0eb2\u0e99\u0e94\u0eb2\u0ea7\u0ec2\u0eab\u0ebc\u0e94',
+                style: TextStyle(fontSize: 13, color: AppColors.textSecondary, height: 1.5),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                height: 46,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const MembershipPackageScreen()),
+                    );
+                  },
+                  icon: const Icon(Icons.star_rounded, color: Colors.white, size: 20),
+                  label: const Text('\u0eaa\u0eb0\u0edd\u0eb1\u0e81\u0eaa\u0eb0\u0ea1\u0eb2\u0e8a\u0eb4\u0e81 Premiere', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFF59E0B),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
+              SizedBox(
+                width: double.infinity,
+                height: 42,
+                child: TextButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: const Text('\u0ec4\u0ea7\u0ec9\u0e97\u0eb5\u0eab\u0ebc\u0eb1\u0e87', style: TextStyle(color: AppColors.textSecondary, fontWeight: FontWeight.bold)),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -282,6 +361,11 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
   }
 
   Widget _buildKycPromptBanner() {
+    // Hide the banner if KYC is already approved or pending
+    if (_kycStatus == KycStatus.approved || _kycStatus == KycStatus.pending) {
+      return const SizedBox.shrink();
+    }
+
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -327,11 +411,27 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
           const SizedBox(width: 8),
           ElevatedButton(
             onPressed: () {
+              final user = ApiService.currentUser ?? {};
+              final userId = (user['user_id'] ?? 3).toString();
+              final userName = '${user['first_name'] ?? ''} ${user['last_name'] ?? ''}'.trim();
+              final userEmail = user['email'] ?? '';
+
               Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (context) => KycSubmissionScreen(
-                    currentKyc: MockKycData.submissions.first,
+                    currentKyc: KycModel(
+                      id: 'kyc_$userId',
+                      userId: userId,
+                      userName: userName.isNotEmpty ? userName : 'ຜູ້ໃຊ້ງານລະບົບ',
+                      userEmail: userEmail,
+                      idCardNumber: '',
+                      fullName: userName,
+                      idCardImagePath: '',
+                      selfieImagePath: '',
+                      status: KycStatus.notSubmitted,
+                      submittedAt: DateTime.now(),
+                    ),
                   ),
                 ),
               );
@@ -349,29 +449,41 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
     );
   }
 
-  // --- 2. Search Bar Widget ---
+  // --- 2. Search Bar Widget (Navigates to dedicated SearchScreen) ---
   Widget _buildSearchBar() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-      ),
-      child: TextField(
-        onChanged: (val) {
-          setState(() {
-            _searchQuery = val;
-          });
-          _loadBackendData();
-        },
-        decoration: const InputDecoration(
-          hintText: 'ຄົ້ນຫາປຶ້ມ ຫຼື ຊື່ຜູ້ແຕ່ງ...',
-          hintStyle: TextStyle(color: AppColors.textSecondary, fontSize: 14),
-          prefixIcon: Icon(Icons.search_rounded, color: AppColors.textSecondary),
-          border: InputBorder.none,
-          enabledBorder: InputBorder.none,
-          focusedBorder: InputBorder.none,
-          contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+    return InkWell(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const SearchScreen()),
+        );
+      },
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: const Color(0xFFE2E8F0)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.02),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          children: const [
+            Icon(Icons.search_rounded, color: AppColors.primary, size: 22),
+            SizedBox(width: 12),
+            Text(
+              'ຄົ້ນຫາປຶ້ມ ຫຼື ຊື່ຜູ້ແຕ່ງ...',
+              style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
+            ),
+            Spacer(),
+            Icon(Icons.tune_rounded, color: AppColors.textSecondary, size: 18),
+          ],
         ),
       ),
     );
@@ -674,7 +786,24 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
               ),
               const SizedBox(width: 6),
               InkWell(
-                onTap: () {},
+                onTap: () {
+                  if (!_isMember) {
+                    _showMembershipRequiredDialog();
+                    return;
+                  }
+                  // Proceed with download for members
+                  final bookId = book.id;
+                  ApiService.recordDownload(bookId).then((success) {
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(success ? '\u0e94\u0eb2\u0ea7\u0ec2\u0eab\u0ebc\u0e94 "${book.title}" \u0eaa\u0eb3\u0ec0\u0ea5\u0eb1\u0e94!' : '\u0e9a\u0eb1\u0e99\u0e97\u0eb6\u0e81\u0ea5\u0eb2\u0e8d\u0e81\u0eb2\u0e99\u0e94\u0eb2\u0ea7\u0ec2\u0eab\u0ebc\u0e94\u0eaa\u0eb3\u0ec0\u0ea5\u0eb1\u0e94'),
+                          backgroundColor: const Color(0xFF10B981),
+                        ),
+                      );
+                    }
+                  });
+                },
                 child: Container(
                   height: 32,
                   width: 32,

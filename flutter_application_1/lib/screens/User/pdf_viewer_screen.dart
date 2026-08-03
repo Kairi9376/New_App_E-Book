@@ -17,6 +17,7 @@ class PdfViewerScreen extends StatefulWidget {
   final String? author;
   final String? description;
   final int? pageCount;
+  final int initialPage;
 
   const PdfViewerScreen({
     super.key,
@@ -26,6 +27,7 @@ class PdfViewerScreen extends StatefulWidget {
     this.author,
     this.description,
     this.pageCount,
+    this.initialPage = 1,
   });
 
   @override
@@ -48,6 +50,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
   @override
   void initState() {
     super.initState();
+    _currentPage = widget.initialPage > 0 ? widget.initialPage : 1;
     _totalPages = widget.pageCount != null && widget.pageCount! > 0 ? widget.pageCount! : 1;
     _normalizePdfUrl();
     _listenToWebMessages();
@@ -138,11 +141,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
     }
     #pdf-canvas {
       display: block;
-      width: auto;
-      height: auto;
-      max-width: 96vw;
-      max-height: 86vh;
-      object-fit: contain;
+      margin: 0 auto;
       image-rendering: -webkit-optimize-contrast;
       image-rendering: crisp-edges;
       text-rendering: optimizeLegibility;
@@ -166,7 +165,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
 </head>
 <body>
   <div id="page-card">
-    <div id="loading-text">ກຳລັງໂຫຼດໜ້າ HD $pageNum...</div>
+    <div id="loading-text">ກຳລັງໂຫຼດໜ້າ Ultra HD $pageNum...</div>
     <canvas id="pdf-canvas"></canvas>
   </div>
 
@@ -190,27 +189,44 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
       if (targetPage < 1) targetPage = 1;
 
       pdfDoc.getPage(targetPage).then(function(page) {
-        // High-DPI Retina Super-Sampling for ultra-sharp vector/text rendering
         var dpr = window.devicePixelRatio || 1;
-        var renderScale = 2.5 * dpr * userZoom; // High HD resolution multiplier
         
-        var viewport = page.getViewport({ scale: renderScale });
+        // 1. Base unscaled page viewport (Scale 1.0)
+        var unscaledViewport = page.getViewport({ scale: 1.0 });
 
-        canvas.width = Math.floor(viewport.width);
-        canvas.height = Math.floor(viewport.height);
+        // 2. Responsive CSS display bounds to fit container perfectly
+        var screenW = window.innerWidth || document.documentElement.clientWidth || 800;
+        var screenH = window.innerHeight || document.documentElement.clientHeight || 900;
+        var targetCssW = screenW * 0.94;
+        var targetCssH = screenH * 0.86;
+
+        var scaleX = targetCssW / unscaledViewport.width;
+        var scaleY = targetCssH / unscaledViewport.height;
+        var baseFitScale = Math.min(scaleX, scaleY);
+        if (baseFitScale <= 0 || isNaN(baseFitScale)) baseFitScale = 1.0;
+
+        // Apply zoom multiplier
+        var cssScale = baseFitScale * userZoom;
+        var cssViewport = page.getViewport({ scale: cssScale });
+
+        // 3. Ultra HD Canvas Resolution Buffer (3.5x Multiplier for razor-sharp vector text rendering)
+        var hdQualityMultiplier = Math.max(3.5, dpr * 3.0);
+        var renderViewport = page.getViewport({ scale: cssScale * hdQualityMultiplier });
+
+        // Set High-DPI canvas buffer resolution
+        canvas.width = Math.floor(renderViewport.width);
+        canvas.height = Math.floor(renderViewport.height);
         
-        // CSS display bounds
-        var cssWidth = Math.floor(viewport.width / dpr / 1.5);
-        var cssHeight = Math.floor(viewport.height / dpr / 1.5);
-        canvas.style.width = cssWidth + "px";
-        canvas.style.height = cssHeight + "px";
+        // Set CSS display dimensions
+        canvas.style.width = Math.floor(cssViewport.width) + "px";
+        canvas.style.height = Math.floor(cssViewport.height) + "px";
 
         ctx.imageSmoothingEnabled = true;
         ctx.imageSmoothingQuality = 'high';
 
         var renderContext = {
           canvasContext: ctx,
-          viewport: viewport
+          viewport: renderViewport
         };
         
         var renderTask = page.render(renderContext);
