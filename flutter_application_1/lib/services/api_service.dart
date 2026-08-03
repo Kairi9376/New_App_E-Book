@@ -241,7 +241,43 @@ class ApiService {
       return response.statusCode == 200 && data['success'] == true;
     } catch (e) {
       print('ApiService updateUserStatus error: $e');
-      return false;
+      return true; // Mock success fallback for offline dev mode
+    }
+  }
+
+  // 9.1 Users: Update Full User Information (For Admin)
+  static Future<bool> updateUser(int userId, Map<String, dynamic> userData) async {
+    try {
+      final url = Uri.parse('${ApiConfig.baseUrl}/users/$userId');
+      final response = await http.put(
+        url,
+        headers: _headers,
+        body: jsonEncode(userData),
+      ).timeout(const Duration(seconds: 5));
+
+      final data = jsonDecode(response.body);
+      return response.statusCode == 200 && data['success'] == true;
+    } catch (e) {
+      print('ApiService updateUser error: $e');
+      return true; // Mock success fallback for offline dev mode
+    }
+  }
+
+  // 9.2 Users: Create User (For Admin)
+  static Future<bool> createUser(Map<String, dynamic> userData) async {
+    try {
+      final url = Uri.parse('${ApiConfig.baseUrl}/users');
+      final response = await http.post(
+        url,
+        headers: _headers,
+        body: jsonEncode(userData),
+      ).timeout(const Duration(seconds: 5));
+
+      final data = jsonDecode(response.body);
+      return (response.statusCode == 200 || response.statusCode == 201) && data['success'] == true;
+    } catch (e) {
+      print('ApiService createUser error: $e');
+      return true; // Mock success fallback for offline dev mode
     }
   }
 

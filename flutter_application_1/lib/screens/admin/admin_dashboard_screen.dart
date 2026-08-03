@@ -8,6 +8,7 @@ import '../../models/kyc_model.dart';
 import '../../services/api_service.dart';
 import '../../services/api_config.dart';
 import 'admin_book_dialog.dart';
+import 'admin_user_dialog.dart';
 import '../login_screen.dart';
 import '../pdf_viewer_screen.dart';
 
@@ -209,23 +210,23 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         context: context,
         builder: (ctx) => AlertDialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: const Text('ระงับการใช้งานบัญชี (Suspend Account)'),
+          title: const Text('ລະງັບການນຳໃຊ້ບັນຊີ (Suspend Account)'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('คุณต้องการระงับบัญชี "${user['email']}" ใช่หรือไม่?'),
+              Text('ທ່ານຕ້ອງການລະງັບບັນຊີ "${user['email']}" ແທ້ບໍ?'),
               const SizedBox(height: 12),
               TextField(
                 controller: reasonController,
                 decoration: const InputDecoration(
-                  labelText: 'เหตุผลการระงับการใช้งาน',
-                  hintText: 'เช่น ละเมิดข้อตกลงการใช้งาน...',
+                  labelText: 'ເຫດຜົນການລະງັບການນຳໃຊ້',
+                  hintText: 'ເຊັ່ນ: ລະເມີດຂໍ້ຕົກລົງການນຳໃຊ້...',
                 ),
               ),
             ],
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('ยกเลิก')),
+            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('ຍົກເລີກ')),
             ElevatedButton(
               onPressed: () async {
                 Navigator.pop(ctx);
@@ -233,12 +234,12 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 if (mounted && success) {
                   await _fetchAdminData();
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('ระงับบัญชี "${user['email']}" ใน MySQL เรียบร้อย')),
+                    SnackBar(content: Text('ລະງັບບັນຊີ "${user['email']}" ສຳເລັດ')),
                   );
                 }
               },
               style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
-              child: const Text('ยืนยันระงับบัญชี'),
+              child: const Text('ຢືນຢັນລະງັບບັນຊີ'),
             ),
           ],
         ),
@@ -248,7 +249,63 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       if (mounted && success) {
         await _fetchAdminData();
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('ปลดระงับบัญชี "${user['email']}" เรียบร้อย'), backgroundColor: Colors.green),
+          SnackBar(content: Text('ປົດລະງັບບັນຊີ "${user['email']}" ສຳເລັດ'), backgroundColor: Colors.green),
+        );
+      }
+    }
+  }
+
+  void _openCreateUserDialog() async {
+    final newUser = await showDialog<Map<String, dynamic>>(
+      context: context,
+      builder: (context) => const AdminUserDialog(),
+    );
+
+    if (newUser != null) {
+      final success = await ApiService.createUser(newUser);
+      if (mounted && success) {
+        setState(() {
+          _adminUsers.insert(0, {
+            'user_id': newUser['user_id'] ?? DateTime.now().millisecondsSinceEpoch,
+            'email': newUser['email'],
+            'first_name': newUser['first_name'],
+            'last_name': newUser['last_name'],
+            'role': newUser['role'],
+            'status': newUser['status'],
+            'is_student': newUser['is_student'],
+          });
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('ເພີ່ມບັນຊີຜູ້ໃຊ້ "${newUser['email']}" ສຳເລັດ'),
+            backgroundColor: AppColors.primary,
+          ),
+        );
+      }
+    }
+  }
+
+  void _openEditUserDialog(Map<String, dynamic> user, int index) async {
+    final updatedData = await showDialog<Map<String, dynamic>>(
+      context: context,
+      builder: (context) => AdminUserDialog(user: user),
+    );
+
+    if (updatedData != null) {
+      final userId = int.tryParse(user['user_id']?.toString() ?? user['id']?.toString() ?? '1') ?? 1;
+      final success = await ApiService.updateUser(userId, updatedData);
+      if (mounted && success) {
+        setState(() {
+          _adminUsers[index] = {
+            ..._adminUsers[index],
+            ...updatedData,
+          };
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('ອັບເດດຂໍ້ມູນຜູ້ໃຊ້ "${updatedData['email']}" ສຳເລັດ'),
+            backgroundColor: AppColors.primary,
+          ),
         );
       }
     }
@@ -589,20 +646,43 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               ],
             ),
             const Divider(height: 24),
-            Text('สิทธิ์การใช้งาน: ${user['role']}'),
+            Text('ສິດການນຳໃຊ້: ${user['role']}'),
             const SizedBox(height: 6),
-            Text('สถานะบัญชี: ${isSuspended ? "ระงับการใช้งาน (Suspended)" : "ปกติ (Active)"}'),
+            Text('ສະຖານະບັນຊີ: ${isSuspended ? "ລະງັບການນຳໃຊ້ (Suspended)" : "ປົກກະຕິ (Active)"}'),
             const SizedBox(height: 20),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {
-                  Navigator.pop(ctx);
-                  _toggleUserStatus(user);
-                },
-                style: ElevatedButton.styleFrom(backgroundColor: isSuspended ? Colors.green : Colors.redAccent),
-                child: Text(isSuspended ? 'ปลดระงับบัญชี' : 'ระงับการใช้งานบัญชี'),
-              ),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () {
+                      Navigator.pop(ctx);
+                      final index = _adminUsers.indexWhere((u) =>
+                          (u['user_id'] ?? u['id']) == (user['user_id'] ?? user['id']));
+                      _openEditUserDialog(user, index >= 0 ? index : 0);
+                    },
+                    icon: const Icon(Icons.edit_note_rounded, size: 20),
+                    label: const Text('ແກ້ໄຂຂໍ້ມູນຜູ້ໃຊ້'),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: AppColors.primary),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.pop(ctx);
+                      _toggleUserStatus(user);
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: isSuspended ? Colors.green : Colors.redAccent,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                    child: Text(isSuspended ? 'ປົດລະງັບບັນຊີ' : 'ລະງັບບັນຊີ'),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -770,7 +850,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: () => Navigator.pop(ctx),
-                child: const Text('ปิดหน้าต่าง'),
+                child: const Text('ອັດໜ້າຕ່າງ'),
               ),
             ),
           ],
@@ -793,23 +873,23 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               children: const [
                 Icon(Icons.security_rounded, color: Colors.indigo, size: 28),
                 SizedBox(width: 10),
-                Text('รายละเอียดบันทึกความปลอดภัย (Audit Log)', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                Text('ລາຍລະອຽດບັນທຶກຄວາມປອດໄພ (Audit Log)', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               ],
             ),
             const Divider(height: 20),
-            Text('ผู้ทำรายการ: ${log['first_name'] ?? ""} (${log['email'] ?? ""})'),
-            Text('สิทธิ์ผู้ทำรายการ: ${log['role'] ?? ""}'),
-            Text('คำสั่งที่ดำเนินการ: ${log['action'] ?? ""}'),
+            Text('ຜູ້ເຮັດລາຍການ: ${log['first_name'] ?? ""} (${log['email'] ?? ""})'),
+            Text('ສິດຜູ້ເຮັດລາຍການ: ${log['role'] ?? ""}'),
+            Text('ຄຳສັ່ງທີ່ດຳເນີນການ: ${log['action'] ?? ""}'),
             Text('IP Address: ${log['ip_address'] ?? "127.0.0.1"}'),
-            Text('เวลาที่ทำรายการ: ${log['created_at'] ?? "N/A"}'),
+            Text('ເວລາທີ່ເຮັດລາຍການ: ${log['created_at'] ?? "N/A"}'),
             const SizedBox(height: 10),
-            Text('รายละเอียดเพิ่มเติม: ${log['details'] ?? "ไม่มี"}', style: const TextStyle(color: Colors.black87)),
+            Text('ລາຍລະອຽດເພີ່ມເຕີມ: ${log['details'] ?? "ບໍ່ມີ"}', style: const TextStyle(color: Colors.black87)),
             const SizedBox(height: 20),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: () => Navigator.pop(ctx),
-                child: const Text('ปิดหน้าต่าง'),
+                child: const Text('ອັດໜ້າຕ່າງ'),
               ),
             ),
           ],
@@ -844,15 +924,15 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: const [
-                Text('ระบบผู้ดูแลระบบ (Admin Master Control)', style: TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.bold)),
-                Text('ความปลอดภัย การเงิน และสิทธิ์การใช้งานระบบ', style: TextStyle(color: AppColors.textSecondary, fontSize: 11)),
+                Text('ລະບົບຜູ້ດູແລລະບົບ (Admin Master Control)', style: TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.bold)),
+                Text('ຄວາມປອດໄພ ການເງິນ ແລະ ສິດການນຳໃຊ້ລະບົບ', style: TextStyle(color: AppColors.textSecondary, fontSize: 11)),
               ],
             ),
           ],
         ),
         actions: [
-          IconButton(icon: const Icon(Icons.refresh_rounded, color: AppColors.primary), onPressed: _fetchAdminData, tooltip: 'รีเฟรชข้อมูล'),
-          IconButton(icon: const Icon(Icons.logout_rounded, color: Colors.redAccent), onPressed: _logout, tooltip: 'ออกจากระบบ'),
+          IconButton(icon: const Icon(Icons.refresh_rounded, color: AppColors.primary), onPressed: _fetchAdminData, tooltip: 'ຣີເຟຣຊຂໍ້ມູນ'),
+          IconButton(icon: const Icon(Icons.logout_rounded, color: Colors.redAccent), onPressed: _logout, tooltip: 'ອອກຈາກລະບົບ'),
           const SizedBox(width: 8),
         ],
       ),
@@ -868,12 +948,12 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     child: Row(
                       children: [
-                        _buildNavTab(0, Icons.menu_book_rounded, 'คลังหนังสือ'),
-                        _buildNavTab(1, Icons.people_alt_rounded, 'จัดการผู้ใช้/พนักงาน'),
-                        _buildNavTab(2, Icons.verified_user_rounded, 'อนุมัติ KYC & นักเรียน'),
-                        _buildNavTab(3, Icons.receipt_long_rounded, 'อนุมัติสลิปโอนเงิน'),
-                        _buildNavTab(4, Icons.card_membership_rounded, 'แพ็กเกจสมาชิก'),
-                        _buildNavTab(5, Icons.security_rounded, 'ระบบ & Logs'),
+                        _buildNavTab(0, Icons.menu_book_rounded, 'ຄັງຫນັງສື'),
+                        _buildNavTab(1, Icons.people_alt_rounded, 'ຈັດການຜູ້ໃຊ້/ພະນັກງານ'),
+                        _buildNavTab(2, Icons.verified_user_rounded, 'ອະນຸມັດ KYC & ນັກຮຽນ'),
+                        _buildNavTab(3, Icons.receipt_long_rounded, 'ອະນຸມັດສະລິບໂອນເງິນ'),
+                        _buildNavTab(4, Icons.card_membership_rounded, 'ແພັກເກັດສະມາຊິກ'),
+                        _buildNavTab(5, Icons.security_rounded, 'ລະບົບ & Logs'),
                       ],
                     ),
                   ),
@@ -934,7 +1014,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               child: TextField(
                 onChanged: (val) => setState(() => _searchQuery = val),
                 decoration: InputDecoration(
-                  hintText: 'ค้นหาหนังสือ หรือชื่อผู้แต่ง...',
+                  hintText: 'ຄົ້ນຫາປຶ້ມ ຫຼື ຊື່ຜູ້ແຕ່ງ...',
                   prefixIcon: const Icon(Icons.search_rounded),
                   contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
@@ -945,7 +1025,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             ElevatedButton.icon(
               onPressed: _openAddBookDialog,
               icon: const Icon(Icons.add_rounded, color: Colors.white),
-              label: const Text('เพิ่มหนังสือใหม่', style: TextStyle(color: Colors.white)),
+              label: const Text('ເພີ່ມປຶ້ມໃໝ່', style: TextStyle(color: Colors.white)),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -957,7 +1037,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         const SizedBox(height: 16),
         Expanded(
           child: filtered.isEmpty
-              ? const Center(child: Text('ไม่พบรายการหนังสือ'))
+              ? const Center(child: Text('ບໍ່ພົບລາຍການປຶ້ມ'))
               : ListView.builder(
                   itemCount: filtered.length,
                   itemBuilder: (ctx, idx) {
@@ -972,7 +1052,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                           child: SizedBox(width: 45, height: 60, child: _buildImage(book.imagePath)),
                         ),
                         title: Text(book.title, style: const TextStyle(fontWeight: FontWeight.bold)),
-                        subtitle: Text('ผู้แต่ง: ${book.author} | หมวดหมู่: ${book.tags.isNotEmpty ? book.tags.first : "ทั่วไป"}'),
+                        subtitle: Text('ຜູ້ແຕ່ງ: ${book.author} | ໝວດໝູ່: ${book.tags.isNotEmpty ? book.tags.first : "ທົ່ວໄປ"}'),
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
@@ -1007,17 +1087,29 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               child: TextField(
                 onChanged: (val) => setState(() => _searchQuery = val),
                 decoration: InputDecoration(
-                  hintText: 'ค้นหาชื่อ หรืออีเมลผู้ใช้งาน...',
+                  hintText: 'ຄົ້ນຫາຊື່ ຫຼື ອີເມວຜູ້ໃຊ້...',
                   prefixIcon: const Icon(Icons.search_rounded),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                 ),
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 8),
             DropdownButton<String>(
               value: _userRoleFilter,
               items: ['ທັງໝົດ', 'Admin', 'Employee', 'User'].map((r) => DropdownMenuItem(value: r, child: Text(r))).toList(),
               onChanged: (val) => setState(() => _userRoleFilter = val!),
+            ),
+            const SizedBox(width: 8),
+            ElevatedButton.icon(
+              onPressed: _openCreateUserDialog,
+              icon: const Icon(Icons.person_add_alt_1_rounded, size: 18),
+              label: const Text('เพิ่มผู้ใช้', style: TextStyle(fontSize: 12)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
             ),
           ],
         ),
@@ -1033,28 +1125,72 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
               return Card(
                 margin: const EdgeInsets.only(bottom: 10),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 child: ListTile(
                   onTap: () => _showUserDetailModal(user),
                   leading: CircleAvatar(
-                    backgroundColor: role == 'admin' ? Colors.purple : (role == 'employee' ? Colors.orange : AppColors.primary),
-                    child: Text((user['first_name'] ?? 'U')[0].toUpperCase(), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                    backgroundColor: role.toLowerCase() == 'admin'
+                        ? Colors.purple
+                        : (role.toLowerCase() == 'employee' ? Colors.orange.shade800 : AppColors.primary),
+                    child: Text(
+                      (user['first_name'] ?? 'U')[0].toUpperCase(),
+                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                    ),
                   ),
                   title: Row(
                     children: [
-                      Text('${user['first_name'] ?? ''} ${user['last_name'] ?? ''}', style: const TextStyle(fontWeight: FontWeight.bold)),
-                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          '${user['first_name'] ?? ''} ${user['last_name'] ?? ''}'.trim(),
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(color: role == 'admin' ? Colors.purple.shade100 : Colors.blue.shade100, borderRadius: BorderRadius.circular(6)),
-                        child: Text(role.toUpperCase(), style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: role == 'admin' ? Colors.purple : Colors.blue)),
+                        decoration: BoxDecoration(
+                          color: role.toLowerCase() == 'admin'
+                              ? Colors.purple.shade100
+                              : (role.toLowerCase() == 'employee' ? Colors.orange.shade100 : Colors.blue.shade100),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          role.toUpperCase(),
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: role.toLowerCase() == 'admin'
+                                ? Colors.purple
+                                : (role.toLowerCase() == 'employee' ? Colors.orange.shade900 : Colors.blue),
+                          ),
+                        ),
                       ),
                     ],
                   ),
                   subtitle: Text('อีเมล: ${user['email']} | สถานะ: ${isSuspended ? "ระงับการใช้งาน" : "ปกติ"}'),
-                  trailing: ElevatedButton(
-                    onPressed: () => _toggleUserStatus(user),
-                    style: ElevatedButton.styleFrom(backgroundColor: isSuspended ? Colors.green : Colors.redAccent),
-                    child: Text(isSuspended ? 'ปลดระงับ' : 'ระงับบัญชี', style: const TextStyle(color: Colors.white, fontSize: 12)),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.edit_note_rounded, color: AppColors.primary, size: 22),
+                        tooltip: 'แก้ไขข้อมูลผู้ใช้',
+                        onPressed: () {
+                          final realIdx = _adminUsers.indexWhere((u) =>
+                              (u['user_id'] ?? u['id']) == (user['user_id'] ?? user['id']));
+                          _openEditUserDialog(user, realIdx >= 0 ? realIdx : idx);
+                        },
+                      ),
+                      ElevatedButton(
+                        onPressed: () => _toggleUserStatus(user),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: isSuspended ? Colors.green : Colors.redAccent,
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          minimumSize: Size.zero,
+                        ),
+                        child: Text(isSuspended ? 'ปลดระงับ' : 'ระงับ', style: const TextStyle(color: Colors.white, fontSize: 11)),
+                      ),
+                    ],
                   ),
                 ),
               );

@@ -18,16 +18,16 @@ class MockDownloadsData {
   static List<DownloadedBookItem> downloadedItems = [
     DownloadedBookItem(
       id: 'd1',
-      title: 'หนังสือสังคม',
-      author: 'ดร.จอน วงวิไล',
-      category: 'สังคม',
+      title: 'ໜັງສືສັງຄົມ',
+      author: 'ດຣ.ຈອນ ວົງວິໄລ',
+      category: 'ສັງຄົມ',
       imagePath: '/Users/intern/.gemini/antigravity/brain/c8a3c47e-e27f-493b-ba56-c3f80ddc659c/social_cover_1785399683975.jpg',
     ),
     DownloadedBookItem(
       id: 'd2',
-      title: 'หนังสือวรรณคดี',
-      author: 'ท่าน สุวันนิ สิทอม',
-      category: 'ศิลปะ',
+      title: 'ໜັງສືວັນນະຄະດີ',
+      author: 'ທ່ານ ສຸວັນນີ ສີທອນ',
+      category: 'ສິລະປະ',
       imagePath: '/Users/intern/.gemini/antigravity/brain/c8a3c47e-e27f-493b-ba56-c3f80ddc659c/quantum_cover_1785383995867.jpg',
     ),
   ];
