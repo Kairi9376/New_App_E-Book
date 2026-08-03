@@ -9,7 +9,7 @@ exports.getUserReadingHistory = async (req, res) => {
     }
 
     const [rows] = await pool.query(`
-      SELECT rh.*, b.title, b.cover_image_url, b.page_count, a.name AS author_name
+      SELECT rh.*, b.title, b.cover_image_url, b.page_count, b.readers_count, b.likes_count, a.name AS author_name
       FROM reading_history rh
       JOIN books b ON rh.book_id = b.book_id
       LEFT JOIN authors a ON b.author_id = a.author_id
@@ -31,6 +31,9 @@ exports.saveReadingProgress = async (req, res) => {
       return res.status(400).json({ success: false, message: 'user_id and book_id are required' });
     }
 
+    // Check if user already has a reading history entry for this book
+    const [existing] = await pool.query('SELECT history_id FROM reading_history WHERE user_id = ? AND book_id = ?', [user_id, book_id]);
+
     await pool.query(`
       INSERT INTO reading_history (user_id, book_id, last_page_read, progress_percent)
       VALUES (?, ?, ?, ?)
@@ -39,6 +42,11 @@ exports.saveReadingProgress = async (req, res) => {
         progress_percent = VALUES(progress_percent),
         last_read_at = CURRENT_TIMESTAMP
     `, [user_id, book_id, last_page_read || 1, progress_percent || 0.00]);
+
+    // Increment readers_count on new reader session
+    if (existing.length === 0) {
+      await pool.query('UPDATE books SET readers_count = readers_count + 1 WHERE book_id = ?', [book_id]);
+    }
 
     res.json({ success: true, message: 'Reading progress saved' });
   } catch (error) {

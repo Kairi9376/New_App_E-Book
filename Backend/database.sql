@@ -1,6 +1,6 @@
 -- ============================================================
 -- ຖານຂໍ້ມູນสำหรับໂຄງການ E-Book Application (ebook_db)
--- ຮອງຮັບການນຳເຂົ້າຜ່ານ phpMyAdmin (XAMPP)
+-- ຮອງຮັບການນຳເຂົ້າຜ່ານ phpMyAdmin / MySQL / PostgreSQL Server
 -- ============================================================
 
 CREATE DATABASE IF NOT EXISTS ebook_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -59,20 +59,22 @@ CREATE TABLE IF NOT EXISTS categories (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- 5. ຕາຕະລາງປຶ້ມ (Books)
+-- 5. ຕາຕະລາງປຶ້ມ (Books - ອັບເດດເພີ່ມ readers_count & likes_count)
 CREATE TABLE IF NOT EXISTS books (
     book_id INT AUTO_INCREMENT PRIMARY KEY,
     title VARCHAR(255) NOT NULL,
     author_id INT NOT NULL,
     language ENUM('LA', 'TH', 'EN', 'JP', 'CN') DEFAULT 'LA',
     page_count INT DEFAULT 0,
-    file_size_bytes BIGINT DEFAULT 0,
+    file_size_bytes BIGINT DEFAULT 0, -- ขนาดไฟล์ PDF เป็น Bytes สำหรับแสดงใน Flutter
     description TEXT,
     cover_image_url VARCHAR(500),
     file_pdf_url VARCHAR(500) NOT NULL,
     uploaded_by INT NOT NULL,
     is_free BOOLEAN DEFAULT FALSE,
-    is_hidden BOOLEAN DEFAULT FALSE,
+    is_hidden BOOLEAN DEFAULT FALSE, -- แอดมิน/พนักงาน กดซ่อนหนังสือได้
+    readers_count INT DEFAULT 0,     -- จำนวนผู้เข้าอ่านทั้งหมด
+    likes_count INT DEFAULT 0,       -- จำนวนคนกดใจทั้งหมด
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (author_id) REFERENCES authors(author_id),
@@ -120,7 +122,7 @@ CREATE TABLE IF NOT EXISTS subscriptions (
     FOREIGN KEY (approved_by) REFERENCES users(user_id) ON DELETE SET NULL
 );
 
--- 9. ຕາຕະລາງປຶ້ມເລົ່ມໂປດ / ຫ້ອງປຶ້ມສ່ວນຕົວ (Bookmarks)
+-- 9. ຕາຕະລາງປຶ້ມເລົ່ມໂປດ / ການກົດໃຈ (Bookmarks / Likes)
 CREATE TABLE IF NOT EXISTS bookmarks (
     bookmark_id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
@@ -128,7 +130,7 @@ CREATE TABLE IF NOT EXISTS bookmarks (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
     FOREIGN KEY (book_id) REFERENCES books(book_id) ON DELETE CASCADE,
-    UNIQUE KEY unique_user_bookmark (user_id, book_id)
+    UNIQUE KEY unique_user_bookmark (user_id, book_id) -- ป้องกันผู้ใช้กดใจเล่มเดิมซ้ำ
 );
 
 -- 10. ຕາຕະລາງປະຫວັດການອ່ານ (Reading History)
@@ -216,12 +218,12 @@ INSERT INTO packages (package_id, name, description, price, duration_days, is_fo
 (3, 'Premium Yearly', 'ເຂົ້າເຖິງປຶ້ມທຸກເລົ່ມໃນຄັງແບບບໍ່ຈຳກັດ 365 ວັນ', 490000.00, 365, FALSE, TRUE)
 ON DUPLICATE KEY UPDATE name=name;
 
--- 5. Insert Books
-INSERT INTO books (book_id, title, author_id, language, page_count, file_size_bytes, description, cover_image_url, file_pdf_url, uploaded_by, is_free, is_hidden) VALUES
-(1, 'The Happiness Effect', 1, 'EN', 240, 15400000, 'ປຶ້ມຖ່າຍທອດເລື່ອງราวການສ້າງຄວາມສຸກ ແລະ ການມອງໂລກໃນແງ່ດີ', 'assets/happiness_cover.jpg', 'assets/sample_book.pdf', 2, TRUE, FALSE),
-(2, 'High School Science (ວິທະຍາສາດ)', 4, 'LA', 310, 22100000, 'ຕຳລາຮຽນວິທະຍາສາດລະດັບມັດທະຍົມປາຍ ຄອບຄຸມພື້ນຖານຟິຊິກ ເຄມີ ຊີວະວິທະຍາ', 'assets/science_cover.jpg', 'assets/sample_book.pdf', 2, TRUE, FALSE),
-(3, 'Quantum Mechanics', 2, 'EN', 450, 38000000, 'ເຈາະລຶກທິດສະດີຄວອນຕຳ ແລະ ກົນລະສາດສະໄໝໃໝ່', 'assets/quantum_cover.jpg', 'assets/sample_book.pdf', 2, FALSE, FALSE),
-(4, 'ປຶ້ມສັງຄົມສຶກສາ', 3, 'LA', 180, 12000000, 'ຄວາມຮູ້ກ່ຽວກັບສັງຄົມ ວັດທະນະທຳ ແລະ ພູມສາດ', 'assets/social_cover.jpg', 'assets/sample_book.pdf', 2, TRUE, FALSE)
+-- 5. Insert Books (มี readers_count & likes_count)
+INSERT INTO books (book_id, title, author_id, language, page_count, file_size_bytes, description, cover_image_url, file_pdf_url, uploaded_by, is_free, is_hidden, readers_count, likes_count) VALUES
+(1, 'The Happiness Effect', 1, 'EN', 240, 15400000, 'ປຶ້ມຖ່າຍທອດເລື່ອງราวການສ້າງຄວາມສຸກ ແລະ ການມອງໂລກໃນແງ່ດີ', 'assets/happiness_cover.jpg', 'assets/sample_book.pdf', 2, TRUE, FALSE, 125, 42),
+(2, 'High School Science (ວິທະຍາສາດ)', 4, 'LA', 310, 22100000, 'ຕຳລາຮຽນວິທະຍາສາດລະດັບມັດທະຍົມປາຍ ຄອບຄຸມພື້ນຖານຟິຊິກ ເຄມີ ຊີວະວິທະຍາ', 'assets/science_cover.jpg', 'assets/sample_book.pdf', 2, TRUE, FALSE, 88, 31),
+(3, 'Quantum Mechanics', 2, 'EN', 450, 38000000, 'ເຈາະລຶກທິດສະດີຄວອນຕຳ ແລະ ກົນລະສາດສະໄໝໃໝ່', 'assets/quantum_cover.jpg', 'assets/sample_book.pdf', 2, FALSE, FALSE, 64, 19),
+(4, 'ປຶ້ມສັງຄົມສຶກສາ', 3, 'LA', 180, 12000000, 'ຄວາມຮູ້ກ່ຽວກັບສັງຄົມ ວັດທະນະທຳ ແລະ ພູມສາດ', 'assets/social_cover.jpg', 'assets/sample_book.pdf', 2, TRUE, FALSE, 210, 95)
 ON DUPLICATE KEY UPDATE title=title;
 
 -- 6. Insert Book Categories

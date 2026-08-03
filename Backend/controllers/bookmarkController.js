@@ -9,7 +9,7 @@ exports.getUserBookmarks = async (req, res) => {
     }
 
     const [rows] = await pool.query(`
-      SELECT bm.*, b.title, b.cover_image_url, b.description, b.is_free, a.name AS author_name
+      SELECT bm.*, b.title, b.cover_image_url, b.description, b.is_free, b.likes_count, b.readers_count, a.name AS author_name
       FROM bookmarks bm
       JOIN books b ON bm.book_id = b.book_id
       LEFT JOIN authors a ON b.author_id = a.author_id
@@ -23,7 +23,7 @@ exports.getUserBookmarks = async (req, res) => {
   }
 };
 
-// POST /api/bookmarks
+// POST /api/bookmarks (Toggle or Add Bookmark / Like)
 exports.addBookmark = async (req, res) => {
   try {
     const { user_id, book_id } = req.body;
@@ -31,12 +31,20 @@ exports.addBookmark = async (req, res) => {
       return res.status(400).json({ success: false, message: 'user_id and book_id are required' });
     }
 
-    const [result] = await pool.query(
-      'INSERT INTO bookmarks (user_id, book_id) VALUES (?, ?) ON DUPLICATE KEY UPDATE created_at = CURRENT_TIMESTAMP',
-      [user_id, book_id]
-    );
+    // Check if already bookmarked
+    const [existing] = await pool.query('SELECT bookmark_id FROM bookmarks WHERE user_id = ? AND book_id = ?', [user_id, book_id]);
 
-    res.status(201).json({ success: true, message: 'Bookmark saved successfully' });
+    if (existing.length > 0) {
+      // Toggle off: remove bookmark and decrement likes_count
+      await pool.query('DELETE FROM bookmarks WHERE user_id = ? AND book_id = ?', [user_id, book_id]);
+      await pool.query('UPDATE books SET likes_count = GREATEST(0, likes_count - 1) WHERE book_id = ?', [book_id]);
+      return res.json({ success: true, isBookmarked: false, message: 'Bookmark removed successfully' });
+    } else {
+      // Toggle on: add bookmark and increment likes_count
+      await pool.query('INSERT INTO bookmarks (user_id, book_id) VALUES (?, ?)', [user_id, book_id]);
+      await pool.query('UPDATE books SET likes_count = likes_count + 1 WHERE book_id = ?', [book_id]);
+      return res.status(201).json({ success: true, isBookmarked: true, message: 'Bookmark saved successfully' });
+    }
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -46,7 +54,10 @@ exports.addBookmark = async (req, res) => {
 exports.removeBookmark = async (req, res) => {
   try {
     const { user_id, book_id } = req.body;
-    await pool.query('DELETE FROM bookmarks WHERE user_id = ? AND book_id = ?', [user_id, book_id]);
+    const [result] = await pool.query('DELETE FROM bookmarks WHERE user_id = ? AND book_id = ?', [user_id, book_id]);
+    if (result.affectedRows > 0) {
+      await pool.query('UPDATE books SET likes_count = GREATEST(0, likes_count - 1) WHERE book_id = ?', [book_id]);
+    }
     res.json({ success: true, message: 'Bookmark removed successfully' });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
