@@ -53,6 +53,21 @@ class KycModel {
     }
   }
 
+  factory KycModel.empty() {
+    return KycModel(
+      id: '',
+      userId: '',
+      userName: '',
+      userEmail: '',
+      idCardNumber: '',
+      fullName: '',
+      idCardImagePath: '',
+      selfieImagePath: '',
+      status: KycStatus.notSubmitted,
+      submittedAt: DateTime.now(),
+    );
+  }
+
   factory KycModel.fromMap(Map<String, dynamic> map, {String uploadsBaseUrl = 'http://localhost:5000/uploads'}) {
     KycStatus parsedStatus = KycStatus.pending;
     final st = map['status']?.toString().toLowerCase();

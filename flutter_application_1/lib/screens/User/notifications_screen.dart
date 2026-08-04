@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/models/kyc_model.dart';
 import '../../theme/app_theme.dart';
 import '../../models/notification_model.dart';
 import '../../services/notification_service.dart';
 import 'book_detail_screen.dart';
+import 'kyc_submission_screen.dart';
 import 'membership_package_screen.dart';
 
 class NotificationsScreen extends StatefulWidget {
@@ -16,7 +18,12 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   bool _isLoading = true;
   int _selectedFilterIndex = 0;
 
-  final List<String> _filterCategories = ['ທັງໝົດ', 'ລະບົບ & KYC', 'ແພັກເກັດ', 'ປຶ້ມໃໝ່'];
+  final List<String> _filterCategories = [
+    'ທັງໝົດ',
+    'ລະບົບ & KYC',
+    'ແພັກເກັດ',
+    'ປຶ້ມໃໝ່'
+  ];
 
   @override
   void initState() {
@@ -63,7 +70,13 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       case NotificationType.subscription:
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (_) => const MembershipPackageScreen()),
+          MaterialPageRoute(
+            builder: (_) => KycSubmissionScreen(
+              // ส่ง object KycModel เริ่มต้น หรือข้อมูลล่าสุดเข้าไป
+              currentKyc:
+                  KycModel.empty(), 
+            ),
+          ),
         );
         break;
 
@@ -92,10 +105,18 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   List<NotificationItem> _getFilteredList(List<NotificationItem> all) {
     if (_selectedFilterIndex == 0) return all;
     if (_selectedFilterIndex == 1) {
-      return all.where((n) => n.type == NotificationType.system || n.type == NotificationType.kyc).toList();
+      return all
+          .where((n) =>
+              n.type == NotificationType.system ||
+              n.type == NotificationType.kyc)
+          .toList();
     }
     if (_selectedFilterIndex == 2) {
-      return all.where((n) => n.type == NotificationType.subscription || n.type == NotificationType.promo).toList();
+      return all
+          .where((n) =>
+              n.type == NotificationType.subscription ||
+              n.type == NotificationType.promo)
+          .toList();
     }
     if (_selectedFilterIndex == 3) {
       return all.where((n) => n.type == NotificationType.book).toList();
@@ -117,26 +138,34 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             backgroundColor: Colors.white,
             elevation: 0.5,
             leading: IconButton(
-              icon: const Icon(Icons.arrow_back_rounded, color: AppColors.textPrimary),
+              icon: const Icon(Icons.arrow_back_rounded,
+                  color: AppColors.textPrimary),
               onPressed: () => Navigator.pop(context),
             ),
             title: Row(
               children: [
                 const Text(
                   'ການແຈ້ງເຕືອນ (Notifications)',
-                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                  style: TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary),
                 ),
                 if (unreadCount > 0) ...[
                   const SizedBox(width: 8),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                     decoration: BoxDecoration(
                       color: const Color(0xFFEF4444),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
                       '$unreadCount ໃໝ່',
-                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white),
+                      style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white),
                     ),
                   ),
                 ],
@@ -146,87 +175,103 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               if (unreadCount > 0)
                 TextButton.icon(
                   onPressed: _markAllAsRead,
-                  icon: const Icon(Icons.done_all_rounded, size: 16, color: AppColors.primary),
-                  label: const Text('ອ່ານທັງໝົດ', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.primary)),
+                  icon: const Icon(Icons.done_all_rounded,
+                      size: 16, color: AppColors.primary),
+                  label: const Text('ອ່ານທັງໝົດ',
+                      style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.primary)),
                 ),
             ],
           ),
-      body: Column(
-        children: [
-          // Filter Chips Row
-          Container(
-            color: Colors.white,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            child: SizedBox(
-              height: 36,
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                itemCount: _filterCategories.length,
-                itemBuilder: (context, idx) {
-                  final isSelected = _selectedFilterIndex == idx;
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: ChoiceChip(
-                      selected: isSelected,
-                      label: Text(_filterCategories[idx]),
-                      labelStyle: TextStyle(
-                        fontSize: 12,
-                        fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                        color: isSelected ? Colors.white : AppColors.textPrimary,
-                      ),
-                      selectedColor: AppColors.primary,
-                      backgroundColor: const Color(0xFFF1F5F9),
-                      side: BorderSide.none,
-                      onSelected: (selected) {
-                        if (selected) {
-                          setState(() => _selectedFilterIndex = idx);
-                        }
-                      },
-                    ),
-                  );
-                },
-              ),
-            ),
-          ),
-          const Divider(height: 1, color: Color(0xFFE2E8F0)),
-
-          // Main List Content
-          Expanded(
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
-                : filteredList.isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: const [
-                            Icon(Icons.notifications_off_outlined, size: 64, color: Color(0xFFCBD5E1)),
-                            SizedBox(height: 12),
-                            Text(
-                              'ບໍ່ມີການແຈ້ງເຕືອນໃນຂະນະນີ້',
-                              style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.textSecondary),
-                            ),
-                          ],
-                        ),
-                      )
-                    : RefreshIndicator(
-                        onRefresh: _fetchNotifications,
-                        color: AppColors.primary,
-                        child: ListView.separated(
-                          padding: const EdgeInsets.all(16),
-                          itemCount: filteredList.length,
-                          separatorBuilder: (_, __) => const SizedBox(height: 12),
-                          itemBuilder: (context, index) {
-                            final item = filteredList[index];
-                            return _buildNotificationCard(item);
+          body: Column(
+            children: [
+              // Filter Chips Row
+              Container(
+                color: Colors.white,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                child: SizedBox(
+                  height: 36,
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: _filterCategories.length,
+                    itemBuilder: (context, idx) {
+                      final isSelected = _selectedFilterIndex == idx;
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: ChoiceChip(
+                          selected: isSelected,
+                          label: Text(_filterCategories[idx]),
+                          labelStyle: TextStyle(
+                            fontSize: 12,
+                            fontWeight:
+                                isSelected ? FontWeight.bold : FontWeight.w500,
+                            color: isSelected
+                                ? Colors.white
+                                : AppColors.textPrimary,
+                          ),
+                          selectedColor: AppColors.primary,
+                          backgroundColor: const Color(0xFFF1F5F9),
+                          side: BorderSide.none,
+                          onSelected: (selected) {
+                            if (selected) {
+                              setState(() => _selectedFilterIndex = idx);
+                            }
                           },
                         ),
-                      ),
+                      );
+                    },
+                  ),
+                ),
+              ),
+              const Divider(height: 1, color: Color(0xFFE2E8F0)),
+
+              // Main List Content
+              Expanded(
+                child: _isLoading
+                    ? const Center(
+                        child:
+                            CircularProgressIndicator(color: AppColors.primary))
+                    : filteredList.isEmpty
+                        ? Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: const [
+                                Icon(Icons.notifications_off_outlined,
+                                    size: 64, color: Color(0xFFCBD5E1)),
+                                SizedBox(height: 12),
+                                Text(
+                                  'ບໍ່ມີການແຈ້ງເຕືອນໃນຂະນະນີ້',
+                                  style: TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.bold,
+                                      color: AppColors.textSecondary),
+                                ),
+                              ],
+                            ),
+                          )
+                        : RefreshIndicator(
+                            onRefresh: _fetchNotifications,
+                            color: AppColors.primary,
+                            child: ListView.separated(
+                              padding: const EdgeInsets.all(16),
+                              itemCount: filteredList.length,
+                              separatorBuilder: (_, __) =>
+                                  const SizedBox(height: 12),
+                              itemBuilder: (context, index) {
+                                final item = filteredList[index];
+                                return _buildNotificationCard(item);
+                              },
+                            ),
+                          ),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
-  },
-);
   }
 
   Widget _buildNotificationCard(NotificationItem item) {
@@ -273,7 +318,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           color: const Color(0xFFEF4444),
           borderRadius: BorderRadius.circular(16),
         ),
-        child: const Icon(Icons.delete_outline_rounded, color: Colors.white, size: 24),
+        child: const Icon(Icons.delete_outline_rounded,
+            color: Colors.white, size: 24),
       ),
       onDismissed: (_) => _deleteNotification(item.id),
       child: InkWell(
@@ -286,7 +332,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             color: item.isRead ? Colors.white : const Color(0xFFF0F7FF),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: item.isRead ? const Color(0xFFE2E8F0) : AppColors.primary.withOpacity(0.3),
+              color: item.isRead
+                  ? const Color(0xFFE2E8F0)
+                  : AppColors.primary.withOpacity(0.3),
               width: item.isRead ? 1 : 1.5,
             ),
             boxShadow: [
@@ -324,7 +372,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                             item.title,
                             style: TextStyle(
                               fontSize: 14,
-                              fontWeight: item.isRead ? FontWeight.w600 : FontWeight.bold,
+                              fontWeight: item.isRead
+                                  ? FontWeight.w600
+                                  : FontWeight.bold,
                               color: AppColors.textPrimary,
                             ),
                           ),
@@ -347,13 +397,16 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       style: TextStyle(
                         fontSize: 12,
                         height: 1.4,
-                        color: item.isRead ? AppColors.textSecondary : const Color(0xFF334155),
+                        color: item.isRead
+                            ? AppColors.textSecondary
+                            : const Color(0xFF334155),
                       ),
                     ),
                     const SizedBox(height: 8),
                     Text(
                       item.timeAgo,
-                      style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
+                      style: const TextStyle(
+                          fontSize: 11, color: Color(0xFF94A3B8)),
                     ),
                   ],
                 ),
