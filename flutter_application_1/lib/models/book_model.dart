@@ -20,6 +20,7 @@ class BookModel {
   final bool isBookmarked;
   final bool isFree;
   final bool isHidden;
+  final bool isDeleted;
   final String? createdAt;
 
   BookModel({
@@ -44,13 +45,19 @@ class BookModel {
     this.isBookmarked = false,
     this.isFree = true,
     this.isHidden = false,
+    this.isDeleted = false,
     this.createdAt,
   });
 
-  factory BookModel.fromMap(Map<String, dynamic> map, {String uploadsBaseUrl = 'http://localhost:5000/uploads'}) {
+  factory BookModel.fromMap(Map<String, dynamic> map,
+      {String uploadsBaseUrl = 'http://localhost:5000/uploads'}) {
     List<String> parsedTags = [];
     if (map['categories'] != null && map['categories'].toString().isNotEmpty) {
-      parsedTags = map['categories'].toString().split(', ').where((t) => t.isNotEmpty).toList();
+      parsedTags = map['categories']
+          .toString()
+          .split(', ')
+          .where((t) => t.isNotEmpty)
+          .toList();
     } else if (map['tags'] != null) {
       if (map['tags'] is List) {
         parsedTags = List<String>.from(map['tags']);
@@ -60,7 +67,8 @@ class BookModel {
     }
 
     List<int> parsedCategoryIds = [];
-    if (map['category_ids'] != null && map['category_ids'].toString().isNotEmpty) {
+    if (map['category_ids'] != null &&
+        map['category_ids'].toString().isNotEmpty) {
       parsedCategoryIds = map['category_ids']
           .toString()
           .split(',')
@@ -80,7 +88,8 @@ class BookModel {
     }
 
     String? pdf = map['file_pdf_url'] ?? map['pdfUrl'];
-    if (pdf != null && (pdf.startsWith('/uploads/') || pdf.startsWith('uploads/'))) {
+    if (pdf != null &&
+        (pdf.startsWith('/uploads/') || pdf.startsWith('uploads/'))) {
       pdf = '$uploadsBaseUrl/${pdf.replaceAll(RegExp(r'^/?uploads/'), '')}';
     }
 
@@ -89,9 +98,16 @@ class BookModel {
       parsedRating = double.tryParse(map['rating'].toString()) ?? 4.5;
     }
 
-    int parsedPages = int.tryParse(map['page_count']?.toString() ?? map['pageCount']?.toString() ?? '0') ?? 0;
-    int parsedSizeBytes = int.tryParse(map['file_size_bytes']?.toString() ?? map['fileSizeBytes']?.toString() ?? '0') ?? 0;
-    int? parsedUploadedBy = int.tryParse(map['uploaded_by']?.toString() ?? map['uploadedBy']?.toString() ?? '');
+    int parsedPages = int.tryParse(map['page_count']?.toString() ??
+            map['pageCount']?.toString() ??
+            '0') ??
+        0;
+    int parsedSizeBytes = int.tryParse(map['file_size_bytes']?.toString() ??
+            map['fileSizeBytes']?.toString() ??
+            '0') ??
+        0;
+    int? parsedUploadedBy = int.tryParse(
+        map['uploaded_by']?.toString() ?? map['uploadedBy']?.toString() ?? '');
 
     return BookModel(
       id: (map['book_id'] ?? map['id'] ?? '').toString(),
@@ -103,18 +119,33 @@ class BookModel {
       pageCount: parsedPages,
       fileSizeBytes: parsedSizeBytes,
       rating: parsedRating,
-      ratingText: map['ratingText'] ?? (parsedRating == 0.0 ? 'New' : parsedRating.toStringAsFixed(1)),
+      ratingText: map['ratingText'] ??
+          (parsedRating == 0.0 ? 'New' : parsedRating.toStringAsFixed(1)),
       tags: parsedTags.isEmpty ? ['ທົ່ວໄປ'] : parsedTags,
       imagePath: cover,
       pdfUrl: pdf,
       description: map['description'] ?? '',
       uploadedBy: parsedUploadedBy,
-      isPopular: map['is_popular'] == 1 || map['is_popular'] == true || map['isPopular'] == true,
-      isNew: map['is_new'] == 1 || map['is_new'] == true || map['isNew'] == true,
-      isRecommended: map['is_recommended'] == 1 || map['is_recommended'] == true || map['isRecommended'] == true,
-      isBookmarked: map['is_bookmarked'] == 1 || map['is_bookmarked'] == true || map['isBookmarked'] == true,
-      isFree: map['is_free'] == 1 || map['is_free'] == true || map['isFree'] == true,
-      isHidden: map['is_hidden'] == 1 || map['is_hidden'] == true || map['isHidden'] == true,
+      isPopular: map['is_popular'] == 1 ||
+          map['is_popular'] == true ||
+          map['isPopular'] == true,
+      isNew:
+          map['is_new'] == 1 || map['is_new'] == true || map['isNew'] == true,
+      isRecommended: map['is_recommended'] == 1 ||
+          map['is_recommended'] == true ||
+          map['isRecommended'] == true,
+      isBookmarked: map['is_bookmarked'] == 1 ||
+          map['is_bookmarked'] == true ||
+          map['isBookmarked'] == true,
+      isFree: map['is_free'] == 1 ||
+          map['is_free'] == true ||
+          map['isFree'] == true,
+      isHidden: map['is_hidden'] == 1 ||
+          map['is_hidden'] == true ||
+          map['isHidden'] == true,
+      isDeleted: map['is_deleted'] == 1 ||
+          map['is_deleted'] == true ||
+          map['isDeleted'] == true,
       createdAt: map['created_at']?.toString(),
     );
   }
@@ -145,6 +176,7 @@ class BookModel {
       'isBookmarked': isBookmarked,
       'is_free': isFree,
       'is_hidden': isHidden,
+      'is_deleted': isDeleted,
       'created_at': createdAt,
     };
   }

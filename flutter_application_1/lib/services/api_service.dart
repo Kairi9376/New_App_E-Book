@@ -14,7 +14,8 @@ class ApiService {
   static Map<String, dynamic>? currentUser;
 
   // Persistent Session Management
-  static Future<void> saveSession(Map<String, dynamic> user, String? token) async {
+  static Future<void> saveSession(
+      Map<String, dynamic> user, String? token) async {
     currentUser = user;
     authToken = token;
     try {
@@ -69,7 +70,8 @@ class ApiService {
   }
 
   // 1. Authentication: Login
-  static Future<Map<String, dynamic>> login(String email, String password) async {
+  static Future<Map<String, dynamic>> login(
+      String email, String password) async {
     try {
       final url = Uri.parse('${ApiConfig.baseUrl}/auth/login');
       final response = await http
@@ -87,7 +89,10 @@ class ApiService {
         await saveSession(currentUser!, authToken);
         return {'success': true, 'token': authToken, 'user': currentUser};
       } else {
-        return {'success': false, 'message': data['message'] ?? 'ເຂົ້າສູ່ລະບົບບໍ່ສຳເລັດ'};
+        return {
+          'success': false,
+          'message': data['message'] ?? 'ເຂົ້າສູ່ລະບົບບໍ່ສຳເລັດ'
+        };
       }
     } catch (e) {
       print('ApiService login error: $e');
@@ -101,7 +106,8 @@ class ApiService {
   }
 
   // 2. Authentication: Register (General User Registration)
-  static Future<Map<String, dynamic>> register(Map<String, dynamic> userData) async {
+  static Future<Map<String, dynamic>> register(
+      Map<String, dynamic> userData) async {
     try {
       final url = Uri.parse('${ApiConfig.baseUrl}/auth/register');
       final response = await http
@@ -119,7 +125,11 @@ class ApiService {
       if (response.statusCode == 200 || response.statusCode == 201) {
         if (data['token'] != null) authToken = data['token'];
         if (data['user'] != null) currentUser = data['user'];
-        return {'success': true, 'message': 'ລົງທະບຽນສຳເລັດ', 'user': data['user']};
+        return {
+          'success': true,
+          'message': 'ລົງທະບຽນສຳເລັດ',
+          'user': data['user']
+        };
       }
       return data;
     } catch (e) {
@@ -143,21 +153,29 @@ class ApiService {
   }
 
   // 3. Books: Fetch all books
-  static Future<List<BookModel>> getBooks({String? search, String? categoryId, bool? isFree}) async {
+  static Future<List<BookModel>> getBooks(
+      {String? search, String? categoryId, bool? isFree}) async {
     try {
       final queryParams = <String, String>{};
       if (search != null && search.isNotEmpty) queryParams['search'] = search;
-      if (categoryId != null && categoryId.isNotEmpty) queryParams['category_id'] = categoryId;
+      if (categoryId != null && categoryId.isNotEmpty)
+        queryParams['category_id'] = categoryId;
       if (isFree != null) queryParams['is_free'] = isFree ? 'true' : 'false';
 
-      final uri = Uri.parse('${ApiConfig.baseUrl}/books').replace(queryParameters: queryParams);
-      final response = await http.get(uri, headers: _headers).timeout(const Duration(seconds: 5));
+      final uri = Uri.parse('${ApiConfig.baseUrl}/books')
+          .replace(queryParameters: queryParams);
+      final response = await http
+          .get(uri, headers: _headers)
+          .timeout(const Duration(seconds: 5));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['success'] == true && data['books'] is List) {
           final List rawList = data['books'];
-          return rawList.map((item) => BookModel.fromMap(item, uploadsBaseUrl: ApiConfig.uploadsBaseUrl)).toList();
+          return rawList
+              .map((item) => BookModel.fromMap(item,
+                  uploadsBaseUrl: ApiConfig.uploadsBaseUrl))
+              .toList();
         }
       }
     } catch (e) {
@@ -172,12 +190,15 @@ class ApiService {
   static Future<BookModel?> getBookById(String id) async {
     try {
       final url = Uri.parse('${ApiConfig.baseUrl}/books/$id');
-      final response = await http.get(url, headers: _headers).timeout(const Duration(seconds: 5));
+      final response = await http
+          .get(url, headers: _headers)
+          .timeout(const Duration(seconds: 5));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['success'] == true && data['book'] != null) {
-          return BookModel.fromMap(data['book'], uploadsBaseUrl: ApiConfig.uploadsBaseUrl);
+          return BookModel.fromMap(data['book'],
+              uploadsBaseUrl: ApiConfig.uploadsBaseUrl);
         }
       }
     } catch (e) {
@@ -194,7 +215,8 @@ class ApiService {
   }
 
   // 5. Books: Create / Add new book (For Employee)
-  static Future<Map<String, dynamic>> createBook(Map<String, dynamic> bookData) async {
+  static Future<Map<String, dynamic>> createBook(
+      Map<String, dynamic> bookData) async {
     try {
       final url = Uri.parse('${ApiConfig.baseUrl}/books');
       final response = await http
@@ -208,7 +230,10 @@ class ApiService {
       return jsonDecode(response.body);
     } catch (e) {
       print('ApiService createBook error: $e');
-      return {'success': false, 'message': 'ບໍ່ສາມາດບັນທຶກປຶ້ມໄປຍັງຫຼັງບ້ານໄດ້: $e'};
+      return {
+        'success': false,
+        'message': 'ບໍ່ສາມາດບັນທຶກປຶ້ມໄປຍັງຫຼັງບ້ານໄດ້: $e'
+      };
     }
   }
 
@@ -235,15 +260,18 @@ class ApiService {
         ),
       );
 
-      final streamedResponse = await request.send().timeout(const Duration(seconds: 25));
+      final streamedResponse =
+          await request.send().timeout(const Duration(seconds: 25));
       final response = await http.Response.fromStream(streamedResponse);
       final data = jsonDecode(response.body);
 
       if (response.statusCode == 200 && data['success'] == true) {
         final uploadsMap = data['uploads'] as Map<String, dynamic>? ?? {};
-        final uploadInfo = uploadsMap[fieldName] ?? (uploadsMap.isNotEmpty ? uploadsMap.values.first : {});
+        final uploadInfo = uploadsMap[fieldName] ??
+            (uploadsMap.isNotEmpty ? uploadsMap.values.first : {});
 
-        final fileUrl = uploadInfo['url'] ?? '${ApiConfig.baseUrl}/uploads/$filename';
+        final fileUrl =
+            uploadInfo['url'] ?? '${ApiConfig.baseUrl}/uploads/$filename';
         final filePath = uploadInfo['path'] ?? 'uploads/$filename';
 
         return {
@@ -253,7 +281,10 @@ class ApiService {
           'filename': uploadInfo['filename'] ?? filename
         };
       } else {
-        return {'success': false, 'message': data['message'] ?? 'ອັບໂຫຼດບໍ່ສຳເລັດ'};
+        return {
+          'success': false,
+          'message': data['message'] ?? 'ອັບໂຫຼດບໍ່ສຳເລັດ'
+        };
       }
     } catch (e) {
       print('ApiService uploadFile error: $e');
@@ -265,7 +296,9 @@ class ApiService {
   static Future<List<Map<String, dynamic>>> getCategories() async {
     try {
       final url = Uri.parse('${ApiConfig.baseUrl}/categories');
-      final response = await http.get(url, headers: _headers).timeout(const Duration(seconds: 5));
+      final response = await http
+          .get(url, headers: _headers)
+          .timeout(const Duration(seconds: 5));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -290,7 +323,9 @@ class ApiService {
   static Future<List<Map<String, dynamic>>> getUsers() async {
     try {
       final url = Uri.parse('${ApiConfig.baseUrl}/users');
-      final response = await http.get(url, headers: _headers).timeout(const Duration(seconds: 5));
+      final response = await http
+          .get(url, headers: _headers)
+          .timeout(const Duration(seconds: 5));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -303,22 +338,53 @@ class ApiService {
     }
 
     return [
-      {'user_id': 1, 'email': 'admin@gmail.com', 'first_name': 'ผู้ดูแล', 'last_name': 'ระบบ (Admin)', 'role': 'admin', 'status': 'active'},
-      {'user_id': 2, 'email': 'employee@gmail.com', 'first_name': 'พนักงาน', 'last_name': 'จัดการคลัง', 'role': 'employee', 'status': 'active'},
-      {'user_id': 3, 'email': 'user1234@gmail.com', 'first_name': 'สมชาย', 'last_name': 'ใจดี', 'role': 'user', 'status': 'active'},
-      {'user_id': 4, 'email': 'member@gmail.com', 'first_name': 'พรีเมี่ยม', 'last_name': 'สมาชิก', 'role': 'user', 'status': 'active'},
+      {
+        'user_id': 1,
+        'email': 'admin@gmail.com',
+        'first_name': 'ผู้ดูแล',
+        'last_name': 'ระบบ (Admin)',
+        'role': 'admin',
+        'status': 'active'
+      },
+      {
+        'user_id': 2,
+        'email': 'employee@gmail.com',
+        'first_name': 'พนักงาน',
+        'last_name': 'จัดการคลัง',
+        'role': 'employee',
+        'status': 'active'
+      },
+      {
+        'user_id': 3,
+        'email': 'user1234@gmail.com',
+        'first_name': 'สมชาย',
+        'last_name': 'ใจดี',
+        'role': 'user',
+        'status': 'active'
+      },
+      {
+        'user_id': 4,
+        'email': 'member@gmail.com',
+        'first_name': 'พรีเมี่ยม',
+        'last_name': 'สมาชิก',
+        'role': 'user',
+        'status': 'active'
+      },
     ];
   }
 
   // 9. Users: Update status (For Admin)
-  static Future<bool> updateUserStatus(int userId, String status, {String? reason}) async {
+  static Future<bool> updateUserStatus(int userId, String status,
+      {String? reason}) async {
     try {
       final url = Uri.parse('${ApiConfig.baseUrl}/users/$userId/status');
-      final response = await http.put(
-        url,
-        headers: _headers,
-        body: jsonEncode({'status': status, 'suspended_reason': reason}),
-      ).timeout(const Duration(seconds: 5));
+      final response = await http
+          .put(
+            url,
+            headers: _headers,
+            body: jsonEncode({'status': status, 'suspended_reason': reason}),
+          )
+          .timeout(const Duration(seconds: 5));
 
       final data = jsonDecode(response.body);
       return response.statusCode == 200 && data['success'] == true;
@@ -329,14 +395,17 @@ class ApiService {
   }
 
   // 9.1 Users: Update Full User Information (For Admin)
-  static Future<bool> updateUser(int userId, Map<String, dynamic> userData) async {
+  static Future<bool> updateUser(
+      int userId, Map<String, dynamic> userData) async {
     try {
       final url = Uri.parse('${ApiConfig.baseUrl}/users/$userId');
-      final response = await http.put(
-        url,
-        headers: _headers,
-        body: jsonEncode(userData),
-      ).timeout(const Duration(seconds: 5));
+      final response = await http
+          .put(
+            url,
+            headers: _headers,
+            body: jsonEncode(userData),
+          )
+          .timeout(const Duration(seconds: 5));
 
       final data = jsonDecode(response.body);
       return response.statusCode == 200 && data['success'] == true;
@@ -350,14 +419,17 @@ class ApiService {
   static Future<bool> createUser(Map<String, dynamic> userData) async {
     try {
       final url = Uri.parse('${ApiConfig.baseUrl}/users');
-      final response = await http.post(
-        url,
-        headers: _headers,
-        body: jsonEncode(userData),
-      ).timeout(const Duration(seconds: 5));
+      final response = await http
+          .post(
+            url,
+            headers: _headers,
+            body: jsonEncode(userData),
+          )
+          .timeout(const Duration(seconds: 5));
 
       final data = jsonDecode(response.body);
-      return (response.statusCode == 200 || response.statusCode == 201) && data['success'] == true;
+      return (response.statusCode == 200 || response.statusCode == 201) &&
+          data['success'] == true;
     } catch (e) {
       print('ApiService createUser error: $e');
       return true; // Mock success fallback for offline dev mode
@@ -368,7 +440,9 @@ class ApiService {
   static Future<List<Map<String, dynamic>>> getKycList() async {
     try {
       final url = Uri.parse('${ApiConfig.baseUrl}/kyc');
-      final response = await http.get(url, headers: _headers).timeout(const Duration(seconds: 5));
+      final response = await http
+          .get(url, headers: _headers)
+          .timeout(const Duration(seconds: 5));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -384,18 +458,21 @@ class ApiService {
   }
 
   // 11. KYC: Update status (For Admin)
-  static Future<bool> updateKycStatus(int kycId, String status, {int? reviewedBy, String? rejectionReason}) async {
+  static Future<bool> updateKycStatus(int kycId, String status,
+      {int? reviewedBy, String? rejectionReason}) async {
     try {
       final url = Uri.parse('${ApiConfig.baseUrl}/kyc/$kycId/status');
-      final response = await http.put(
-        url,
-        headers: _headers,
-        body: jsonEncode({
-          'status': status,
-          'reviewed_by': reviewedBy ?? 1,
-          'rejection_reason': rejectionReason
-        }),
-      ).timeout(const Duration(seconds: 5));
+      final response = await http
+          .put(
+            url,
+            headers: _headers,
+            body: jsonEncode({
+              'status': status,
+              'reviewed_by': reviewedBy ?? 1,
+              'rejection_reason': rejectionReason
+            }),
+          )
+          .timeout(const Duration(seconds: 5));
 
       final data = jsonDecode(response.body);
       return response.statusCode == 200 && data['success'] == true;
@@ -418,7 +495,8 @@ class ApiService {
           .timeout(const Duration(seconds: 8));
 
       final data = jsonDecode(response.body);
-      return (response.statusCode == 200 || response.statusCode == 201) && data['success'] == true;
+      return (response.statusCode == 200 || response.statusCode == 201) &&
+          data['success'] == true;
     } catch (e) {
       print('ApiService submitKyc error: $e');
       return false;
@@ -429,7 +507,9 @@ class ApiService {
   static Future<KycModel?> getUserKycStatus(int userId) async {
     try {
       final url = Uri.parse('${ApiConfig.baseUrl}/kyc/user/$userId');
-      final response = await http.get(url, headers: _headers).timeout(const Duration(seconds: 5));
+      final response = await http
+          .get(url, headers: _headers)
+          .timeout(const Duration(seconds: 5));
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['success'] == true && data['kyc'] != null) {
@@ -444,7 +524,8 @@ class ApiService {
   }
 
   // 12. Books: Update book (For Admin/Employee)
-  static Future<bool> updateBook(String bookId, Map<String, dynamic> updateData) async {
+  static Future<bool> updateBook(
+      String bookId, Map<String, dynamic> updateData) async {
     try {
       final url = Uri.parse('${ApiConfig.baseUrl}/books/$bookId');
       final response = await http
@@ -467,12 +548,54 @@ class ApiService {
   static Future<bool> deleteBook(String bookId) async {
     try {
       final url = Uri.parse('${ApiConfig.baseUrl}/books/$bookId');
-      final response = await http.delete(url, headers: _headers).timeout(const Duration(seconds: 5));
+      final response = await http
+          .delete(url, headers: _headers)
+          .timeout(const Duration(seconds: 5));
 
       final data = jsonDecode(response.body);
       return response.statusCode == 200 && data['success'] == true;
     } catch (e) {
       print('ApiService deleteBook error: $e');
+      return false;
+    }
+  }
+
+  // 13.1 Books: Fetch deleted (soft-deleted) books (For Restore)
+  static Future<List<BookModel>> getDeletedBooks() async {
+    try {
+      final url = Uri.parse('${ApiConfig.baseUrl}/books/deleted');
+      final response = await http
+          .get(url, headers: _headers)
+          .timeout(const Duration(seconds: 5));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['success'] == true && data['books'] is List) {
+          final List rawList = data['books'];
+          return rawList
+              .map((item) => BookModel.fromMap(item,
+                  uploadsBaseUrl: ApiConfig.uploadsBaseUrl))
+              .toList();
+        }
+      }
+    } catch (e) {
+      print('ApiService getDeletedBooks error: $e');
+    }
+    return [];
+  }
+
+  // 13.2 Books: Restore soft-deleted book (For Employee/Admin)
+  static Future<bool> restoreBook(String bookId) async {
+    try {
+      final url = Uri.parse('${ApiConfig.baseUrl}/books/$bookId/restore');
+      final response = await http
+          .put(url, headers: _headers)
+          .timeout(const Duration(seconds: 5));
+
+      final data = jsonDecode(response.body);
+      return response.statusCode == 200 && data['success'] == true;
+    } catch (e) {
+      print('ApiService restoreBook error: $e');
       return false;
     }
   }
@@ -497,11 +620,49 @@ class ApiService {
     }
   }
 
+  // 14.1 Categories: Update Category (For Admin/Employee)
+  static Future<bool> updateCategory(int categoryId, String name) async {
+    try {
+      final url = Uri.parse('${ApiConfig.baseUrl}/categories/$categoryId');
+      final response = await http
+          .put(
+            url,
+            headers: _headers,
+            body: jsonEncode({'name': name}),
+          )
+          .timeout(const Duration(seconds: 5));
+
+      final data = jsonDecode(response.body);
+      return response.statusCode == 200 && data['success'] == true;
+    } catch (e) {
+      print('ApiService updateCategory error: $e');
+      return false;
+    }
+  }
+
+  // 14.2 Categories: Delete Category (For Admin/Employee)
+  static Future<bool> deleteCategory(int categoryId) async {
+    try {
+      final url = Uri.parse('${ApiConfig.baseUrl}/categories/$categoryId');
+      final response = await http
+          .delete(url, headers: _headers)
+          .timeout(const Duration(seconds: 5));
+
+      final data = jsonDecode(response.body);
+      return response.statusCode == 200 && data['success'] == true;
+    } catch (e) {
+      print('ApiService deleteCategory error: $e');
+      return false;
+    }
+  }
+
   // 15. Subscriptions: Fetch all subscription requests (For Admin)
   static Future<List<Map<String, dynamic>>> getSubscriptions() async {
     try {
       final url = Uri.parse('${ApiConfig.baseUrl}/subscriptions');
-      final response = await http.get(url, headers: _headers).timeout(const Duration(seconds: 5));
+      final response = await http
+          .get(url, headers: _headers)
+          .timeout(const Duration(seconds: 5));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -516,18 +677,21 @@ class ApiService {
   }
 
   // 16. Subscriptions: Update payment status (For Admin Approval/Rejection)
-  static Future<bool> updateSubscriptionStatus(int subId, String status, {int? approvedBy, String? reason}) async {
+  static Future<bool> updateSubscriptionStatus(int subId, String status,
+      {int? approvedBy, String? reason}) async {
     try {
       final url = Uri.parse('${ApiConfig.baseUrl}/subscriptions/$subId/status');
-      final response = await http.put(
-        url,
-        headers: _headers,
-        body: jsonEncode({
-          'payment_status': status,
-          'approved_by': approvedBy ?? currentUser?['user_id'] ?? 1,
-          'rejected_reason': reason
-        }),
-      ).timeout(const Duration(seconds: 5));
+      final response = await http
+          .put(
+            url,
+            headers: _headers,
+            body: jsonEncode({
+              'payment_status': status,
+              'approved_by': approvedBy ?? currentUser?['user_id'] ?? 1,
+              'rejected_reason': reason
+            }),
+          )
+          .timeout(const Duration(seconds: 5));
 
       final data = jsonDecode(response.body);
       return response.statusCode == 200 && data['success'] == true;
@@ -541,11 +705,13 @@ class ApiService {
   static Future<bool> createSubscription(Map<String, dynamic> subData) async {
     try {
       final url = Uri.parse('${ApiConfig.baseUrl}/subscriptions');
-      final response = await http.post(
-        url,
-        headers: _headers,
-        body: jsonEncode(subData),
-      ).timeout(const Duration(seconds: 10));
+      final response = await http
+          .post(
+            url,
+            headers: _headers,
+            body: jsonEncode(subData),
+          )
+          .timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = jsonDecode(response.body);
@@ -559,10 +725,13 @@ class ApiService {
   }
 
   // 18. Subscriptions: Fetch live user subscription status
-  static Future<Map<String, dynamic>?> getUserSubscriptionStatus(int userId) async {
+  static Future<Map<String, dynamic>?> getUserSubscriptionStatus(
+      int userId) async {
     try {
       final url = Uri.parse('${ApiConfig.baseUrl}/subscriptions/user/$userId');
-      final response = await http.get(url, headers: _headers).timeout(const Duration(seconds: 5));
+      final response = await http
+          .get(url, headers: _headers)
+          .timeout(const Duration(seconds: 5));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -581,7 +750,9 @@ class ApiService {
   static Future<List<Map<String, dynamic>>> getPackages() async {
     try {
       final url = Uri.parse('${ApiConfig.baseUrl}/packages');
-      final response = await http.get(url, headers: _headers).timeout(const Duration(seconds: 5));
+      final response = await http
+          .get(url, headers: _headers)
+          .timeout(const Duration(seconds: 5));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -624,11 +795,13 @@ class ApiService {
   static Future<bool> createPackage(Map<String, dynamic> pkgData) async {
     try {
       final url = Uri.parse('${ApiConfig.baseUrl}/packages');
-      final response = await http.post(
-        url,
-        headers: _headers,
-        body: jsonEncode(pkgData),
-      ).timeout(const Duration(seconds: 5));
+      final response = await http
+          .post(
+            url,
+            headers: _headers,
+            body: jsonEncode(pkgData),
+          )
+          .timeout(const Duration(seconds: 5));
 
       final data = jsonDecode(response.body);
       return response.statusCode == 201 && data['success'] == true;
@@ -642,7 +815,9 @@ class ApiService {
   static Future<List<Map<String, dynamic>>> getAuthors() async {
     try {
       final url = Uri.parse('${ApiConfig.baseUrl}/authors');
-      final response = await http.get(url, headers: _headers).timeout(const Duration(seconds: 5));
+      final response = await http
+          .get(url, headers: _headers)
+          .timeout(const Duration(seconds: 5));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -663,11 +838,13 @@ class ApiService {
   static Future<bool> createAuthor(String name, {String? bio}) async {
     try {
       final url = Uri.parse('${ApiConfig.baseUrl}/authors');
-      final response = await http.post(
-        url,
-        headers: _headers,
-        body: jsonEncode({'name': name, 'biography': bio}),
-      ).timeout(const Duration(seconds: 5));
+      final response = await http
+          .post(
+            url,
+            headers: _headers,
+            body: jsonEncode({'name': name, 'biography': bio}),
+          )
+          .timeout(const Duration(seconds: 5));
 
       final data = jsonDecode(response.body);
       return response.statusCode == 201 && data['success'] == true;
@@ -678,14 +855,17 @@ class ApiService {
   }
 
   // 20.1 Authors: Update author (For Admin)
-  static Future<bool> updateAuthor(int authorId, String name, {String? bio}) async {
+  static Future<bool> updateAuthor(int authorId, String name,
+      {String? bio}) async {
     try {
       final url = Uri.parse('${ApiConfig.baseUrl}/authors/$authorId');
-      final response = await http.put(
-        url,
-        headers: _headers,
-        body: jsonEncode({'name': name, 'biography': bio}),
-      ).timeout(const Duration(seconds: 5));
+      final response = await http
+          .put(
+            url,
+            headers: _headers,
+            body: jsonEncode({'name': name, 'biography': bio}),
+          )
+          .timeout(const Duration(seconds: 5));
 
       final data = jsonDecode(response.body);
       return response.statusCode == 200 && data['success'] == true;
@@ -699,7 +879,9 @@ class ApiService {
   static Future<bool> deleteAuthor(int authorId) async {
     try {
       final url = Uri.parse('${ApiConfig.baseUrl}/authors/$authorId');
-      final response = await http.delete(url, headers: _headers).timeout(const Duration(seconds: 5));
+      final response = await http
+          .delete(url, headers: _headers)
+          .timeout(const Duration(seconds: 5));
 
       final data = jsonDecode(response.body);
       return response.statusCode == 200 && data['success'] == true;
@@ -713,7 +895,9 @@ class ApiService {
   static Future<List<Map<String, dynamic>>> getAuditLogs() async {
     try {
       final url = Uri.parse('${ApiConfig.baseUrl}/audit-logs');
-      final response = await http.get(url, headers: _headers).timeout(const Duration(seconds: 5));
+      final response = await http
+          .get(url, headers: _headers)
+          .timeout(const Duration(seconds: 5));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -734,12 +918,17 @@ class ApiService {
       final userId = user['user_id'] ?? 3;
 
       final url = Uri.parse('${ApiConfig.baseUrl}/history?user_id=$userId');
-      final response = await http.get(url, headers: _headers).timeout(const Duration(seconds: 5));
+      final response = await http
+          .get(url, headers: _headers)
+          .timeout(const Duration(seconds: 5));
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['success'] == true && data['history'] is List) {
           final List rawList = data['history'];
-          return rawList.map((item) => HistoryBookItem.fromMap(item, uploadsBaseUrl: ApiConfig.uploadsBaseUrl)).toList();
+          return rawList
+              .map((item) => HistoryBookItem.fromMap(item,
+                  uploadsBaseUrl: ApiConfig.uploadsBaseUrl))
+              .toList();
         }
       }
     } catch (e) {
@@ -749,26 +938,34 @@ class ApiService {
   }
 
   // 22b. User: Record Reading History & Progress
-  static Future<bool> recordReadingHistory({required String bookId, required int lastPageRead, int totalPages = 1}) async {
+  static Future<bool> recordReadingHistory(
+      {required String bookId,
+      required int lastPageRead,
+      int totalPages = 1}) async {
     try {
       final user = currentUser ?? {};
       final userId = user['user_id'] ?? 3;
-      final double progressPercent = totalPages > 0 ? (lastPageRead / totalPages * 100.0).clamp(0.0, 100.0) : 0.0;
+      final double progressPercent = totalPages > 0
+          ? (lastPageRead / totalPages * 100.0).clamp(0.0, 100.0)
+          : 0.0;
 
       final url = Uri.parse('${ApiConfig.baseUrl}/history');
-      final response = await http.post(
-        url,
-        headers: _headers,
-        body: jsonEncode({
-          'user_id': userId,
-          'book_id': bookId,
-          'last_page_read': lastPageRead,
-          'progress_percent': progressPercent,
-        }),
-      ).timeout(const Duration(seconds: 5));
+      final response = await http
+          .post(
+            url,
+            headers: _headers,
+            body: jsonEncode({
+              'user_id': userId,
+              'book_id': bookId,
+              'last_page_read': lastPageRead,
+              'progress_percent': progressPercent,
+            }),
+          )
+          .timeout(const Duration(seconds: 5));
 
       final data = jsonDecode(response.body);
-      return response.statusCode == 200 || response.statusCode == 201 && data['success'] == true;
+      return response.statusCode == 200 ||
+          response.statusCode == 201 && data['success'] == true;
     } catch (e) {
       print('ApiService recordReadingHistory error: $e');
       return true;
@@ -782,12 +979,17 @@ class ApiService {
       final userId = user['user_id'] ?? 3;
 
       final url = Uri.parse('${ApiConfig.baseUrl}/bookmarks?user_id=$userId');
-      final response = await http.get(url, headers: _headers).timeout(const Duration(seconds: 5));
+      final response = await http
+          .get(url, headers: _headers)
+          .timeout(const Duration(seconds: 5));
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['success'] == true && data['bookmarks'] is List) {
           final List rawList = data['bookmarks'];
-          return rawList.map((item) => SavedBookItem.fromMap(item, uploadsBaseUrl: ApiConfig.uploadsBaseUrl)).toList();
+          return rawList
+              .map((item) => SavedBookItem.fromMap(item,
+                  uploadsBaseUrl: ApiConfig.uploadsBaseUrl))
+              .toList();
         }
       }
     } catch (e) {
@@ -803,12 +1005,17 @@ class ApiService {
       final userId = user['user_id'] ?? 3;
 
       final url = Uri.parse('${ApiConfig.baseUrl}/downloads?user_id=$userId');
-      final response = await http.get(url, headers: _headers).timeout(const Duration(seconds: 5));
+      final response = await http
+          .get(url, headers: _headers)
+          .timeout(const Duration(seconds: 5));
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['success'] == true && data['downloads'] is List) {
           final List rawList = data['downloads'];
-          return rawList.map((item) => DownloadedBookItem.fromMap(item, uploadsBaseUrl: ApiConfig.uploadsBaseUrl)).toList();
+          return rawList
+              .map((item) => DownloadedBookItem.fromMap(item,
+                  uploadsBaseUrl: ApiConfig.uploadsBaseUrl))
+              .toList();
         }
       }
     } catch (e) {
@@ -824,18 +1031,21 @@ class ApiService {
       final userId = user['user_id'] ?? 3;
 
       final url = Uri.parse('${ApiConfig.baseUrl}/downloads');
-      final response = await http.post(
-        url,
-        headers: _headers,
-        body: jsonEncode({
-          'user_id': userId,
-          'book_id': bookId,
-          'device_info': 'Flutter Application',
-        }),
-      ).timeout(const Duration(seconds: 5));
+      final response = await http
+          .post(
+            url,
+            headers: _headers,
+            body: jsonEncode({
+              'user_id': userId,
+              'book_id': bookId,
+              'device_info': 'Flutter Application',
+            }),
+          )
+          .timeout(const Duration(seconds: 5));
 
       final data = jsonDecode(response.body);
-      return response.statusCode == 200 || response.statusCode == 201 && data['success'] == true;
+      return response.statusCode == 200 ||
+          response.statusCode == 201 && data['success'] == true;
     } catch (e) {
       print('ApiService recordDownload error: $e');
       return true;
@@ -849,17 +1059,20 @@ class ApiService {
       final userId = user['user_id'] ?? 3;
 
       final url = Uri.parse('${ApiConfig.baseUrl}/bookmarks');
-      final response = await http.post(
-        url,
-        headers: _headers,
-        body: jsonEncode({
-          'user_id': userId,
-          'book_id': bookId,
-        }),
-      ).timeout(const Duration(seconds: 5));
+      final response = await http
+          .post(
+            url,
+            headers: _headers,
+            body: jsonEncode({
+              'user_id': userId,
+              'book_id': bookId,
+            }),
+          )
+          .timeout(const Duration(seconds: 5));
 
       final data = jsonDecode(response.body);
-      return response.statusCode == 200 || response.statusCode == 201 && data['success'] == true;
+      return response.statusCode == 200 ||
+          response.statusCode == 201 && data['success'] == true;
     } catch (e) {
       print('ApiService toggleBookmark error: $e');
       return true;
@@ -870,7 +1083,9 @@ class ApiService {
   static Future<Map<String, dynamic>> getUserProfile() async {
     try {
       final url = Uri.parse('${ApiConfig.baseUrl}/user/profile');
-      final response = await http.get(url, headers: _headers).timeout(const Duration(seconds: 5));
+      final response = await http
+          .get(url, headers: _headers)
+          .timeout(const Duration(seconds: 5));
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['success'] == true && data['user'] != null) {
@@ -881,15 +1096,16 @@ class ApiService {
     } catch (e) {
       print('ApiService getUserProfile error: $e');
     }
-    return currentUser ?? {
-      'user_id': 3,
-      'first_name': 'ສົມຊາຍ',
-      'last_name': 'ໃຈດີ',
-      'email': 'user1234@gmail.com',
-      'role': 'user',
-      'created_at': '2026-11-04',
-      'expires_at': '2026-12-04',
-    };
+    return currentUser ??
+        {
+          'user_id': 3,
+          'first_name': 'ສົມຊາຍ',
+          'last_name': 'ໃຈດີ',
+          'email': 'user1234@gmail.com',
+          'role': 'user',
+          'created_at': '2026-11-04',
+          'expires_at': '2026-12-04',
+        };
   }
 
   // Helper Fallback Mock Books
@@ -902,26 +1118,51 @@ class ApiService {
   }
 
   // Helper Fallback Mock Login
-  static Map<String, dynamic> _mockLoginFallback(String email, String password) {
+  static Map<String, dynamic> _mockLoginFallback(
+      String email, String password) {
     if (email == 'admin@gmail.com' && password == 'admin123456') {
       return {
         'success': true,
-        'user': {'user_id': 1, 'email': email, 'first_name': 'Admin', 'last_name': 'System', 'role': 'admin'}
+        'user': {
+          'user_id': 1,
+          'email': email,
+          'first_name': 'Admin',
+          'last_name': 'System',
+          'role': 'admin'
+        }
       };
     } else if (email == 'employee@gmail.com' && password == 'employee123') {
       return {
         'success': true,
-        'user': {'user_id': 2, 'email': email, 'first_name': 'Staff', 'last_name': 'Employee', 'role': 'employee'}
+        'user': {
+          'user_id': 2,
+          'email': email,
+          'first_name': 'Staff',
+          'last_name': 'Employee',
+          'role': 'employee'
+        }
       };
     } else if (email == 'member@gmail.com' && password == 'member1234') {
       return {
         'success': true,
-        'user': {'user_id': 3, 'email': email, 'first_name': 'Premiere', 'last_name': 'Member', 'role': 'user'}
+        'user': {
+          'user_id': 3,
+          'email': email,
+          'first_name': 'Premiere',
+          'last_name': 'Member',
+          'role': 'user'
+        }
       };
     } else if (email == 'user1234@gmail.com' && password == 'user1234') {
       return {
         'success': true,
-        'user': {'user_id': 4, 'email': email, 'first_name': 'General', 'last_name': 'User', 'role': 'user'}
+        'user': {
+          'user_id': 4,
+          'email': email,
+          'first_name': 'General',
+          'last_name': 'User',
+          'role': 'user'
+        }
       };
     } else {
       return {'success': false, 'message': 'ອີເມວ ຫຼື ລະຫັດຜ່ານບໍ່ຖືກຕ້ອງ'};

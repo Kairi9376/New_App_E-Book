@@ -75,6 +75,7 @@ CREATE TABLE IF NOT EXISTS books (
     is_hidden BOOLEAN DEFAULT FALSE, -- แอดมิน/พนักงาน กดซ่อนหนังสือได้
     readers_count INT DEFAULT 0,     -- จำนวนผู้เข้าอ่านทั้งหมด
     likes_count INT DEFAULT 0,       -- จำนวนคนกดใจทั้งหมด
+    is_deleted BOOLEAN DEFAULT FALSE, -- Soft delete: หนังสือที่ถูกลบจะไม่แสดง (เก็บไฟล์/ข้อมูลไว้)
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (author_id) REFERENCES authors(author_id),
