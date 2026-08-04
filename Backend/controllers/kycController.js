@@ -1,5 +1,6 @@
 const { pool } = require('../config/db');
 const { deleteOldFile } = require('../utils/fileUtils');
+const { createNotification } = require('./notificationController');
 
 // GET /api/kyc
 exports.getAllKyc = async (req, res) => {
@@ -74,6 +75,7 @@ exports.getUserKyc = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
 exports.updateKycStatus = async (req, res) => {
   try {
     const { id } = req.params;
@@ -83,12 +85,33 @@ exports.updateKycStatus = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Invalid status value' });
     }
 
+    const [kycRows] = await pool.query('SELECT user_id FROM kyc_verifications WHERE kyc_id = ?', [id]);
+
     await pool.query(
       `UPDATE kyc_verifications 
        SET status = ?, reviewed_by = ?, rejection_reason = ?
        WHERE kyc_id = ?`,
       [status, reviewed_by || null, rejection_reason || null, id]
     );
+
+    if (kycRows.length > 0) {
+      const targetUserId = kycRows[0].user_id;
+      if (status === 'approved') {
+        await createNotification({
+          userId: targetUserId,
+          title: '🎉 ຢືນຢັນຕົວຕົນ (KYC) ສຳເລັດແລ້ວ!',
+          message: 'ບັນຊີຂອງທ່ານໄດ້ຮັບການອະນຸມັດ KYC ຮຽບຮ້ອຍແລ້ວ ສາມາດສະໝັກແພັກເກັດສະມາຊິກເພື່ອເລີ່ມໃຊ້ງານໄດ້ທັນທີ',
+          type: 'kyc',
+        });
+      } else if (status === 'rejected') {
+        await createNotification({
+          userId: targetUserId,
+          title: '⚠️ ການຢືນຢັນຕົວຕົນ (KYC) ບໍ່ຜ່ານການອະນຸມັດ',
+          message: `ເຫດຜົນ: ${rejection_reason || 'ເອກະສານບໍ່ຈະແຈ້ງ'} ກະລຸນາຍື່ນເອກະສານແກ້ໄຂใหມ່ອີກຄັ້ງ`,
+          type: 'kyc',
+        });
+      }
+    }
 
     res.json({ success: true, message: `KYC verification status updated to ${status}` });
   } catch (error) {

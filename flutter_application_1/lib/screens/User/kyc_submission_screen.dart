@@ -6,6 +6,8 @@ import '../../models/kyc_model.dart';
 import '../../services/api_service.dart';
 import '../../services/file_picker_helper.dart';
 import '../../utils/image_helper.dart';
+import '../../services/notification_service.dart';
+import '../../models/notification_model.dart';
 import 'membership_package_screen.dart';
 
 class KycSubmissionScreen extends StatefulWidget {
@@ -104,6 +106,7 @@ class _KycSubmissionScreenState extends State<KycSubmissionScreen> {
     setState(() => _isUploadingDoc = true);
     try {
       final picked = await FilePickerHelper.pickFile(accept: 'image/*');
+      await Future.delayed(const Duration(milliseconds: 100));
       if (picked != null) {
         final bytes = Uint8List.fromList(picked.bytes);
         // Upload to backend API
@@ -138,7 +141,7 @@ class _KycSubmissionScreenState extends State<KycSubmissionScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('เกิดข้อผิดพลาดในการอัปโหลด: $e'), backgroundColor: Colors.redAccent),
+          SnackBar(content: Text('ເກີດຂໍ້ຜິດພາດໃນການອັບໂຫຼດ: $e'), backgroundColor: Colors.redAccent),
         );
       }
     } finally {
@@ -150,6 +153,7 @@ class _KycSubmissionScreenState extends State<KycSubmissionScreen> {
     setState(() => _isUploadingSelfie = true);
     try {
       final picked = await FilePickerHelper.pickFile(accept: 'image/*');
+      await Future.delayed(const Duration(milliseconds: 100));
       if (picked != null) {
         final bytes = Uint8List.fromList(picked.bytes);
         // Upload to backend API
@@ -184,7 +188,7 @@ class _KycSubmissionScreenState extends State<KycSubmissionScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('เกิดข้อผิดพลาดในการอัปโหลด: $e'), backgroundColor: Colors.redAccent),
+          SnackBar(content: Text('ເກີດຂໍ້ຜິດພາດໃນການອັບໂຫຼດ: $e'), backgroundColor: Colors.redAccent),
         );
       }
     } finally {
@@ -244,11 +248,11 @@ class _KycSubmissionScreenState extends State<KycSubmissionScreen> {
         widget.onKycUpdated!(updatedKyc);
       }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(success ? 'ສົ່ງຂໍ້ມູນຢືນຢັນຕົວຕົນ (KYC) ເຂົ້າຖານຂໍ້ມູນ MySQL ສຳເລັດ!' : 'ສົ່ງຂໍ້ມູນຢືนຢັນຕົວຕົນ (KYC) ສຳເລັດ! ກະລຸນາລໍຖ້າແອດມິນອະນຸມັດ'),
-          backgroundColor: const Color(0xFF10B981),
-        ),
+      NotificationService.addNotification(
+        context,
+        title: '🛡️ ສົ່ງຂໍ້ມູນຢືນຢັນຕົວຕົນ (KYC) ສຳເລັດແລ້ວ',
+        message: 'ຂໍ້ມູນເອກະສານຂອງທ່ານຖືກສົ່ງເຂົ້າสู่ระบบແລ້ວ ກະລຸນາລໍຖ້າການກວດສອບ ແລະ ອະນຸມັດຈາກແອດມິນ',
+        type: NotificationType.kyc,
       );
     }
   }

@@ -9,6 +9,9 @@ class BookModel {
   final int fileSizeBytes;
   final double rating;
   final String ratingText;
+  final int likeCount;
+  final int viewCount;
+  final bool isLiked;
   final List<String> tags;
   final String imagePath;
   final String? pdfUrl;
@@ -31,8 +34,11 @@ class BookModel {
     this.language = 'LA',
     this.pageCount = 0,
     this.fileSizeBytes = 0,
-    required this.rating,
+    this.rating = 0.0,
     this.ratingText = '',
+    this.likeCount = 0,
+    this.viewCount = 0,
+    this.isLiked = false,
     required this.tags,
     required this.imagePath,
     this.pdfUrl,
@@ -46,6 +52,20 @@ class BookModel {
     this.isHidden = false,
     this.createdAt,
   });
+
+  String get formattedLikes {
+    if (likeCount >= 1000) {
+      return '${(likeCount / 1000).toStringAsFixed(1)}k';
+    }
+    return likeCount.toString();
+  }
+
+  String get formattedViews {
+    if (viewCount >= 1000) {
+      return '${(viewCount / 1000).toStringAsFixed(1)}k';
+    }
+    return viewCount.toString();
+  }
 
   factory BookModel.fromMap(Map<String, dynamic> map, {String uploadsBaseUrl = 'http://localhost:5000/uploads'}) {
     List<String> parsedTags = [];
@@ -84,10 +104,14 @@ class BookModel {
       pdf = '$uploadsBaseUrl/${pdf.replaceAll(RegExp(r'^/?uploads/'), '')}';
     }
 
-    double parsedRating = 4.5;
+    double parsedRating = 0.0;
     if (map['rating'] != null) {
-      parsedRating = double.tryParse(map['rating'].toString()) ?? 4.5;
+      parsedRating = double.tryParse(map['rating'].toString()) ?? 0.0;
     }
+
+    int parsedLikes = int.tryParse(map['like_count']?.toString() ?? map['likes']?.toString() ?? map['likeCount']?.toString() ?? '124') ?? 124;
+    int parsedViews = int.tryParse(map['view_count']?.toString() ?? map['views']?.toString() ?? map['readers']?.toString() ?? map['viewCount']?.toString() ?? '350') ?? 350;
+    bool parsedIsLiked = map['is_liked'] == 1 || map['is_liked'] == true || map['isLiked'] == true;
 
     int parsedPages = int.tryParse(map['page_count']?.toString() ?? map['pageCount']?.toString() ?? '0') ?? 0;
     int parsedSizeBytes = int.tryParse(map['file_size_bytes']?.toString() ?? map['fileSizeBytes']?.toString() ?? '0') ?? 0;
@@ -104,6 +128,9 @@ class BookModel {
       fileSizeBytes: parsedSizeBytes,
       rating: parsedRating,
       ratingText: map['ratingText'] ?? (parsedRating == 0.0 ? 'New' : parsedRating.toStringAsFixed(1)),
+      likeCount: parsedLikes,
+      viewCount: parsedViews,
+      isLiked: parsedIsLiked,
       tags: parsedTags.isEmpty ? ['ທົ່ວໄປ'] : parsedTags,
       imagePath: cover,
       pdfUrl: pdf,
@@ -132,6 +159,9 @@ class BookModel {
       'file_size_bytes': fileSizeBytes,
       'rating': rating,
       'ratingText': ratingText,
+      'like_count': likeCount,
+      'view_count': viewCount,
+      'is_liked': isLiked,
       'tags': tags,
       'cover_image_url': imagePath,
       'imagePath': imagePath,
@@ -156,8 +186,8 @@ class MockBookData {
       id: '1',
       title: 'The Happiness Effect',
       author: 'Stephen T. Radentz',
-      rating: 4.9,
-      ratingText: '4.9',
+      likeCount: 1240,
+      viewCount: 4500,
       tags: ['ຊີວິດ'],
       imagePath: 'assets/sample_cover.png',
       pdfUrl: 'assets/sample_book.pdf',
@@ -167,8 +197,8 @@ class MockBookData {
       id: '2',
       title: 'High School Science',
       author: 'Nageen Prakashan',
-      rating: 3.7,
-      ratingText: '3.7',
+      likeCount: 890,
+      viewCount: 3200,
       tags: ['ວິທະຍາສາດ'],
       imagePath: 'assets/sample_cover.png',
       pdfUrl: 'assets/sample_book.pdf',
@@ -181,8 +211,8 @@ class MockBookData {
       id: '3',
       title: 'Quantum Mechanics',
       author: 'Dr. Elias Thorne',
-      rating: 0.0,
-      ratingText: 'New',
+      likeCount: 450,
+      viewCount: 1800,
       tags: ['ສິລະປະ'],
       imagePath: 'assets/sample_cover.png',
       pdfUrl: 'assets/sample_book.pdf',
@@ -192,8 +222,8 @@ class MockBookData {
       id: '4',
       title: 'Advances in Physics',
       author: 'Dr. Elias Thorne',
-      rating: 0.0,
-      ratingText: 'New',
+      likeCount: 320,
+      viewCount: 1200,
       tags: ['ຜະຈົນໄພ'],
       imagePath: 'assets/sample_cover.png',
       pdfUrl: 'assets/sample_book.pdf',
@@ -206,8 +236,8 @@ class MockBookData {
       id: '6',
       title: 'Learning English Book 3',
       author: 'English Teacher',
-      rating: 4.9,
-      ratingText: '4.9',
+      likeCount: 2150,
+      viewCount: 6800,
       tags: ['ພາສາອັງກິດ'],
       imagePath: 'assets/sample_cover.png',
       pdfUrl: 'assets/sample_book.pdf',
@@ -217,8 +247,8 @@ class MockBookData {
       id: '7',
       title: 'Everything you need to ace MATHS',
       author: 'Award Winning teacher',
-      rating: 5.0,
-      ratingText: '5.0',
+      likeCount: 3400,
+      viewCount: 9200,
       tags: ['ຄະນິດສາດ'],
       imagePath: 'assets/sample_cover.png',
       pdfUrl: 'assets/sample_book.pdf',

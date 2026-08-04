@@ -5,8 +5,13 @@ class DownloadedBookItem {
   final String title;
   final String author;
   final String category;
+  final int pageCount;
+  final int fileSizeBytes;
+  final int likeCount;
+  final int viewCount;
   final String imagePath;
   final String? pdfUrl;
+  final String? description;
   final String? downloadedAt;
 
   DownloadedBookItem({
@@ -16,10 +21,21 @@ class DownloadedBookItem {
     required this.title,
     required this.author,
     required this.category,
+    this.pageCount = 120,
+    this.fileSizeBytes = 0,
+    this.likeCount = 0,
+    this.viewCount = 0,
     required this.imagePath,
     this.pdfUrl,
+    this.description,
     this.downloadedAt,
   });
+
+  String get formattedFileSize {
+    if (fileSizeBytes <= 0) return '2.5 MB';
+    final mb = fileSizeBytes / (1024 * 1024);
+    return '${mb.toStringAsFixed(1)} MB';
+  }
 
   factory DownloadedBookItem.fromMap(Map<String, dynamic> map, {String uploadsBaseUrl = 'http://localhost:5000/uploads'}) {
     String cover = map['cover_image_url'] ?? map['imagePath'] ?? '';
@@ -34,6 +50,10 @@ class DownloadedBookItem {
 
     int? dId = int.tryParse(map['download_id']?.toString() ?? '');
     int? bId = int.tryParse(map['book_id']?.toString() ?? map['id']?.toString() ?? '');
+    int pCount = int.tryParse(map['page_count']?.toString() ?? map['pageCount']?.toString() ?? '') ?? 120;
+    int fSize = int.tryParse(map['file_size_bytes']?.toString() ?? map['fileSizeBytes']?.toString() ?? '') ?? 0;
+    int likes = int.tryParse(map['likes_count']?.toString() ?? map['like_count']?.toString() ?? '150') ?? 150;
+    int views = int.tryParse(map['readers_count']?.toString() ?? map['view_count']?.toString() ?? '420') ?? 420;
 
     return DownloadedBookItem(
       id: (map['download_id'] ?? map['book_id'] ?? map['id'] ?? '').toString(),
@@ -41,9 +61,14 @@ class DownloadedBookItem {
       bookId: bId,
       title: map['title'] ?? '',
       author: map['author_name'] ?? map['author'] ?? 'ບໍ່ລະບຸຜູ້ແຕ່ງ',
-      category: map['category_name'] ?? map['category'] ?? 'ທົ່ວໄປ',
+      category: (map['category_name'] ?? map['category'] ?? map['categories'] ?? 'ທົ່ວໄປ').toString(),
+      pageCount: pCount > 0 ? pCount : 120,
+      fileSizeBytes: fSize,
+      likeCount: likes,
+      viewCount: views,
       imagePath: cover.isNotEmpty ? cover : 'assets/sample_cover.png',
       pdfUrl: pdf,
+      description: map['description'] ?? '',
       downloadedAt: map['downloaded_at']?.toString(),
     );
   }
@@ -55,8 +80,13 @@ class DownloadedBookItem {
       'title': title,
       'author': author,
       'category': category,
+      'page_count': pageCount,
+      'file_size_bytes': fileSizeBytes,
+      'likes_count': likeCount,
+      'readers_count': viewCount,
       'cover_image_url': imagePath,
       'file_pdf_url': pdfUrl,
+      'description': description,
       'downloaded_at': downloadedAt,
     };
   }
@@ -70,6 +100,7 @@ class MockDownloadsData {
       title: 'ໜັງສືສັງຄົມ',
       author: 'ດຣ.ຈອນ ວົງວິໄລ',
       category: 'ສັງຄົມ',
+      pageCount: 120,
       imagePath: 'assets/sample_cover.png',
       pdfUrl: 'assets/sample_book.pdf',
     ),
@@ -79,6 +110,7 @@ class MockDownloadsData {
       title: 'Quantum Mechanics',
       author: 'Dr. Elias Thorne',
       category: 'ເຕັກໂນໂລຊີ',
+      pageCount: 150,
       imagePath: 'assets/sample_cover.png',
       pdfUrl: 'assets/sample_book.pdf',
     ),

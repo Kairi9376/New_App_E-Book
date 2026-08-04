@@ -15,6 +15,9 @@ import 'kyc_submission_screen.dart';
 import 'membership_package_screen.dart';
 import 'pdf_viewer_screen.dart';
 import 'search_screen.dart';
+import 'notifications_screen.dart';
+import '../../services/notification_service.dart';
+import '../../models/notification_model.dart';
 
 class UserHomeScreen extends StatefulWidget {
   const UserHomeScreen({super.key});
@@ -331,30 +334,55 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
           ),
         ),
 
-        // Notification Bell Icon with Dot
-        Stack(
-          children: [
-            IconButton(
-              onPressed: () {},
-              icon: const Icon(
-                Icons.notifications_none_rounded,
-                color: AppColors.textPrimary,
-                size: 26,
-              ),
-            ),
-            Positioned(
-              right: 12,
-              top: 12,
-              child: Container(
-                width: 8,
-                height: 8,
-                decoration: const BoxDecoration(
-                  color: Colors.redAccent,
-                  shape: BoxShape.circle,
+        // Dynamic Notification Bell Icon with Unread Badge Notifier
+        ValueListenableBuilder<List<NotificationItem>>(
+          valueListenable: NotificationService.notificationsNotifier,
+          builder: (context, notifications, _) {
+            final unreadCount = notifications.where((n) => !n.isRead).length;
+
+            return Stack(
+              children: [
+                IconButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const NotificationsScreen()),
+                    );
+                  },
+                  icon: const Icon(
+                    Icons.notifications_none_rounded,
+                    color: AppColors.textPrimary,
+                    size: 26,
+                  ),
                 ),
-              ),
-            ),
-          ],
+                if (unreadCount > 0)
+                  Positioned(
+                    right: 8,
+                    top: 8,
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFEF4444),
+                        shape: BoxShape.circle,
+                      ),
+                      constraints: const BoxConstraints(
+                        minWidth: 16,
+                        minHeight: 16,
+                      ),
+                      child: Text(
+                        unreadCount > 9 ? '9+' : '$unreadCount',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
+              ],
+            );
+          },
         ),
       ],
     );
@@ -596,7 +624,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
       );
     }
 
-    final books = _fetchedBooks.where((b) => b.isNew || b.ratingText == 'New').toList();
+    final books = _fetchedBooks.where((b) => b.isNew).toList();
     final displayBooks = books.isNotEmpty ? books : _fetchedBooks;
 
     if (displayBooks.isEmpty) {
@@ -620,7 +648,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
       );
     }
 
-    final books = _fetchedBooks.where((b) => b.isRecommended || b.rating >= 4.0).toList();
+    final books = _fetchedBooks.where((b) => b.isRecommended || b.likeCount >= 500).toList();
     final displayBooks = books.isNotEmpty ? books : _fetchedBooks;
 
     if (displayBooks.isEmpty) {
@@ -726,13 +754,24 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
           ),
           const SizedBox(height: 4),
 
-          // Rating Row
+          // Heart Likes & Readers Row
           Row(
             children: [
-              const Icon(Icons.star_rounded, size: 14, color: Colors.amber),
-              const SizedBox(width: 4),
+              const Icon(Icons.favorite_rounded, size: 13, color: Color(0xFFEF4444)),
+              const SizedBox(width: 3),
               Text(
-                book.ratingText,
+                book.formattedLikes,
+                style: const TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const SizedBox(width: 8),
+              const Icon(Icons.visibility_rounded, size: 13, color: Color(0xFF3B82F6)),
+              const SizedBox(width: 3),
+              Text(
+                book.formattedViews,
                 style: const TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
@@ -875,13 +914,24 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                   ),
                   const SizedBox(height: 4),
 
-                  // Rating & Tags Row
+                  // Likes & Readers Row
                   Row(
                     children: [
-                      const Icon(Icons.star_rounded, size: 14, color: Colors.amber),
-                      const SizedBox(width: 4),
+                      const Icon(Icons.favorite_rounded, size: 13, color: Color(0xFFEF4444)),
+                      const SizedBox(width: 3),
                       Text(
-                        book.ratingText,
+                        book.formattedLikes,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      const Icon(Icons.visibility_rounded, size: 13, color: Color(0xFF3B82F6)),
+                      const SizedBox(width: 3),
+                      Text(
+                        book.formattedViews,
                         style: const TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.bold,

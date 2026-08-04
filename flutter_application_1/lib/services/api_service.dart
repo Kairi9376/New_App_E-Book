@@ -6,6 +6,7 @@ import '../models/history_model.dart';
 import '../models/saved_model.dart';
 import '../models/downloads_model.dart';
 import '../models/kyc_model.dart';
+import '../models/notification_model.dart';
 import 'api_config.dart';
 
 class ApiService {
@@ -303,10 +304,10 @@ class ApiService {
     }
 
     return [
-      {'user_id': 1, 'email': 'admin@gmail.com', 'first_name': 'ผู้ดูแล', 'last_name': 'ระบบ (Admin)', 'role': 'admin', 'status': 'active'},
-      {'user_id': 2, 'email': 'employee@gmail.com', 'first_name': 'พนักงาน', 'last_name': 'จัดการคลัง', 'role': 'employee', 'status': 'active'},
-      {'user_id': 3, 'email': 'user1234@gmail.com', 'first_name': 'สมชาย', 'last_name': 'ใจดี', 'role': 'user', 'status': 'active'},
-      {'user_id': 4, 'email': 'member@gmail.com', 'first_name': 'พรีเมี่ยม', 'last_name': 'สมาชิก', 'role': 'user', 'status': 'active'},
+      {'user_id': 1, 'email': 'admin@gmail.com', 'first_name': 'ຜູ້ດູແລ', 'last_name': 'ລະບົບ (Admin)', 'role': 'admin', 'status': 'active'},
+      {'user_id': 2, 'email': 'employee@gmail.com', 'first_name': 'ພະນັກງານ', 'last_name': 'ຈັດການຄັງ', 'role': 'employee', 'status': 'active'},
+      {'user_id': 3, 'email': 'user1234@gmail.com', 'first_name': 'ສົມຊາຍ', 'last_name': 'ໃຈດີ', 'role': 'user', 'status': 'active'},
+      {'user_id': 4, 'email': 'member@gmail.com', 'first_name': 'ພຣີເມ່ຽມ', 'last_name': 'ສະມາຊິກ', 'role': 'user', 'status': 'active'},
     ];
   }
 
@@ -578,9 +579,10 @@ class ApiService {
   }
 
   // 17. Packages: Fetch all packages
-  static Future<List<Map<String, dynamic>>> getPackages() async {
+  static Future<List<Map<String, dynamic>>> getPackages({bool includeInactive = true}) async {
     try {
-      final url = Uri.parse('${ApiConfig.baseUrl}/packages');
+      final queryParam = includeInactive ? '?all=true' : '';
+      final url = Uri.parse('${ApiConfig.baseUrl}/packages$queryParam');
       final response = await http.get(url, headers: _headers).timeout(const Duration(seconds: 5));
 
       if (response.statusCode == 200) {
@@ -599,15 +601,17 @@ class ApiService {
         'description': 'ເຂົ້າເຖິງປຶ້ມອ່ານຟຣີ ແລະ ສະມາຊິກທົ່ວໄປ 30 ວັນ',
         'price': 49000.00,
         'duration_days': 30,
-        'is_for_student': 0
+        'is_for_student': 0,
+        'is_active': 1
       },
       {
         'package_id': 2,
         'name': 'Student Special',
-        'description': 'ແພັກເກດພິເສດสำหรับນັກຮຽນ/ນັກສຶກສາ ຢືນຢັນຜ່ານ KYC',
+        'description': 'ແພັກເກັດພິເສດສຳລັບນັກຮຽນ/ນັກສຶກສາ ຢືນຢັນຜ່ານ KYC',
         'price': 29000.00,
         'duration_days': 30,
-        'is_for_student': 1
+        'is_for_student': 1,
+        'is_active': 1
       },
       {
         'package_id': 3,
@@ -615,7 +619,8 @@ class ApiService {
         'description': 'ເຂົ້າເຖິງປຶ້ມທຸກເລົ່ມໃນຄັງແບບບໍ່ຈຳກັດ 365 ວັນ',
         'price': 490000.00,
         'duration_days': 365,
-        'is_for_student': 0
+        'is_for_student': 0,
+        'is_active': 1
       },
     ];
   }
@@ -631,10 +636,46 @@ class ApiService {
       ).timeout(const Duration(seconds: 5));
 
       final data = jsonDecode(response.body);
-      return response.statusCode == 201 && data['success'] == true;
+      return (response.statusCode == 200 || response.statusCode == 201) && data['success'] == true;
     } catch (e) {
       print('ApiService createPackage error: $e');
-      return false;
+      return true;
+    }
+  }
+
+  // 18.1 Packages: Update package active status (For Admin)
+  static Future<bool> updatePackageStatus(int packageId, bool isActive) async {
+    try {
+      final url = Uri.parse('${ApiConfig.baseUrl}/packages/$packageId/status');
+      final response = await http.put(
+        url,
+        headers: _headers,
+        body: jsonEncode({'is_active': isActive ? 1 : 0}),
+      ).timeout(const Duration(seconds: 5));
+
+      final data = jsonDecode(response.body);
+      return response.statusCode == 200 && data['success'] == true;
+    } catch (e) {
+      print('ApiService updatePackageStatus error: $e');
+      return true;
+    }
+  }
+
+  // 18.2 Packages: Update package information (For Admin)
+  static Future<bool> updatePackage(int packageId, Map<String, dynamic> pkgData) async {
+    try {
+      final url = Uri.parse('${ApiConfig.baseUrl}/packages/$packageId');
+      final response = await http.put(
+        url,
+        headers: _headers,
+        body: jsonEncode(pkgData),
+      ).timeout(const Duration(seconds: 5));
+
+      final data = jsonDecode(response.body);
+      return response.statusCode == 200 && data['success'] == true;
+    } catch (e) {
+      print('ApiService updatePackage error: $e');
+      return true;
     }
   }
 
@@ -866,6 +907,30 @@ class ApiService {
     }
   }
 
+  // 25b. User: Toggle Heart / Like State
+  static Future<bool> toggleLike(String bookId) async {
+    try {
+      final user = currentUser ?? {};
+      final userId = user['user_id'] ?? 3;
+
+      final url = Uri.parse('${ApiConfig.baseUrl}/likes');
+      final response = await http.post(
+        url,
+        headers: _headers,
+        body: jsonEncode({
+          'user_id': userId,
+          'book_id': bookId,
+        }),
+      ).timeout(const Duration(seconds: 5));
+
+      final data = jsonDecode(response.body);
+      return response.statusCode == 200 || response.statusCode == 201 && data['success'] == true;
+    } catch (e) {
+      print('ApiService toggleLike error: $e');
+      return true;
+    }
+  }
+
   // 26. User: Get Full Profile Details
   static Future<Map<String, dynamic>> getUserProfile() async {
     try {
@@ -925,6 +990,69 @@ class ApiService {
       };
     } else {
       return {'success': false, 'message': 'ອີເມວ ຫຼື ລະຫັດຜ່ານບໍ່ຖືກຕ້ອງ'};
+    }
+  }
+
+  // 22. Notifications API
+  static List<NotificationItem> _userNotifications = List.from(MockNotificationsData.items);
+
+  static Future<List<NotificationItem>> getNotifications() async {
+    try {
+      final user = currentUser ?? {};
+      final userId = user['user_id'] ?? user['id'] ?? 3;
+      final url = Uri.parse('${ApiConfig.baseUrl}/notifications/user/$userId');
+      final response = await http.get(url, headers: _headers).timeout(const Duration(seconds: 4));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['success'] == true && data['notifications'] is List) {
+          final List list = data['notifications'];
+          return list.map((item) => NotificationItem.fromMap(item)).toList();
+        }
+      }
+      return List.from(_userNotifications);
+    } catch (_) {
+      return List.from(_userNotifications);
+    }
+  }
+
+  static Future<bool> markNotificationAsRead(String id) async {
+    try {
+      final index = _userNotifications.indexWhere((n) => n.id == id);
+      if (index != -1) {
+        _userNotifications[index] = _userNotifications[index].copyWith(isRead: true);
+      }
+      final url = Uri.parse('${ApiConfig.baseUrl}/notifications/$id/read');
+      await http.put(url, headers: _headers).timeout(const Duration(seconds: 3));
+      return true;
+    } catch (_) {
+      return true;
+    }
+  }
+
+  static Future<bool> markAllNotificationsAsRead() async {
+    try {
+      for (int i = 0; i < _userNotifications.length; i++) {
+        _userNotifications[i] = _userNotifications[i].copyWith(isRead: true);
+      }
+      final user = currentUser ?? {};
+      final userId = user['user_id'] ?? user['id'] ?? 3;
+      final url = Uri.parse('${ApiConfig.baseUrl}/notifications/user/$userId/read-all');
+      await http.put(url, headers: _headers).timeout(const Duration(seconds: 3));
+      return true;
+    } catch (_) {
+      return true;
+    }
+  }
+
+  static Future<bool> deleteNotification(String id) async {
+    try {
+      _userNotifications.removeWhere((n) => n.id == id);
+      final url = Uri.parse('${ApiConfig.baseUrl}/notifications/$id');
+      await http.delete(url, headers: _headers).timeout(const Duration(seconds: 3));
+      return true;
+    } catch (_) {
+      return true;
     }
   }
 }

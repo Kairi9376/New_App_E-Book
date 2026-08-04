@@ -1,4 +1,5 @@
 const { pool } = require('../config/db');
+const { createNotification } = require('./notificationController');
 
 // GET /api/subscriptions
 exports.getAllSubscriptions = async (req, res) => {
@@ -71,8 +72,15 @@ exports.updateSubscriptionStatus = async (req, res) => {
     let startDate = null;
     let endDate = null;
 
+    const [subRows] = await pool.query(
+      `SELECT s.user_id, s.package_id, p.name AS package_name
+       FROM subscriptions s
+       JOIN packages p ON s.package_id = p.package_id
+       WHERE s.subscription_id = ?`,
+      [id]
+    );
+
     if (payment_status === 'active') {
-      const [subRows] = await pool.query('SELECT package_id FROM subscriptions WHERE subscription_id = ?', [id]);
       if (subRows.length > 0) {
         const [pkgRows] = await pool.query('SELECT duration_days FROM packages WHERE package_id = ?', [subRows[0].package_id]);
         const durationDays = pkgRows[0] ? pkgRows[0].duration_days : 30;
@@ -89,6 +97,26 @@ exports.updateSubscriptionStatus = async (req, res) => {
        WHERE subscription_id = ?`,
       [payment_status, approved_by || null, rejected_reason || null, startDate, endDate, id]
     );
+
+    if (subRows.length > 0) {
+      const targetUserId = subRows[0].user_id;
+      const pkgName = subRows[0].package_name || 'Premiere';
+      if (payment_status === 'active') {
+        await createNotification({
+          userId: targetUserId,
+          title: `💎 ແພັກເກັດ "${pkgName}" ເລີ່ມໃຊ້ງານແລ້ວ!`,
+          message: 'ການຊຳລະເງິນຂອງທ່ານໄດ້ຮັບການອະນຸມັດຮຽບຮ້ອຍແລ້ວ ທ່ານໄດ້ຮັບສິດ Premiere Member ໃນການອ່ານ ແລະ ດາວໂຫຼດໜັງສືໄດ້ແລ້ວມື້ນີ້',
+          type: 'subscription',
+        });
+      } else if (payment_status === 'rejected') {
+        await createNotification({
+          userId: targetUserId,
+          title: '❌ ການຊຳລະເງິນສະໝັກແພັກເກັດບໍ່ສຳເລັດ',
+          message: `ເຫດຜົນ: ${rejected_reason || 'ສະລິບການໂອນເງິນບໍ່ຖືກຕ້ອງ'} ກະລຸນາກວດສອບ ແລະ ແຈ້ງຊຳລະເງິນใหມ່ອີກຄັ້ງ`,
+          type: 'subscription',
+        });
+      }
+    }
 
     res.json({ success: true, message: `Subscription status updated to ${payment_status}` });
   } catch (error) {

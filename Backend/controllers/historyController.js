@@ -9,7 +9,29 @@ exports.getUserReadingHistory = async (req, res) => {
     }
 
     const [rows] = await pool.query(`
-      SELECT rh.*, b.title, b.cover_image_url, b.page_count, b.readers_count, b.likes_count, a.name AS author_name
+      SELECT 
+        rh.history_id,
+        rh.user_id,
+        rh.book_id,
+        rh.last_page_read,
+        rh.progress_percent,
+        rh.last_read_at,
+        b.title,
+        b.cover_image_url,
+        b.file_size_bytes,
+        b.file_pdf_url,
+        b.page_count,
+        b.description,
+        b.likes_count,
+        b.readers_count,
+        b.rating,
+        a.name AS author_name,
+        (
+          SELECT GROUP_CONCAT(cat.name SEPARATOR ', ') 
+          FROM book_categories bc2 
+          JOIN categories cat ON bc2.category_id = cat.category_id 
+          WHERE bc2.book_id = b.book_id
+        ) AS category_name
       FROM reading_history rh
       JOIN books b ON rh.book_id = b.book_id
       LEFT JOIN authors a ON b.author_id = a.author_id

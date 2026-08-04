@@ -9,7 +9,29 @@ exports.getUserDownloads = async (req, res) => {
     }
 
     const [rows] = await pool.query(`
-      SELECT d.*, b.title, b.cover_image_url, b.file_size_bytes, b.file_pdf_url, a.name AS author_name
+      SELECT 
+        d.download_id,
+        d.user_id,
+        d.book_id,
+        d.ip_address,
+        d.device_info,
+        d.downloaded_at,
+        b.title,
+        b.cover_image_url,
+        b.file_size_bytes,
+        b.file_pdf_url,
+        b.page_count,
+        b.description,
+        b.likes_count,
+        b.readers_count,
+        b.rating,
+        a.name AS author_name,
+        (
+          SELECT GROUP_CONCAT(cat.name SEPARATOR ', ') 
+          FROM book_categories bc2 
+          JOIN categories cat ON bc2.category_id = cat.category_id 
+          WHERE bc2.book_id = b.book_id
+        ) AS category_name
       FROM downloads d
       JOIN books b ON d.book_id = b.book_id
       LEFT JOIN authors a ON b.author_id = a.author_id

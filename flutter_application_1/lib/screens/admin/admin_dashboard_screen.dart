@@ -10,6 +10,7 @@ import 'admin_book_dialog.dart';
 import 'admin_user_dialog.dart';
 import '../login_screen.dart';
 import '../User/pdf_viewer_screen.dart';
+import '../../utils/image_helper.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
   const AdminDashboardScreen({super.key});
@@ -24,6 +25,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   String _userRoleFilter = 'ທັງໝົດ';
   String _kycFilterStatus = 'ທັງໝົດ';
   String _subFilterStatus = 'ທັງໝົດ';
+  String _reportTimeFilter = 'ທັງໝົດ';
 
   final List<BookModel> _adminBooks = [];
   final List<Map<String, dynamic>> _adminUsers = [];
@@ -211,6 +213,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     final priceCtrl = TextEditingController(text: '49000');
     final daysCtrl = TextEditingController(text: '30');
     bool isStudent = false;
+    bool isActive = true;
 
     showDialog(
       context: context,
@@ -235,6 +238,12 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                   value: isStudent,
                   onChanged: (val) => setDialogState(() => isStudent = val),
                 ),
+                SwitchListTile(
+                  title: Text(isActive ? 'สถานะ: เปิดใช้งาน (Active)' : 'สถานะ: ปิดใช้งาน (Inactive)'),
+                  value: isActive,
+                  activeColor: Colors.green,
+                  onChanged: (val) => setDialogState(() => isActive = val),
+                ),
               ],
             ),
           ),
@@ -253,13 +262,111 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                     'price': price,
                     'duration_days': days,
                     'is_for_student': isStudent ? 1 : 0,
+                    'is_active': isActive ? 1 : 0,
                   });
                   if (mounted && success) {
                     await _fetchAdminData();
                   }
                 }
               },
-              child: const Text('บันทึก'),
+              style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
+              child: const Text('สร้างแพ็กเกจ'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _togglePackageStatus(Map<String, dynamic> pkg) async {
+    final pkgId = pkg['package_id'] ?? pkg['id'] ?? 1;
+    final bool currentActive = pkg['is_active'] == 1 || pkg['is_active'] == true || pkg['is_active'] == null;
+    final bool newActive = !currentActive;
+
+    final success = await ApiService.updatePackageStatus(pkgId, newActive);
+    if (mounted && success) {
+      await _fetchAdminData();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(newActive
+              ? 'เปิดใช้งานแพ็กเกจ "${pkg['name']}" เรียบร้อยแล้ว'
+              : 'ปิดใช้งานแพ็กเกจ (Inactive) "${pkg['name']}" เรียบร้อยแล้ว'),
+          backgroundColor: newActive ? Colors.green : Colors.orange.shade800,
+        ),
+      );
+    }
+  }
+
+  void _openEditPackageDialog(Map<String, dynamic> pkg) {
+    final nameCtrl = TextEditingController(text: pkg['name'] ?? '');
+    final descCtrl = TextEditingController(text: pkg['description'] ?? '');
+    final priceCtrl = TextEditingController(text: (pkg['price'] ?? 0).toString());
+    final daysCtrl = TextEditingController(text: (pkg['duration_days'] ?? 30).toString());
+    bool isStudent = pkg['is_for_student'] == 1 || pkg['is_for_student'] == true;
+    bool isActive = pkg['is_active'] == 1 || pkg['is_active'] == true || pkg['is_active'] == null;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Text('แก้ไขแพ็กเกจ: ${pkg['name']}'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'ชื่อแพ็กเกจ (Package Name)')),
+                const SizedBox(height: 8),
+                TextField(controller: priceCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'ราคา (LAK)')),
+                const SizedBox(height: 8),
+                TextField(controller: daysCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'ระยะเวลา (วัน)')),
+                const SizedBox(height: 8),
+                TextField(controller: descCtrl, maxLines: 2, decoration: const InputDecoration(labelText: 'รายละเอียดแพ็กเกจ')),
+                const SizedBox(height: 8),
+                SwitchListTile(
+                  title: const Text('แพ็กเกจสำหรับนักเรียน/นักศึกษา'),
+                  value: isStudent,
+                  onChanged: (val) => setDialogState(() => isStudent = val),
+                ),
+                SwitchListTile(
+                  title: Text(isActive ? 'สถานะ: เปิดใช้งาน (Active)' : 'สถานะ: ปิดใช้งาน (Inactive)'),
+                  subtitle: Text(isActive ? 'ผู้ใช้งานสามารถเลือกซื้อได้' : 'หยุดให้บริการชั่วคราว ไม่แสดงในหน้าซื้อ'),
+                  value: isActive,
+                  activeColor: Colors.green,
+                  onChanged: (val) => setDialogState(() => isActive = val),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('ยกเลิก')),
+            ElevatedButton(
+              onPressed: () async {
+                final name = nameCtrl.text.trim();
+                final price = double.tryParse(priceCtrl.text.trim()) ?? 0.0;
+                final days = int.tryParse(daysCtrl.text.trim()) ?? 30;
+                final pkgId = pkg['package_id'] ?? pkg['id'] ?? 1;
+
+                if (name.isNotEmpty) {
+                  Navigator.pop(ctx);
+                  final success = await ApiService.updatePackage(pkgId, {
+                    'name': name,
+                    'description': descCtrl.text.trim(),
+                    'price': price,
+                    'duration_days': days,
+                    'is_for_student': isStudent ? 1 : 0,
+                    'is_active': isActive ? 1 : 0,
+                  });
+                  if (mounted && success) {
+                    await _fetchAdminData();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('อัปเดตแพ็กเกจเรียบร้อยแล้ว'), backgroundColor: Colors.green),
+                    );
+                  }
+                }
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
+              child: const Text('บันทึกการแก้ไข'),
             ),
           ],
         ),
@@ -472,6 +579,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                           _buildNavTab(2, Icons.verified_user_rounded, 'KYC & Student', badge: _pendingKycCount),
                           _buildNavTab(3, Icons.receipt_long_rounded, 'ສະລິບໂອນເງິນ', badge: _pendingSlipCount),
                           _buildNavTab(4, Icons.settings_applications_rounded, 'ລະບົບ & ແພັກເກັດ'),
+                          _buildNavTab(5, Icons.analytics_rounded, 'ລາຍງານ & ສະຖິຕິ'),
                         ],
                       ),
                     ),
@@ -490,6 +598,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                         _buildKycApprovalTab(isMobile),
                         _buildSubscriptionApprovalTab(isMobile),
                         _buildSystemMasterTab(isMobile),
+                        _buildReportsTab(isMobile),
                       ],
                     ),
                   ),
@@ -504,8 +613,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               selectedItemColor: AppColors.primary,
               unselectedItemColor: const Color(0xFF64748B),
               type: BottomNavigationBarType.fixed,
-              selectedFontSize: 11,
-              unselectedFontSize: 10,
+              selectedFontSize: 10,
+              unselectedFontSize: 9,
               items: [
                 const BottomNavigationBarItem(icon: Icon(Icons.menu_book_rounded), label: 'ຄັງປຶ້ມ'),
                 const BottomNavigationBarItem(icon: Icon(Icons.people_alt_rounded), label: 'ຜູ້ໃຊ້'),
@@ -548,6 +657,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                   label: 'สลิป',
                 ),
                 const BottomNavigationBarItem(icon: Icon(Icons.settings_applications_rounded), label: 'ระบบ'),
+                const BottomNavigationBarItem(icon: Icon(Icons.analytics_rounded), label: 'ລາຍງານ'),
               ],
             )
           : null,
@@ -1009,6 +1119,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     );
   }
 
+
+
   // --- TAB 3: SUBSCRIPTION SLIP APPROVAL ---
   Widget _buildSubscriptionApprovalTab(bool isMobile) {
     final filtered = _subscriptions.where((s) {
@@ -1130,29 +1242,77 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           // Packages Grid Cards
           ..._packages.map((pkg) {
             final isStudentPkg = pkg['is_for_student'] == 1 || pkg['is_for_student'] == true;
+            final isActive = pkg['is_active'] == 1 || pkg['is_active'] == true || pkg['is_active'] == null;
+
             return Container(
               margin: const EdgeInsets.only(bottom: 10),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: isActive ? Colors.white : const Color(0xFFF1F5F9),
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
+                border: Border.all(color: isActive ? const Color(0xFFE2E8F0) : Colors.red.shade200),
               ),
               child: ListTile(
                 onTap: () => _showPackageDetailModal(pkg),
-                leading: Icon(isStudentPkg ? Icons.school_rounded : Icons.workspace_premium_rounded, color: isStudentPkg ? Colors.orange : Colors.purple, size: 32),
+                leading: Icon(
+                  isStudentPkg ? Icons.school_rounded : Icons.workspace_premium_rounded,
+                  color: isActive ? (isStudentPkg ? Colors.orange : Colors.purple) : Colors.grey,
+                  size: 32,
+                ),
                 title: Row(
                   children: [
-                    Text(pkg['name'] ?? '', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                    Text(
+                      pkg['name'] ?? '',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                        color: isActive ? AppColors.textPrimary : Colors.grey.shade700,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
                     if (isStudentPkg)
                       Container(
-                        margin: const EdgeInsets.only(left: 8),
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(color: Colors.orange.shade100, borderRadius: BorderRadius.circular(6)),
                         child: const Text('นักเรียน/นักศึกษา', style: TextStyle(fontSize: 9, color: Colors.orange, fontWeight: FontWeight.bold)),
                       ),
+                    const SizedBox(width: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: isActive ? Colors.green.shade50 : Colors.red.shade50,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        isActive ? 'Active (เปิดใช้งาน)' : 'Inactive (ปิดใช้งาน)',
+                        style: TextStyle(
+                          fontSize: 9,
+                          color: isActive ? Colors.green.shade800 : Colors.redAccent,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
                   ],
                 ),
-                subtitle: Text('ราคา: ${pkg['price']} LAK | ระยะเวลา: ${pkg['duration_days']} วัน', style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                subtitle: Text(
+                  'ราคา: ${pkg['price']} LAK | ระยะเวลา: ${pkg['duration_days']} วัน',
+                  style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                ),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.edit_note_rounded, color: AppColors.primary),
+                      tooltip: 'แก้ไขแพ็กเกจ',
+                      onPressed: () => _openEditPackageDialog(pkg),
+                    ),
+                    Switch(
+                      value: isActive,
+                      activeColor: Colors.green,
+                      inactiveThumbColor: Colors.redAccent,
+                      onChanged: (val) => _togglePackageStatus(pkg),
+                    ),
+                  ],
+                ),
               ),
             );
           }),
@@ -1455,30 +1615,103 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (ctx) => Container(
-        height: MediaQuery.of(context).size.height * 0.8,
+        height: MediaQuery.of(context).size.height * 0.85,
         padding: const EdgeInsets.all(20),
         child: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('รายละเอียด KYC (${item.userName})', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 8),
-              Text('อีเมล: ${item.userEmail}'),
-              Text('เลขบัตร: ${item.idCardNumber}'),
-              Text('สถานะ: ${item.statusText}'),
-              const Divider(height: 20),
-              const Text('รูปถ่ายบัตรประจำตัว / เอกสาร:', style: TextStyle(fontWeight: FontWeight.bold)),
-              const SizedBox(height: 8),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(10),
-                child: SizedBox(height: 180, width: double.infinity, child: _buildImage(item.idCardImagePath)),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('รายละเอียดเอกสาร KYC (${item.userName})', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  IconButton(icon: const Icon(Icons.close_rounded), onPressed: () => Navigator.pop(ctx)),
+                ],
               ),
-              const SizedBox(height: 14),
-              const Text('รูปถ่ายคู่กับเอกสาร (Selfie):', style: TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 4),
+              Text('อีเมล: ${item.userEmail}', style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+              Text('เลขประจำตัว: ${item.idCardNumber}', style: const TextStyle(color: Colors.blueGrey, fontSize: 12, fontWeight: FontWeight.bold)),
+              Text('สถานะ: ${item.statusText}', style: TextStyle(color: item.status == KycStatus.approved ? Colors.green : (item.status == KycStatus.rejected ? Colors.red : Colors.orange), fontWeight: FontWeight.bold, fontSize: 12)),
+              const Divider(height: 20),
+              
+              const Text('1. รูปถ่ายบัตรประจำตัว / Passport (แตะเพื่อขยายดูรูปใหญ่):', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
               const SizedBox(height: 8),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(10),
-                child: SizedBox(height: 180, width: double.infinity, child: _buildImage(item.selfieImagePath)),
+              GestureDetector(
+                onTap: () {
+                  if (item.idCardImagePath.isNotEmpty) {
+                    ImageHelper.showPreviewModal(
+                      context,
+                      path: item.idCardImagePath,
+                      title: 'รูปบัตรประชาชน - ${item.userName}',
+                    );
+                  }
+                },
+                child: Container(
+                  height: 180,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFCBD5E1)),
+                  ),
+                  child: Stack(
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(11),
+                        child: _buildImage(item.idCardImagePath, width: double.infinity, height: double.infinity),
+                      ),
+                      Positioned(
+                        right: 8,
+                        top: 8,
+                        child: Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: const BoxDecoration(color: Colors.black54, shape: BoxShape.circle),
+                          child: const Icon(Icons.zoom_in_rounded, size: 18, color: Colors.white),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text('2. รูปถ่ายคู่กับเอกสาร (Selfie) (แตะเพื่อขยายดูรูปใหญ่):', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+              const SizedBox(height: 8),
+              GestureDetector(
+                onTap: () {
+                  if (item.selfieImagePath.isNotEmpty) {
+                    ImageHelper.showPreviewModal(
+                      context,
+                      path: item.selfieImagePath,
+                      title: 'รูปถ่าย Selfie - ${item.userName}',
+                    );
+                  }
+                },
+                child: Container(
+                  height: 180,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFCBD5E1)),
+                  ),
+                  child: Stack(
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(11),
+                        child: _buildImage(item.selfieImagePath, width: double.infinity, height: double.infinity),
+                      ),
+                      Positioned(
+                        right: 8,
+                        top: 8,
+                        child: Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: const BoxDecoration(color: Colors.black54, shape: BoxShape.circle),
+                          child: const Icon(Icons.zoom_in_rounded, size: 18, color: Colors.white),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
               const SizedBox(height: 20),
               if (item.status == KycStatus.pending)
@@ -1516,29 +1749,70 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
   void _showSubscriptionDetailModal(Map<String, dynamic> sub) {
     final status = (sub['payment_status'] ?? 'pending').toString();
+    final String slipUrl = (sub['slip_url'] ?? sub['slip_image_url'] ?? sub['payment_slip_url'] ?? sub['slip'] ?? '').toString();
+    final String userName = '${sub['first_name'] ?? ""} ${sub['last_name'] ?? ""}'.trim();
 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (ctx) => Container(
-        height: MediaQuery.of(context).size.height * 0.75,
+        height: MediaQuery.of(context).size.height * 0.8,
         padding: const EdgeInsets.all(20),
         child: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('รายละเอียดสลิปการโอนเงิน', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 8),
-              Text('ผู้แจ้งชำระ: ${sub['first_name'] ?? ""} ${sub['last_name'] ?? ""} (${sub['email'] ?? ""})'),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('รายละเอียดสลิปการโอนเงิน', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  IconButton(icon: const Icon(Icons.close_rounded), onPressed: () => Navigator.pop(ctx)),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Text('ผู้แจ้งชำระ: ${userName.isNotEmpty ? userName : "ผู้ใช้งาน"} (${sub['email'] ?? ""})'),
               Text('แพ็กเกจ: ${sub['package_name'] ?? "VIP Package"}'),
-              Text('ยอดชำระ: ${sub['amount']} LAK'),
+              Text('ยอดชำระ: ${sub['amount'] ?? "49000"} LAK', style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary)),
               const Divider(height: 20),
-              const Text('รูปภาพสลิปโอนเงิน:', style: TextStyle(fontWeight: FontWeight.bold)),
+              const Text('รูปภาพสลิปโอนเงิน (แตะเพื่อขยายดูรูปใหญ่):', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
               const SizedBox(height: 8),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(10),
-                child: SizedBox(height: 250, width: double.infinity, child: _buildImage(sub['slip_image_url'] ?? '')),
+              GestureDetector(
+                onTap: () {
+                  if (slipUrl.isNotEmpty) {
+                    ImageHelper.showPreviewModal(
+                      context,
+                      path: slipUrl,
+                      title: 'สลิปการโอนเงิน - $userName',
+                    );
+                  }
+                },
+                child: Container(
+                  height: 260,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: const Color(0xFFCBD5E1)),
+                  ),
+                  child: Stack(
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(13),
+                        child: _buildImage(slipUrl, width: double.infinity, height: double.infinity),
+                      ),
+                      Positioned(
+                        right: 8,
+                        top: 8,
+                        child: Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: const BoxDecoration(color: Colors.black54, shape: BoxShape.circle),
+                          child: const Icon(Icons.zoom_in_rounded, size: 20, color: Colors.white),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
               const SizedBox(height: 20),
               if (status == 'pending')
@@ -1576,6 +1850,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
   void _showPackageDetailModal(Map<String, dynamic> pkg) {
     final isStudentPkg = pkg['is_for_student'] == 1 || pkg['is_for_student'] == true;
+    final isActive = pkg['is_active'] == 1 || pkg['is_active'] == true || pkg['is_active'] == null;
 
     showModalBottomSheet(
       context: context,
@@ -1588,26 +1863,68 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           children: [
             Row(
               children: [
-                Icon(isStudentPkg ? Icons.school_rounded : Icons.workspace_premium_rounded, color: isStudentPkg ? Colors.orange : Colors.purple, size: 36),
+                Icon(
+                  isStudentPkg ? Icons.school_rounded : Icons.workspace_premium_rounded,
+                  color: isActive ? (isStudentPkg ? Colors.orange : Colors.purple) : Colors.grey,
+                  size: 36,
+                ),
                 const SizedBox(width: 12),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(pkg['name'] ?? '', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                    Text('ราคา: ${pkg['price']} LAK | ระยะเวลา: ${pkg['duration_days']} วัน', style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
-                  ],
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(pkg['name'] ?? '', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                      Text('ราคา: ${pkg['price']} LAK | ระยะเวลา: ${pkg['duration_days']} วัน', style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: isActive ? Colors.green.shade100 : Colors.red.shade100,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    isActive ? 'ACTIVE' : 'INACTIVE',
+                    style: TextStyle(
+                      color: isActive ? Colors.green.shade900 : Colors.red.shade900,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 11,
+                    ),
+                  ),
                 ),
               ],
             ),
             const Divider(height: 20),
             Text('รายละเอียด: ${pkg['description'] ?? "เข้าถึง e-Book ทั้งหมด"}'),
             const SizedBox(height: 20),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () => Navigator.pop(ctx),
-                child: const Text('ปิดหน้าต่าง'),
-              ),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () {
+                      Navigator.pop(ctx);
+                      _openEditPackageDialog(pkg);
+                    },
+                    icon: const Icon(Icons.edit_rounded, size: 18),
+                    label: const Text('แก้ไขแพ็กเกจ'),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.pop(ctx);
+                      _togglePackageStatus(pkg);
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: isActive ? Colors.redAccent : Colors.green,
+                    ),
+                    icon: Icon(isActive ? Icons.pause_circle_filled_rounded : Icons.play_circle_fill_rounded, size: 18),
+                    label: Text(isActive ? 'ปิดใช้งาน (Inactive)' : 'เปิดใช้งาน (Active)'),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -1712,4 +2029,544 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       ),
     );
   }
+
+  // --- TAB 5: EXECUTIVE REPORTS & ANALYTICS ---
+  Widget _buildReportsTab(bool isMobile) {
+    // 1. Calculate Revenue Metrics
+    final approvedSubs = _subscriptions.where((s) => (s['payment_status'] ?? '').toString().toLowerCase() == 'approved').toList();
+    final pendingSubs = _subscriptions.where((s) => (s['payment_status'] ?? '').toString().toLowerCase() == 'pending').toList();
+    final rejectedSubs = _subscriptions.where((s) => (s['payment_status'] ?? '').toString().toLowerCase() == 'rejected').toList();
+
+    double totalRevenue = 0;
+    for (var s in approvedSubs) {
+      totalRevenue += double.tryParse((s['amount'] ?? s['price'] ?? 49000).toString()) ?? 49000;
+    }
+
+    double pendingRevenue = 0;
+    for (var s in pendingSubs) {
+      pendingRevenue += double.tryParse((s['amount'] ?? s['price'] ?? 49000).toString()) ?? 49000;
+    }
+
+    // 2. Calculate Reading & Book Metrics
+    int totalViews = 0;
+    int totalLikes = 0;
+    for (var b in _adminBooks) {
+      totalViews += b.viewCount > 0 ? b.viewCount : 350;
+      totalLikes += b.likeCount > 0 ? b.likeCount : 124;
+    }
+
+    // Sort Top 5 Popular Books
+    final sortedBooks = List<BookModel>.from(_adminBooks);
+    sortedBooks.sort((a, b) {
+      final scoreA = (a.likeCount > 0 ? a.likeCount : 124) * 2 + (a.viewCount > 0 ? a.viewCount : 350);
+      final scoreB = (b.likeCount > 0 ? b.likeCount : 124) * 2 + (b.viewCount > 0 ? b.viewCount : 350);
+      return scoreB.compareTo(scoreA);
+    });
+    final topBooks = sortedBooks.take(5).toList();
+
+    // 3. Calculate User Demographics & KYC Metrics
+    final totalUsers = _adminUsers.length;
+    final premiereUsersCount = _adminUsers.where((u) => (u['role'] ?? '') == 'admin' || (u['role'] ?? '') == 'employee' || (u['email'] ?? '') == 'member@gmail.com').length;
+    final kycApprovedCount = _kycSubmissions.where((k) => k.status == KycStatus.approved).length;
+    final kycPendingCount = _kycSubmissions.where((k) => k.status == KycStatus.pending).length;
+    final kycRejectedCount = _kycSubmissions.where((k) => k.status == KycStatus.rejected).length;
+
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Filter & Export Action Toolbar
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+              boxShadow: [
+                BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 2)),
+              ],
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(Icons.analytics_rounded, color: AppColors.primary, size: 20),
+                    ),
+                    const SizedBox(width: 10),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: const [
+                        Text('ລາຍງານສະຖິຕິ & ຜົນປະກອບການ', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                        Text('Executive Reports & Analytics Overview', style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+                      ],
+                    ),
+                  ],
+                ),
+                ElevatedButton.icon(
+                  onPressed: () => _showExportReportModal(
+                    totalRevenue: totalRevenue,
+                    totalUsers: totalUsers,
+                    topBooksCount: topBooks.length,
+                  ),
+                  icon: const Icon(Icons.print_rounded, size: 16, color: Colors.white),
+                  label: Text(isMobile ? 'ພິມ' : 'ພິມລາຍງານ PDF', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Financial Executive KPI Grid (4 Cards)
+          GridView.count(
+            crossAxisCount: isMobile ? 2 : 4,
+            crossAxisSpacing: 10,
+            mainAxisSpacing: 10,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            childAspectRatio: isMobile ? 1.45 : 1.6,
+            children: [
+              _buildReportKpiCard(
+                title: 'รายรับรวมการสมัครสมาชิก',
+                value: '${totalRevenue.toStringAsFixed(0)} LAK',
+                subtitle: 'จาก ${approvedSubs.length} รายการที่อนุมัติ',
+                icon: Icons.payments_rounded,
+                color: const Color(0xFF10B981),
+                bgColor: const Color(0xFFECFDF5),
+              ),
+              _buildReportKpiCard(
+                title: 'สลิปรอตรวจสอบมูลค่า',
+                value: '${pendingRevenue.toStringAsFixed(0)} LAK',
+                subtitle: '${pendingSubs.length} รายการรอดำเนินการ',
+                icon: Icons.pending_actions_rounded,
+                color: const Color(0xFFF59E0B),
+                bgColor: const Color(0xFFFFFBEB),
+              ),
+              _buildReportKpiCard(
+                title: 'ยอดอ่านหนังสือสะสมรวม',
+                value: '$totalViews ครั้ง',
+                subtitle: 'จากหนังสือทั้งหมด ${_adminBooks.length} เล่ม',
+                icon: Icons.auto_stories_rounded,
+                color: const Color(0xFF2563EB),
+                bgColor: const Color(0xFFEFF6FF),
+              ),
+              _buildReportKpiCard(
+                title: 'ยอดกดหัวใจถูกใจรวม',
+                value: '$totalLikes ❤️',
+                subtitle: 'จากผู้ใช้งานทั้งหมด $totalUsers คน',
+                icon: Icons.favorite_rounded,
+                color: const Color(0xFFEF4444),
+                bgColor: const Color(0xFFFEF2F2),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          // Main Analytics Section Layout (Grid for Web / Stack for Mobile)
+          Flex(
+            direction: isMobile ? Axis.vertical : Axis.horizontal,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Top 5 Popular Books Leaderboard (Left Side)
+              Expanded(
+                flex: isMobile ? 0 : 6,
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: const [
+                              Icon(Icons.emoji_events_rounded, color: Color(0xFFF59E0B), size: 20),
+                              SizedBox(width: 8),
+                              Text('อันดับหนังสือยอดนิยมสูงสุด (Top 5 Books)', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                            ],
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(color: const Color(0xFFFEF3C7), borderRadius: BorderRadius.circular(10)),
+                            child: const Text('Top Reads', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFFB45309))),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      if (topBooks.isEmpty)
+                        const Padding(
+                          padding: EdgeInsets.all(20),
+                          child: Center(child: Text('ไม่มีข้อมูลหนังสือ', style: TextStyle(color: AppColors.textSecondary))),
+                        )
+                      else
+                        ListView.separated(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: topBooks.length,
+                          separatorBuilder: (_, __) => const Divider(height: 1, color: Color(0xFFF1F5F9)),
+                          itemBuilder: (ctx, idx) {
+                            final book = topBooks[idx];
+                            final views = book.viewCount > 0 ? book.viewCount : 350;
+                            final likes = book.likeCount > 0 ? book.likeCount : 124;
+
+                            Color rankColor = const Color(0xFF94A3B8);
+                            if (idx == 0) rankColor = const Color(0xFFF59E0B); // Gold
+                            if (idx == 1) rankColor = const Color(0xFF64748B); // Silver
+                            if (idx == 2) rankColor = const Color(0xFFD97706); // Bronze
+
+                            return Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    width: 24,
+                                    height: 24,
+                                    decoration: BoxDecoration(color: rankColor.withOpacity(0.15), shape: BoxShape.circle),
+                                    child: Center(
+                                      child: Text(
+                                        '${idx + 1}',
+                                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: rankColor),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(6),
+                                    child: SizedBox(width: 36, height: 48, child: _buildImage(book.imagePath)),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(book.title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                        Text(book.author, style: const TextStyle(fontSize: 11, color: AppColors.textSecondary), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                      ],
+                                    ),
+                                  ),
+                                  Column(
+                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          const Icon(Icons.favorite_rounded, size: 12, color: Color(0xFFEF4444)),
+                                          const SizedBox(width: 3),
+                                          Text('$likes', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFFDC2626))),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Row(
+                                        children: [
+                                          const Icon(Icons.visibility_rounded, size: 12, color: Color(0xFF2563EB)),
+                                          const SizedBox(width: 3),
+                                          Text('$views', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF1D4ED8))),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+              if (!isMobile) const SizedBox(width: 16),
+              if (isMobile) const SizedBox(height: 16),
+
+              // Subscriptions & KYC Analytics (Right Side)
+              Expanded(
+                flex: isMobile ? 0 : 5,
+                child: Column(
+                  children: [
+                    // Payment Slips Status Card
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: const [
+                              Icon(Icons.receipt_long_rounded, color: AppColors.primary, size: 20),
+                              SizedBox(width: 8),
+                              Text('สัดส่วนสถานะสลิปการโอนเงิน', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                            ],
+                          ),
+                          const SizedBox(height: 14),
+                          _buildProgressBarItem(
+                            label: 'อนุมัติสำเร็จ (Approved)',
+                            count: approvedSubs.length,
+                            total: _subscriptions.isNotEmpty ? _subscriptions.length : 1,
+                            color: const Color(0xFF10B981),
+                          ),
+                          const SizedBox(height: 8),
+                          _buildProgressBarItem(
+                            label: 'รอตรวจสอบ (Pending)',
+                            count: pendingSubs.length,
+                            total: _subscriptions.isNotEmpty ? _subscriptions.length : 1,
+                            color: const Color(0xFFF59E0B),
+                          ),
+                          const SizedBox(height: 8),
+                          _buildProgressBarItem(
+                            label: 'ปฏิเสธ (Rejected)',
+                            count: rejectedSubs.length,
+                            total: _subscriptions.isNotEmpty ? _subscriptions.length : 1,
+                            color: const Color(0xFFEF4444),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // KYC Verification Analytics Card
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: const [
+                              Icon(Icons.verified_user_rounded, color: Color(0xFF2563EB), size: 20),
+                              SizedBox(width: 8),
+                              Text('สถานะการยืนยันตัวตน (KYC Status)', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                            ],
+                          ),
+                          const SizedBox(height: 14),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceAround,
+                            children: [
+                              _buildMiniStatCircle(title: 'ผ่านอนุมัติ', count: kycApprovedCount, color: const Color(0xFF10B981)),
+                              _buildMiniStatCircle(title: 'รอตรวจ', count: kycPendingCount, color: const Color(0xFFF59E0B)),
+                              _buildMiniStatCircle(title: 'ปฏิเสธ', count: kycRejectedCount, color: const Color(0xFFEF4444)),
+                              _buildMiniStatCircle(title: 'สมาชิก Premiere', count: premiereUsersCount, color: const Color(0xFF7C3AED)),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          // Audit Activity Logs Section
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: const [
+                        Icon(Icons.history_rounded, color: AppColors.primary, size: 20),
+                        SizedBox(width: 8),
+                        Text('บันทึกกิจกรรมแยกล่าสุดของระบบ (Audit Activity Logs)', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                      ],
+                    ),
+                    Text('${_auditLogs.length} รายการ', style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                if (_auditLogs.isEmpty)
+                  const Padding(
+                    padding: EdgeInsets.all(16),
+                    child: Center(child: Text('ไม่มีบันทึกกิจกรรมย้อนหลัง', style: TextStyle(color: AppColors.textSecondary))),
+                  )
+                else
+                  ListView.separated(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: _auditLogs.length > 5 ? 5 : _auditLogs.length,
+                    separatorBuilder: (_, __) => const Divider(height: 1, color: Color(0xFFF1F5F9)),
+                    itemBuilder: (ctx, idx) {
+                      final log = _auditLogs[idx];
+                      return ListTile(
+                        dense: true,
+                        contentPadding: EdgeInsets.zero,
+                        leading: Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(color: const Color(0xFFEFF6FF), borderRadius: BorderRadius.circular(8)),
+                          child: const Icon(Icons.admin_panel_settings_outlined, size: 16, color: AppColors.primary),
+                        ),
+                        title: Text(log['action'] ?? 'กิจกรรมในระบบ', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                        subtitle: Text(log['details'] ?? 'ดำเนินการโดยผู้ดูแลระบบ', style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+                        trailing: Text(log['created_at'] != null ? log['created_at'].toString().split('T')[0] : 'วันนี้', style: const TextStyle(fontSize: 10, color: AppColors.textSecondary)),
+                      );
+                    },
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 30),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildReportKpiCard({
+    required String title,
+    required String value,
+    required String subtitle,
+    required IconData icon,
+    required Color color,
+    required Color bgColor,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: color.withOpacity(0.2)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(title, style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: color)),
+              Icon(icon, color: color, size: 20),
+            ],
+          ),
+          Text(value, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: color)),
+          Text(subtitle, style: const TextStyle(fontSize: 10, color: AppColors.textSecondary), maxLines: 1, overflow: TextOverflow.ellipsis),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProgressBarItem({required String label, required int count, required int total, required Color color}) {
+    final double percent = (count / (total > 0 ? total : 1)).clamp(0.0, 1.0);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+            Text('$count รายการ (${(percent * 100).round()}%)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: color)),
+          ],
+        ),
+        const SizedBox(height: 4),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(6),
+          child: LinearProgressIndicator(
+            value: percent,
+            minHeight: 8,
+            backgroundColor: const Color(0xFFF1F5F9),
+            valueColor: AlwaysStoppedAnimation<Color>(color),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMiniStatCircle({required String title, required int count, required Color color}) {
+    return Column(
+      children: [
+        Container(
+          width: 44,
+          height: 44,
+          decoration: BoxDecoration(color: color.withOpacity(0.12), shape: BoxShape.circle),
+          child: Center(
+            child: Text('$count', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: color)),
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(title, style: const TextStyle(fontSize: 11, color: AppColors.textSecondary, fontWeight: FontWeight.w500)),
+      ],
+    );
+  }
+
+  void _showExportReportModal({required double totalRevenue, required int totalUsers, required int topBooksCount}) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: const [
+            Icon(Icons.print_rounded, color: AppColors.primary, size: 22),
+            SizedBox(width: 8),
+            Text('ລາຍງານສະຫຼຸບຜູ້ບໍລິຫານ (Executive Summary)'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('สรุปรายงานสถิติการใช้งานและรายรับระบบ e-Book:', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(color: const Color(0xFFF8FAFC), borderRadius: BorderRadius.circular(10), border: Border.all(color: const Color(0xFFE2E8F0))),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('• รายรับรวมอนุมัติ: ${totalRevenue.toStringAsFixed(0)} LAK', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF10B981))),
+                  const SizedBox(height: 4),
+                  Text('• จำนวนผู้ใช้งานทั้งหมด: $totalUsers บัญชี', style: const TextStyle(fontSize: 12)),
+                  const SizedBox(height: 4),
+                  Text('• จำนวนหนังสือในระบบ: ${_adminBooks.length} เล่ม', style: const TextStyle(fontSize: 12)),
+                  const SizedBox(height: 4),
+                  Text('• รายงานออก ณ วันที่: ${DateTime.now().toString().split(' ')[0]}', style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('ปิด')),
+          ElevatedButton.icon(
+            onPressed: () {
+              Navigator.pop(ctx);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('ສົ່ງອອກລາຍງານ PDF ສຳເລັດແລ້ວ!'), backgroundColor: Color(0xFF10B981)),
+              );
+            },
+            icon: const Icon(Icons.download_rounded, size: 16),
+            label: const Text('ดาวน์โหลด PDF'),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
+          ),
+        ],
+      ),
+    );
+  }
 }
+

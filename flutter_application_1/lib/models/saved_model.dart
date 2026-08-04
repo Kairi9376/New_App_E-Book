@@ -5,6 +5,8 @@ class SavedBookItem {
   final String title;
   final String author;
   final double rating;
+  final int likeCount;
+  final int viewCount;
   final String category;
   final String imagePath;
   final String? pdfUrl;
@@ -17,7 +19,9 @@ class SavedBookItem {
     this.bookId,
     required this.title,
     required this.author,
-    required this.rating,
+    this.rating = 0.0,
+    this.likeCount = 0,
+    this.viewCount = 0,
     required this.category,
     required this.imagePath,
     this.pdfUrl,
@@ -25,11 +29,28 @@ class SavedBookItem {
     this.isBookmarked = true,
   });
 
-  factory SavedBookItem.fromMap(Map<String, dynamic> map, {String uploadsBaseUrl = 'http://localhost:5000/uploads'}) {
-    double parsedRating = 4.5;
-    if (map['rating'] != null) {
-      parsedRating = double.tryParse(map['rating'].toString()) ?? 4.5;
+  String get formattedLikes {
+    if (likeCount >= 1000) {
+      return '${(likeCount / 1000).toStringAsFixed(1)}k';
     }
+    return likeCount.toString();
+  }
+
+  String get formattedViews {
+    if (viewCount >= 1000) {
+      return '${(viewCount / 1000).toStringAsFixed(1)}k';
+    }
+    return viewCount.toString();
+  }
+
+  factory SavedBookItem.fromMap(Map<String, dynamic> map, {String uploadsBaseUrl = 'http://localhost:5000/uploads'}) {
+    double parsedRating = 0.0;
+    if (map['rating'] != null) {
+      parsedRating = double.tryParse(map['rating'].toString()) ?? 0.0;
+    }
+
+    int parsedLikes = int.tryParse(map['like_count']?.toString() ?? map['likes']?.toString() ?? map['likeCount']?.toString() ?? '124') ?? 124;
+    int parsedViews = int.tryParse(map['view_count']?.toString() ?? map['views']?.toString() ?? map['readers']?.toString() ?? map['viewCount']?.toString() ?? '350') ?? 350;
 
     String cover = map['cover_image_url'] ?? map['imagePath'] ?? '';
     if (cover.startsWith('/uploads/') || cover.startsWith('uploads/')) {
@@ -51,6 +72,8 @@ class SavedBookItem {
       title: map['title'] ?? '',
       author: map['author_name'] ?? map['author'] ?? 'ບໍ່ລະບຸຜູ້ແຕ່ງ',
       rating: parsedRating,
+      likeCount: parsedLikes,
+      viewCount: parsedViews,
       category: map['category_name'] ?? map['category'] ?? 'ທົ່ວໄປ',
       imagePath: cover.isNotEmpty ? cover : 'assets/sample_cover.png',
       pdfUrl: pdf,
@@ -66,6 +89,8 @@ class SavedBookItem {
       'title': title,
       'author': author,
       'rating': rating,
+      'like_count': likeCount,
+      'view_count': viewCount,
       'category': category,
       'cover_image_url': imagePath,
       'file_pdf_url': pdfUrl,
@@ -81,7 +106,8 @@ class MockSavedData {
       bookId: 3,
       title: 'Quantum Mechanics',
       author: 'Dr. Elias Thorne',
-      rating: 4.9,
+      likeCount: 450,
+      viewCount: 1800,
       category: 'ເຕັກໂນໂລຊີ',
       imagePath: 'assets/sample_cover.png',
       pdfUrl: 'assets/sample_book.pdf',
@@ -92,7 +118,8 @@ class MockSavedData {
       bookId: 2,
       title: 'High School Science',
       author: 'Nageen Prakashan',
-      rating: 4.8,
+      likeCount: 890,
+      viewCount: 3200,
       category: 'ວິທະຍາສາດ',
       imagePath: 'assets/sample_cover.png',
       pdfUrl: 'assets/sample_book.pdf',

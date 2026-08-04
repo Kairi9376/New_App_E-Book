@@ -113,6 +113,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
           id: item.bookId?.toString() ?? item.id,
           title: item.title,
           author: item.author,
+          pageCount: 120,
           rating: 4.8,
           ratingText: '4.8',
           tags: item.category.isNotEmpty ? [item.category] : ['ທັງໝົດ'],

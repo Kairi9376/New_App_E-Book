@@ -10,6 +10,8 @@ import '../../models/kyc_model.dart';
 import 'pdf_viewer_screen.dart';
 import 'kyc_submission_screen.dart';
 import 'membership_package_screen.dart';
+import '../../services/notification_service.dart';
+import '../../models/notification_model.dart';
 
 class BookDetailScreen extends StatefulWidget {
   final BookModel? book;
@@ -22,12 +24,14 @@ class BookDetailScreen extends StatefulWidget {
 
 class _BookDetailScreenState extends State<BookDetailScreen> {
   bool _isBookmarked = false;
+  bool _isLiked = false;
+  int _likeCount = 124;
+  int _viewCount = 350;
 
   late String _title;
   late String _author;
-  late String _ratingText;
   late String _imagePath;
-  int _totalPageCount = 20;
+  int _totalPageCount = 120;
   int _lastPageRead = 0;
   int _selectedPageChunk = 0;
 
@@ -37,14 +41,15 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
     if (widget.book != null) {
       _title = widget.book!.title;
       _author = widget.book!.author;
-      _ratingText = widget.book!.ratingText;
       _imagePath = widget.book!.imagePath;
       _isBookmarked = widget.book!.isBookmarked;
-      _totalPageCount = widget.book!.pageCount > 0 ? widget.book!.pageCount : 20;
+      _isLiked = widget.book!.isLiked;
+      _likeCount = widget.book!.likeCount > 0 ? widget.book!.likeCount : 124;
+      _viewCount = widget.book!.viewCount > 0 ? widget.book!.viewCount : 350;
+      _totalPageCount = widget.book!.pageCount > 0 ? widget.book!.pageCount : 120;
     } else {
       _title = 'The Happiness Effect';
       _author = 'Stephen T. Radentz';
-      _ratingText = '4.9';
       _imagePath = 'assets/sample_book.pdf';
     }
 
@@ -214,7 +219,7 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                       ),
                       child: Column(
                         children: [
-                          // Top Header Actions Row (Back, Bookmark, Share)
+                          // Top Header Actions Row (Back, Heart Like, Bookmark, Share)
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
@@ -224,6 +229,20 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                               ),
                               Row(
                                 children: [
+                                  _buildCircularIconButton(
+                                    icon: _isLiked ? Icons.favorite_rounded : Icons.favorite_outline_rounded,
+                                    iconColor: const Color(0xFFEF4444),
+                                    onTap: () async {
+                                      setState(() {
+                                        _isLiked = !_isLiked;
+                                        _likeCount += _isLiked ? 1 : -1;
+                                      });
+                                      if (widget.book != null) {
+                                        await ApiService.toggleLike(widget.book!.id);
+                                      }
+                                    },
+                                  ),
+                                  const SizedBox(width: 10),
                                   _buildCircularIconButton(
                                     icon: _isBookmarked
                                         ? Icons.bookmark_rounded
@@ -314,15 +333,34 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                           ),
                           const SizedBox(height: 16),
 
-                          // Info Badges Row (Rating, Pages, Language)
+                          // Info Badges Row (Likes, Readers, Pages)
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
+                              InkWell(
+                                onTap: () async {
+                                  setState(() {
+                                    _isLiked = !_isLiked;
+                                    _likeCount += _isLiked ? 1 : -1;
+                                  });
+                                  if (widget.book != null) {
+                                    await ApiService.toggleLike(widget.book!.id);
+                                  }
+                                },
+                                borderRadius: BorderRadius.circular(12),
+                                child: _buildInfoBadge(
+                                  icon: _isLiked ? Icons.favorite_rounded : Icons.favorite_outline_rounded,
+                                  iconColor: const Color(0xFFEF4444),
+                                  text: '$_likeCount ຖືກໃຈ',
+                                  bgColor: const Color(0xFFFEF2F2),
+                                ),
+                              ),
+                              const SizedBox(width: 10),
                               _buildInfoBadge(
-                                icon: Icons.star_rounded,
-                                iconColor: const Color(0xFFF59E0B),
-                                text: _ratingText,
-                                bgColor: const Color(0xFFFEF3C7),
+                                icon: Icons.visibility_rounded,
+                                iconColor: const Color(0xFF2563EB),
+                                text: '$_viewCount ຜູ້ອ່ານ',
+                                bgColor: const Color(0xFFEFF6FF),
                               ),
                               const SizedBox(width: 10),
                               _buildInfoBadge(
@@ -330,13 +368,6 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                                 iconColor: AppColors.primary,
                                 text: '$_totalPageCount ໜ້າ',
                                 bgColor: const Color(0xFFE2EDFF),
-                              ),
-                              const SizedBox(width: 10),
-                              _buildInfoBadge(
-                                icon: Icons.language_rounded,
-                                iconColor: const Color(0xFF7C3AED),
-                                text: widget.book?.language ?? 'Laos',
-                                bgColor: const Color(0xFFF3E8FF),
                               ),
                             ],
                           ),
@@ -383,6 +414,13 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                                       final bookId = widget.book?.id ?? '1';
                                       final success = await ApiService.recordDownload(bookId);
                                       if (mounted) {
+                                        NotificationService.addNotification(
+                                          context,
+                                          title: '📥 ດາວໂຫຼດໜັງສືສຳເລັດແລ້ວ',
+                                          message: 'ບັນທຶກ "${_title}" ເຂົ້າຄັງອອບໄລນ໌ຮຽບຮ້ອຍແລ້ວ',
+                                          type: NotificationType.book,
+                                          targetId: bookId,
+                                        );
                                         ScaffoldMessenger.of(context).showSnackBar(
                                           SnackBar(
                                             content: Text(success
@@ -616,7 +654,6 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
             itemBuilder: (context, index) {
               final int pageNum = startPage + index;
               final bool isLastReadPage = pageNum == _lastPageRead;
-              final bool isReadPage = _lastPageRead > 0 && pageNum <= _lastPageRead;
 
               return InkWell(
                 onTap: () => _openReader(initialPage: pageNum),
@@ -627,9 +664,7 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                     color: isLastReadPage ? const Color(0xFFFEF3C7) : Colors.white,
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(
-                      color: isLastReadPage
-                          ? const Color(0xFFF59E0B)
-                          : (isReadPage ? const Color(0xFFCBD5E1) : const Color(0xFFE2E8F0)),
+                      color: isLastReadPage ? const Color(0xFFF59E0B) : const Color(0xFFE2E8F0),
                       width: isLastReadPage ? 1.8 : 1,
                     ),
                   ),
@@ -639,9 +674,7 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                         width: 28,
                         height: 28,
                         decoration: BoxDecoration(
-                          color: isLastReadPage
-                              ? const Color(0xFFF59E0B)
-                              : (isReadPage ? const Color(0xFF10B981) : const Color(0xFFF1F5F9)),
+                          color: isLastReadPage ? const Color(0xFFF59E0B) : const Color(0xFFF1F5F9),
                           shape: BoxShape.circle,
                         ),
                         child: Center(
@@ -650,7 +683,7 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.bold,
-                              color: (isLastReadPage || isReadPage) ? Colors.white : AppColors.textSecondary,
+                              color: isLastReadPage ? Colors.white : AppColors.textSecondary,
                             ),
                           ),
                         ),
@@ -685,8 +718,6 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                             ],
                           ),
                         )
-                      else if (isReadPage)
-                        const Icon(Icons.check_circle_rounded, color: Color(0xFF10B981), size: 18)
                       else
                         const Icon(Icons.arrow_forward_ios_rounded, color: Color(0xFF94A3B8), size: 14),
                     ],
@@ -711,14 +742,14 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('ກະລຸນາປ້ອນໝາຍເລກໜ້າ (1 ถึง $_totalPageCount):', style: const TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+            Text('ກະລຸນາປ້ອນໝາຍເລກໜ້າ (1 ເຖິງ $_totalPageCount):', style: const TextStyle(fontSize: 13, color: AppColors.textSecondary)),
             const SizedBox(height: 12),
             TextField(
               controller: controller,
               keyboardType: TextInputType.number,
               autofocus: true,
               decoration: InputDecoration(
-                hintText: 'ตัวอย่าง: 45',
+                hintText: 'ຕົວຢ່າງ: 45',
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                 contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               ),
@@ -739,7 +770,7 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
               } else {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text('ກະລຸນາປ້ອນตัวเลขระหว่าง 1 ถึง $_totalPageCount'),
+                    content: Text('ກະລຸນາປ້ອນຕົວເລກລະຫວ່າງ 1 ເຖິງ $_totalPageCount'),
                     backgroundColor: Colors.redAccent,
                   ),
                 );

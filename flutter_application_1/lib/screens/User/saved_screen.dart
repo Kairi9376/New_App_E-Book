@@ -1,11 +1,10 @@
-import 'dart:io';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import '../../theme/app_theme.dart';
 import '../../models/saved_model.dart';
+import '../../models/book_model.dart';
 import '../../services/api_service.dart';
 import '../../utils/image_helper.dart';
-import 'pdf_viewer_screen.dart';
+import 'book_detail_screen.dart';
 
 class SavedScreen extends StatefulWidget {
   const SavedScreen({super.key});
@@ -17,6 +16,10 @@ class SavedScreen extends StatefulWidget {
 class _SavedScreenState extends State<SavedScreen> {
   List<SavedBookItem> _savedList = [];
   bool _isLoading = true;
+  String _searchQuery = '';
+  int _selectedCategoryIndex = 0;
+
+  final List<String> _categories = ['ທັງໝົດ', 'ວິທະຍາສາດ', 'ສິນລະປະ', 'ເຕັກໂນໂລຊີ', 'ຊີວິດ'];
 
   @override
   void initState() {
@@ -35,45 +38,93 @@ class _SavedScreenState extends State<SavedScreen> {
     }
   }
 
-  void _toggleBookmark(int index) async {
-    final item = _savedList[index];
+  void _toggleBookmark(SavedBookItem item, int index) async {
     setState(() {
-      _savedList.removeAt(index);
+      _savedList.removeWhere((b) => b.id == item.id);
     });
     await ApiService.toggleBookmark(item.id);
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('ລົບ "${item.title}" ອອກຈາກລາຍການບັນທຶກແລ້ວ'),
+          backgroundColor: const Color(0xFFEF4444),
+          action: SnackBarAction(
+            label: 'ເລີກທຳ',
+            textColor: Colors.white,
+            onPressed: () async {
+              await ApiService.toggleBookmark(item.id);
+              _fetchSavedBooks();
+            },
+          ),
+        ),
+      );
+    }
+  }
+
+  void _openBookDetail(SavedBookItem item) {
+    final bookModel = BookModel(
+      id: item.bookId?.toString() ?? item.id,
+      title: item.title,
+      author: item.author,
+      tags: item.category.isNotEmpty ? [item.category] : ['ທັງໝົດ'],
+      imagePath: item.imagePath,
+      pdfUrl: item.pdfUrl ?? 'assets/sample_book.pdf',
+      likeCount: item.likeCount,
+      viewCount: item.viewCount,
+      pageCount: 120,
+      description: item.description ?? '',
+    );
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => BookDetailScreen(book: bookModel)),
+    );
+  }
+
+  List<SavedBookItem> get _filteredList {
+    return _savedList.where((book) {
+      final matchesSearch = _searchQuery.isEmpty ||
+          book.title.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+          book.author.toLowerCase().contains(_searchQuery.toLowerCase());
+
+      final matchesCategory = _selectedCategoryIndex == 0 ||
+          book.category == _categories[_selectedCategoryIndex];
+
+      return matchesSearch && matchesCategory;
+    }).toList();
   }
 
   Widget _buildImage(String path, {double? width, double? height}) {
     return ImageHelper.buildImage(path, width: width, height: height, fit: BoxFit.cover);
   }
 
-  Widget _buildPlaceholder(double? width, double? height) {
-    return Container(
-      width: width,
-      height: height,
-      color: const Color(0xFF1E293B),
-      child: const Icon(Icons.book_rounded, color: AppColors.primary, size: 32),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
+    final displayList = _filteredList;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 18.0, vertical: 16.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header Title
+          // Header Title & Refresh Button
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                'ບັນທຶກ',
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
-                ),
+              Row(
+                children: const [
+                  Icon(Icons.bookmark_rounded, color: AppColors.primary, size: 26),
+                  SizedBox(width: 8),
+                  Text(
+                    'ບັນທຶກ (Saved Books)',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                ],
               ),
               IconButton(
                 icon: const Icon(Icons.refresh_rounded, color: AppColors.primary),
@@ -82,17 +133,90 @@ class _SavedScreenState extends State<SavedScreen> {
               ),
             ],
           ),
+          const SizedBox(height: 12),
+
+          // Search Box
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.02),
+                  blurRadius: 6,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: TextField(
+              onChanged: (val) => setState(() => _searchQuery = val),
+              decoration: const InputDecoration(
+                hintText: 'ຄົ້ນຫາໃນລາຍການບັນທຶກ...',
+                hintStyle: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                icon: Icon(Icons.search_rounded, color: AppColors.textSecondary, size: 20),
+                border: InputBorder.none,
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          // Category Chips Bar
+          SizedBox(
+            height: 34,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: _categories.length,
+              itemBuilder: (context, idx) {
+                final isSelected = _selectedCategoryIndex == idx;
+                return Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: ChoiceChip(
+                    selected: isSelected,
+                    label: Text(_categories[idx]),
+                    labelStyle: TextStyle(
+                      fontSize: 12,
+                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                      color: isSelected ? Colors.white : AppColors.textPrimary,
+                    ),
+                    selectedColor: AppColors.primary,
+                    backgroundColor: const Color(0xFFF1F5F9),
+                    side: BorderSide.none,
+                    onSelected: (selected) {
+                      if (selected) {
+                        setState(() => _selectedCategoryIndex = idx);
+                      }
+                    },
+                  ),
+                );
+              },
+            ),
+          ),
           const SizedBox(height: 14),
 
           // Saved Grid Items
           Expanded(
             child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : _savedList.isEmpty
-                    ? const Center(
-                        child: Text(
-                          'ບໍ່ມີປຶ້ມທີ່ບັນທຶກໄວ້',
-                          style: TextStyle(fontSize: 15, color: AppColors.textSecondary),
+                ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
+                : displayList.isEmpty
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.bookmark_border_rounded, size: 64, color: Color(0xFFCBD5E1)),
+                            const SizedBox(height: 12),
+                            const Text(
+                              'ບໍ່ມີປຶ້ມທີ່ບັນທຶກໄວ້',
+                              style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.textSecondary),
+                            ),
+                            const SizedBox(height: 6),
+                            const Text(
+                              'ກົດໄອຄອນຄັ້ນໜ້າ 📌 ໃນໜ້າໜັງສືເພື່ອບັນທຶກໄວ້ອ່ານພາຍຫຼັງ',
+                              style: TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
                         ),
                       )
                     : RefreshIndicator(
@@ -100,15 +224,15 @@ class _SavedScreenState extends State<SavedScreen> {
                         color: AppColors.primary,
                         child: GridView.builder(
                           physics: const AlwaysScrollableScrollPhysics(),
-                          itemCount: _savedList.length,
+                          itemCount: displayList.length,
                           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                             crossAxisCount: 2,
-                            childAspectRatio: 0.58,
+                            childAspectRatio: 0.55,
                             crossAxisSpacing: 14,
                             mainAxisSpacing: 16,
                           ),
                           itemBuilder: (context, index) {
-                            return _buildSavedCard(_savedList[index], index);
+                            return _buildSavedCard(displayList[index], index);
                           },
                         ),
                       ),
@@ -119,131 +243,153 @@ class _SavedScreenState extends State<SavedScreen> {
   }
 
   Widget _buildSavedCard(SavedBookItem item, int index) {
-    return Container(
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFF1F5F9)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Cover Image Container with Bookmark Icon Badge
-          Expanded(
-            child: Stack(
-              children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: Container(
-                    width: double.infinity,
-                    color: const Color(0xFFF8FAFC),
-                    child: _buildImage(item.imagePath),
-                  ),
-                ),
-
-                // Floating Top Right Bookmark Button
-                Positioned(
-                  top: 8,
-                  right: 8,
-                  child: GestureDetector(
-                    onTap: () => _toggleBookmark(index),
+    return InkWell(
+      onTap: () => _openBookDetail(item),
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFFF1F5F9)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Cover Image Container with Bookmark Icon Badge
+            Expanded(
+              child: Stack(
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
                     child: Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: const BoxDecoration(
-                        color: AppColors.primary,
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black26,
-                            blurRadius: 4,
-                            offset: Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: const Icon(
-                        Icons.bookmark_rounded,
-                        size: 16,
-                        color: Colors.white,
-                      ),
+                      width: double.infinity,
+                      color: const Color(0xFFF8FAFC),
+                      child: _buildImage(item.imagePath),
                     ),
                   ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 10),
 
-          // Category Tag
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-            decoration: BoxDecoration(
-              color: const Color(0xFFE2EDFF),
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: Text(
-              item.category,
-              style: const TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.bold,
-                color: AppColors.primary,
-              ),
-            ),
-          ),
-          const SizedBox(height: 6),
-
-          // Title
-          Text(
-            item.title,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          const SizedBox(height: 2),
-
-          // Author & Rating Row
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Text(
-                  item.author,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-              ),
-              Row(
-                children: [
-                  const Icon(Icons.star_rounded, size: 14, color: Colors.amber),
-                  const SizedBox(width: 2),
-                  Text(
-                    item.rating.toStringAsFixed(1),
-                    style: const TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
+                  // Floating Top Right Bookmark Button
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: GestureDetector(
+                      onTap: () => _toggleBookmark(item, index),
+                      child: Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: const BoxDecoration(
+                          color: AppColors.primary,
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black26,
+                              blurRadius: 4,
+                              offset: Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: const Icon(
+                          Icons.bookmark_rounded,
+                          size: 16,
+                          color: Colors.white,
+                        ),
+                      ),
                     ),
                   ),
                 ],
               ),
-            ],
-          ),
-        ],
+            ),
+            const SizedBox(height: 10),
+
+            // Category Tag
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: const Color(0xFFE2EDFF),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Text(
+                item.category,
+                style: const TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.primary,
+                ),
+              ),
+            ),
+            const SizedBox(height: 6),
+
+            // Title
+            Text(
+              item.title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 2),
+
+            // Author & Heart Likes Row
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Text(
+                    item.author,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ),
+                Row(
+                  children: [
+                    const Icon(Icons.favorite_rounded, size: 12, color: Color(0xFFEF4444)),
+                    const SizedBox(width: 2),
+                    Text(
+                      item.formattedLikes,
+                      style: const TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+
+            // Quick Read Button
+            SizedBox(
+              width: double.infinity,
+              height: 28,
+              child: ElevatedButton.icon(
+                onPressed: () => _openBookDetail(item),
+                icon: const Icon(Icons.menu_book_rounded, size: 12, color: Colors.white),
+                label: const Text('ອ່ານເລີຍ', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  padding: EdgeInsets.zero,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  elevation: 0,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -1,5 +1,3 @@
-import 'dart:io';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import '../../theme/app_theme.dart';
 import '../../models/downloads_model.dart';
@@ -17,7 +15,7 @@ class DownloadsScreen extends StatefulWidget {
 
 class _DownloadsScreenState extends State<DownloadsScreen> {
   int _selectedCategoryIndex = 0;
-  final List<String> _categories = ['ທັງໝົດ', 'ວິທະຍາສາດ', 'ສິນລະປະ', 'ສຸຂະພາບ'];
+  String _searchQuery = '';
 
   List<DownloadedBookItem> _downloadList = [];
   bool _isLoading = true;
@@ -39,51 +37,109 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
     }
   }
 
-  void _removeItem(int index) {
-    final removed = _downloadList[index];
+  void _removeItem(int index, DownloadedBookItem item) {
     setState(() {
-      _downloadList.removeAt(index);
+      _downloadList.removeWhere((b) => b.id == item.id);
     });
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('ລົບ "${removed.title}" ອອກຈາກລາຍການດາວໂຫຼດແລ້ວ'),
-        duration: const Duration(seconds: 2),
+        content: Text('ລົບ "${item.title}" ອອກຈາກລາຍການດາວໂຫຼດແລ້ວ'),
+        backgroundColor: const Color(0xFFEF4444),
+        duration: const Duration(seconds: 3),
+        action: SnackBarAction(
+          label: 'ເລີກທຳ',
+          textColor: Colors.white,
+          onPressed: () {
+            _fetchDownloads();
+          },
+        ),
       ),
     );
+  }
+
+  void _openBookDetail(DownloadedBookItem item) {
+    final bookModel = BookModel(
+      id: item.bookId?.toString() ?? item.id,
+      title: item.title,
+      author: item.author,
+      pageCount: item.pageCount > 0 ? item.pageCount : 120,
+      rating: 4.8,
+      ratingText: '4.8',
+      likeCount: item.likeCount,
+      viewCount: item.viewCount,
+      tags: item.category.isNotEmpty ? [item.category] : ['ທັງໝົດ'],
+      imagePath: item.imagePath,
+      pdfUrl: item.pdfUrl ?? 'assets/sample_book.pdf',
+      description: item.description ?? '',
+    );
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => BookDetailScreen(book: bookModel)),
+    );
+  }
+
+  List<String> get _categories {
+    final cats = <String>{'ທັງໝົດ'};
+    for (final item in _downloadList) {
+      if (item.category.isNotEmpty) {
+        final parts = item.category.split(',');
+        for (var p in parts) {
+          final trimmed = p.trim();
+          if (trimmed.isNotEmpty) cats.add(trimmed);
+        }
+      }
+    }
+    return cats.toList();
+  }
+
+  List<DownloadedBookItem> get _filteredList {
+    final catList = _categories;
+    final selectedCat = (_selectedCategoryIndex < catList.length) ? catList[_selectedCategoryIndex] : 'ທັງໝົດ';
+
+    return _downloadList.where((book) {
+      final matchesSearch = _searchQuery.isEmpty ||
+          book.title.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+          book.author.toLowerCase().contains(_searchQuery.toLowerCase());
+
+      final matchesCategory = _selectedCategoryIndex == 0 ||
+          book.category.toLowerCase().contains(selectedCat.toLowerCase());
+
+      return matchesSearch && matchesCategory;
+    }).toList();
   }
 
   Widget _buildImage(String path, {double? width, double? height}) {
     return ImageHelper.buildImage(path, width: width, height: height, fit: BoxFit.cover);
   }
 
-  Widget _buildPlaceholder(double? width, double? height) {
-    return Container(
-      width: width,
-      height: height,
-      color: Colors.blueGrey.shade100,
-      child: const Icon(Icons.book_rounded, color: AppColors.primary, size: 32),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
+    final displayList = _filteredList;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 18.0, vertical: 16.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header Title
+          // Header Title & Refresh Button
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                'ດາວໂຫຼດ',
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
-                ),
+              Row(
+                children: const [
+                  Icon(Icons.download_for_offline_rounded, color: AppColors.primary, size: 26),
+                  SizedBox(width: 8),
+                  Text(
+                    'ດາວໂຫຼດ (Downloaded Books)',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                ],
               ),
               IconButton(
                 icon: const Icon(Icons.refresh_rounded, color: AppColors.primary),
@@ -92,15 +148,42 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 12),
+
+          // Search Box
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.02),
+                  blurRadius: 6,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: TextField(
+              onChanged: (val) => setState(() => _searchQuery = val),
+              decoration: const InputDecoration(
+                hintText: 'ຄົ້ນຫາໃນລາຍການດາວໂຫຼດ...',
+                hintStyle: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                icon: Icon(Icons.search_rounded, color: AppColors.textSecondary, size: 20),
+                border: InputBorder.none,
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
 
           // Category Chips Bar
           SizedBox(
-            height: 38,
+            height: 34,
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               itemCount: _categories.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 10),
+              separatorBuilder: (_, __) => const SizedBox(width: 8),
               itemBuilder: (context, index) {
                 final isSelected = _selectedCategoryIndex == index;
                 return ChoiceChip(
@@ -111,40 +194,56 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
                   labelStyle: TextStyle(
                     color: isSelected ? Colors.white : const Color(0xFF64748B),
                     fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                    fontSize: 13,
+                    fontSize: 12,
                   ),
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
-                    side: BorderSide.none,
-                  ),
+                  side: BorderSide.none,
                   onSelected: (selected) {
-                    setState(() {
-                      _selectedCategoryIndex = index;
-                    });
+                    if (selected) {
+                      setState(() => _selectedCategoryIndex = index);
+                    }
                   },
                 );
               },
             ),
           ),
-          const SizedBox(height: 18),
+          const SizedBox(height: 16),
 
           // Downloaded List Items
           Expanded(
-            child: _downloadList.isEmpty
-                ? const Center(
-                    child: Text(
-                      'ບໍ່ມີໄຟລ໌ດາວໂຫຼດໃນເຄື່ອງ',
-                      style: TextStyle(fontSize: 15, color: AppColors.textSecondary),
-                    ),
-                  )
-                : ListView.separated(
-                    itemCount: _downloadList.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 16),
-                    itemBuilder: (context, index) {
-                      return _buildDownloadCard(_downloadList[index], index);
-                    },
-                  ),
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
+                : displayList.isEmpty
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.cloud_download_outlined, size: 64, color: Color(0xFFCBD5E1)),
+                            const SizedBox(height: 12),
+                            const Text(
+                              'ບໍ່ມີໄຟລ໌ດາວໂຫຼດໃນເຄື່ອງ',
+                              style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.textSecondary),
+                            ),
+                            const SizedBox(height: 6),
+                            const Text(
+                              'ກົດປຸ່ມດາວໂຫຼດ 📥 ໃນໜ້າໜັງສືເພື່ອບັນທຶກໄວ້ອ່ານອອບໄລນ໌',
+                              style: TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ),
+                      )
+                    : RefreshIndicator(
+                        onRefresh: _fetchDownloads,
+                        color: AppColors.primary,
+                        child: ListView.separated(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          itemCount: displayList.length,
+                          separatorBuilder: (_, __) => const SizedBox(height: 14),
+                          itemBuilder: (context, index) {
+                            return _buildDownloadCard(displayList[index], index);
+                          },
+                        ),
+                      ),
           ),
         ],
       ),
@@ -152,140 +251,175 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
   }
 
   Widget _buildDownloadCard(DownloadedBookItem item, int index) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.02),
-            blurRadius: 8,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Book Thumbnail Image
-          ClipRRect(
-            borderRadius: BorderRadius.circular(10),
-            child: _buildImage(
-              item.imagePath,
-              width: 90,
-              height: 115,
+    return InkWell(
+      onTap: () => _openBookDetail(item),
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFFE2E8F0)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.03),
+              blurRadius: 8,
+              offset: const Offset(0, 3),
             ),
-          ),
-          const SizedBox(width: 16),
+          ],
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Book Thumbnail Image
+            ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: _buildImage(
+                item.imagePath,
+                width: 85,
+                height: 115,
+              ),
+            ),
+            const SizedBox(width: 14),
 
-          // Details & Action Column
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            item.title,
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.textPrimary,
+            // Details & Action Column
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              item.title,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.textPrimary,
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            item.author,
-                            style: const TextStyle(
-                              fontSize: 13,
-                              color: AppColors.textSecondary,
+                            const SizedBox(height: 3),
+                            Text(
+                              item.author,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: AppColors.textSecondary,
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    // Delete Icon Button
-                    IconButton(
-                      onPressed: () => _removeItem(index),
-                      icon: const Icon(
-                        Icons.delete_outline_rounded,
-                        color: Color(0xFFDC2626),
-                        size: 22,
-                      ),
-                      constraints: const BoxConstraints(),
-                      padding: EdgeInsets.zero,
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-
-                // Category Tag Pill
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFEBF1F7),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    item.category,
-                    style: const TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w500,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 14),
-
-                // Read Now Button
-                SizedBox(
-                  height: 34,
-                  width: 110,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      final bookModel = BookModel(
-                        id: item.bookId?.toString() ?? item.id,
-                        title: item.title,
-                        author: item.author,
-                        rating: 4.8,
-                        ratingText: '4.8',
-                        tags: item.category.isNotEmpty ? [item.category] : ['ທັງໝົດ'],
-                        imagePath: item.imagePath,
-                        pdfUrl: item.pdfUrl ?? 'assets/sample_book.pdf',
-                      );
-
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => BookDetailScreen(book: bookModel),
+                          ],
                         ),
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      padding: EdgeInsets.zero,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      // Delete Icon Button
+                      IconButton(
+                        onPressed: () => _removeItem(index, item),
+                        icon: const Icon(
+                          Icons.delete_outline_rounded,
+                          color: Color(0xFFDC2626),
+                          size: 20,
+                        ),
+                        constraints: const BoxConstraints(),
+                        padding: EdgeInsets.zero,
+                        tooltip: 'ລົບໄຟລ໌',
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+
+                  // Metadata Badges (Category & File Size & Page Count)
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 4,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFEBF1F7),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          item.category,
+                          style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF1F5F9),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.sd_storage_outlined, size: 12, color: AppColors.textSecondary),
+                            const SizedBox(width: 3),
+                            Text(
+                              item.formattedFileSize,
+                              style: const TextStyle(
+                                fontSize: 10,
+                                color: AppColors.textSecondary,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF1F5F9),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          '${item.pageCount} ໜ້າ',
+                          style: const TextStyle(
+                            fontSize: 10,
+                            color: AppColors.textSecondary,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Read Now Button
+                  SizedBox(
+                    height: 32,
+                    width: 115,
+                    child: ElevatedButton.icon(
+                      onPressed: () => _openBookDetail(item),
+                      icon: const Icon(Icons.menu_book_rounded, size: 14, color: Colors.white),
+                      label: const Text(
+                        'ອ່ານເລີຍ',
+                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        padding: EdgeInsets.zero,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
                       ),
                     ),
-                    child: const Text(
-                      'ອ່ານເລີຍ',
-                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
-                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'theme/app_theme.dart';
 import 'services/api_service.dart';
+import 'services/notification_service.dart';
 import 'screens/login_screen.dart';
 import 'screens/User/user_home_screen.dart';
 import 'screens/admin/admin_dashboard_screen.dart';
@@ -44,6 +45,7 @@ class _AppInitializerState extends State<AppInitializer> {
 
   Future<void> _checkSavedSession() async {
     final hasSession = await ApiService.loadSession();
+    await NotificationService.init();
     if (mounted) {
       setState(() {
         if (hasSession && ApiService.currentUser != null) {

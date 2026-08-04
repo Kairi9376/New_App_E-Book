@@ -9,7 +9,28 @@ exports.getUserBookmarks = async (req, res) => {
     }
 
     const [rows] = await pool.query(`
-      SELECT bm.*, b.title, b.cover_image_url, b.description, b.is_free, b.likes_count, b.readers_count, a.name AS author_name
+      SELECT 
+        bm.bookmark_id,
+        bm.user_id,
+        bm.book_id,
+        bm.created_at,
+        b.title,
+        b.cover_image_url,
+        b.file_size_bytes,
+        b.file_pdf_url,
+        b.page_count,
+        b.description,
+        b.is_free,
+        b.likes_count,
+        b.readers_count,
+        b.rating,
+        a.name AS author_name,
+        (
+          SELECT GROUP_CONCAT(cat.name SEPARATOR ', ') 
+          FROM book_categories bc2 
+          JOIN categories cat ON bc2.category_id = cat.category_id 
+          WHERE bc2.book_id = b.book_id
+        ) AS category_name
       FROM bookmarks bm
       JOIN books b ON bm.book_id = b.book_id
       LEFT JOIN authors a ON b.author_id = a.author_id
