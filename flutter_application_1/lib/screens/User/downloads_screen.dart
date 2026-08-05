@@ -37,38 +37,51 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
     }
   }
 
-  void _removeItem(int index, DownloadedBookItem item) {
+  Future<void> _removeItem(int index, DownloadedBookItem item) async {
+    final deletedId = item.downloadId?.toString() ?? item.id;
     setState(() {
       _downloadList.removeWhere((b) => b.id == item.id);
     });
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('ລົບ "${item.title}" ອອກຈາກລາຍການດາວໂຫຼດແລ້ວ'),
-        backgroundColor: const Color(0xFFEF4444),
-        duration: const Duration(seconds: 3),
-        action: SnackBarAction(
-          label: 'ເລີກທຳ',
-          textColor: Colors.white,
-          onPressed: () {
-            _fetchDownloads();
-          },
+    await ApiService.deleteDownload(deletedId);
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('ລົບ "${item.title}" ອອກຈາກລາຍການດາວໂຫຼດແລ້ວ'),
+          backgroundColor: const Color(0xFFEF4444),
+          duration: const Duration(seconds: 3),
+          action: SnackBarAction(
+            label: 'ເລີກທຳ',
+            textColor: Colors.white,
+            onPressed: () async {
+              if (item.bookId != null) {
+                await ApiService.recordDownload(item.bookId.toString());
+              }
+              _fetchDownloads();
+            },
+          ),
         ),
-      ),
-    );
+      );
+    }
   }
 
   void _openBookDetail(DownloadedBookItem item) {
+    final parsedTags = item.category.isNotEmpty
+        ? item.category.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList()
+        : ['ທົ່ວໄປ'];
+
     final bookModel = BookModel(
       id: item.bookId?.toString() ?? item.id,
       title: item.title,
       author: item.author,
-      pageCount: item.pageCount > 0 ? item.pageCount : 120,
-      rating: 4.8,
-      ratingText: '4.8',
+      pageCount: item.pageCount,
+      fileSizeBytes: item.fileSizeBytes,
+      rating: item.rating,
+      ratingText: item.rating == 0.0 ? 'New' : item.rating.toStringAsFixed(1),
       likeCount: item.likeCount,
       viewCount: item.viewCount,
-      tags: item.category.isNotEmpty ? [item.category] : ['ທັງໝົດ'],
+      tags: parsedTags,
       imagePath: item.imagePath,
       pdfUrl: item.pdfUrl ?? 'assets/sample_book.pdf',
       description: item.description ?? '',
@@ -96,14 +109,15 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
 
   List<DownloadedBookItem> get _filteredList {
     final catList = _categories;
-    final selectedCat = (_selectedCategoryIndex < catList.length) ? catList[_selectedCategoryIndex] : 'ທັງໝົດ';
+    final safeIndex = (_selectedCategoryIndex < catList.length) ? _selectedCategoryIndex : 0;
+    final selectedCat = catList[safeIndex];
 
     return _downloadList.where((book) {
       final matchesSearch = _searchQuery.isEmpty ||
           book.title.toLowerCase().contains(_searchQuery.toLowerCase()) ||
           book.author.toLowerCase().contains(_searchQuery.toLowerCase());
 
-      final matchesCategory = _selectedCategoryIndex == 0 ||
+      final matchesCategory = safeIndex == 0 ||
           book.category.toLowerCase().contains(selectedCat.toLowerCase());
 
       return matchesSearch && matchesCategory;
@@ -251,6 +265,10 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
   }
 
   Widget _buildDownloadCard(DownloadedBookItem item, int index) {
+    final catBadgeList = item.category.isNotEmpty
+        ? item.category.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList()
+        : ['ທົ່ວໄປ'];
+
     return InkWell(
       onTap: () => _openBookDetail(item),
       borderRadius: BorderRadius.circular(16),
@@ -334,63 +352,67 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
                   ),
                   const SizedBox(height: 8),
 
-                  // Metadata Badges (Category & File Size & Page Count)
+                  // Metadata Badges (Categories & File Size & Page Count)
                   Wrap(
                     spacing: 6,
                     runSpacing: 4,
                     children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFEBF1F7),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text(
-                          item.category,
-                          style: const TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.primary,
+                      ...catBadgeList.map(
+                        (catName) => Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFEBF1F7),
+                            borderRadius: BorderRadius.circular(6),
                           ),
-                        ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF1F5F9),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(Icons.sd_storage_outlined, size: 12, color: AppColors.textSecondary),
-                            const SizedBox(width: 3),
-                            Text(
-                              item.formattedFileSize,
-                              style: const TextStyle(
-                                fontSize: 10,
-                                color: AppColors.textSecondary,
-                                fontWeight: FontWeight.bold,
-                              ),
+                          child: Text(
+                            catName,
+                            style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.primary,
                             ),
-                          ],
-                        ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF1F5F9),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text(
-                          '${item.pageCount} ໜ້າ',
-                          style: const TextStyle(
-                            fontSize: 10,
-                            color: AppColors.textSecondary,
-                            fontWeight: FontWeight.bold,
                           ),
                         ),
                       ),
+                      if (item.fileSizeBytes > 0)
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF1F5F9),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.sd_storage_outlined, size: 12, color: AppColors.textSecondary),
+                              const SizedBox(width: 3),
+                              Text(
+                                item.formattedFileSize,
+                                style: const TextStyle(
+                                  fontSize: 10,
+                                  color: AppColors.textSecondary,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      if (item.pageCount > 0)
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF1F5F9),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            '${item.pageCount} ໜ້າ',
+                            style: const TextStyle(
+                              fontSize: 10,
+                              color: AppColors.textSecondary,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
                     ],
                   ),
                   const SizedBox(height: 12),
@@ -424,3 +446,4 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
     );
   }
 }
+

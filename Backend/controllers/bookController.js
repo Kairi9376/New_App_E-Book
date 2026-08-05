@@ -4,46 +4,67 @@ const { deleteOldFile, isSameFilePath } = require('../utils/fileUtils');
 // GET /api/books
 exports.getAllBooks = async (req, res) => {
   try {
-    const { search, language, category_id, is_free, is_hidden } = req.query;
+    const { search, language, category_id, is_free, is_hidden, status, uploaded_by, role } = req.query;
 
     let query = `
-      SELECT b.*, a.name AS author_name, u.first_name AS uploader_first_name, u.last_name AS uploader_last_name,
+      SELECT b.*, a.name AS author_name, 
+             u.first_name AS uploader_first_name, u.last_name AS uploader_last_name,
+             r.first_name AS approver_first_name, r.last_name AS approver_last_name,
              GROUP_CONCAT(c.name SEPARATOR ', ') AS categories,
              GROUP_CONCAT(c.category_id SEPARATOR ', ') AS category_ids
       FROM books b
       LEFT JOIN authors a ON b.author_id = a.author_id
       LEFT JOIN users u ON b.uploaded_by = u.user_id
+      LEFT JOIN users r ON b.approved_by = r.user_id
       LEFT JOIN book_categories bc ON b.book_id = bc.book_id
       LEFT JOIN categories c ON bc.category_id = c.category_id
       WHERE 1=1
     `;
     const params = [];
 
+    // Filter by Search Keyword
     if (search) {
       query += ` AND (b.title LIKE ? OR a.name LIKE ? OR b.description LIKE ?)`;
       params.push(`%${search}%`, `%${search}%`, `%${search}%`);
     }
 
+    // Filter by Language
     if (language) {
       query += ` AND b.language = ?`;
       params.push(language);
     }
 
+    // Filter by Category
     if (category_id) {
       query += ` AND bc.category_id = ?`;
       params.push(category_id);
     }
 
+    // Filter by Free access
     if (is_free !== undefined) {
       query += ` AND b.is_free = ?`;
       params.push(is_free === 'true' || is_free === '1' ? 1 : 0);
     }
 
+    // Filter by Employee Uploader
+    if (uploaded_by) {
+      query += ` AND b.uploaded_by = ?`;
+      params.push(uploaded_by);
+    }
+
+    // Approval Status & Visibility Logic
+    if (status && status !== 'all') {
+      query += ` AND b.status = ?`;
+      params.push(status);
+    } else if (!status && !uploaded_by && role !== 'admin') {
+      // 🟢 General App User default: Only books with status = 'approved' AND is_hidden = FALSE
+      query += ` AND b.status = 'approved' AND b.is_hidden = FALSE`;
+    }
+
+    // Filter by Hidden status if explicitly requested
     if (is_hidden !== undefined) {
       query += ` AND b.is_hidden = ?`;
       params.push(is_hidden === 'true' || is_hidden === '1' ? 1 : 0);
-    } else {
-      query += ` AND b.is_hidden = FALSE`;
     }
 
     query += ` GROUP BY b.book_id ORDER BY b.book_id DESC`;
@@ -63,11 +84,13 @@ exports.getBookById = async (req, res) => {
     const [rows] = await pool.query(`
       SELECT b.*, a.name AS author_name, a.biography AS author_biography,
              u.first_name AS uploader_first_name, u.last_name AS uploader_last_name,
+             r.first_name AS approver_first_name, r.last_name AS approver_last_name,
              GROUP_CONCAT(c.name SEPARATOR ', ') AS categories,
              GROUP_CONCAT(c.category_id SEPARATOR ', ') AS category_ids
       FROM books b
       LEFT JOIN authors a ON b.author_id = a.author_id
       LEFT JOIN users u ON b.uploaded_by = u.user_id
+      LEFT JOIN users r ON b.approved_by = r.user_id
       LEFT JOIN book_categories bc ON b.book_id = bc.book_id
       LEFT JOIN categories c ON bc.category_id = c.category_id
       WHERE b.book_id = ?
@@ -84,13 +107,13 @@ exports.getBookById = async (req, res) => {
   }
 };
 
-// POST /api/books
+// POST /api/books (Employee / Staff upload - Default status: 'pending')
 exports.createBook = async (req, res) => {
   try {
     const {
       title, author_id, language, page_count, file_size_bytes,
       description, cover_image_url, file_pdf_url, uploaded_by,
-      is_free, category_ids, category_id, readers_count, likes_count
+      is_free, category_ids, category_id, readers_count, likes_count, status
     } = req.body;
 
     if (!title) {
@@ -98,13 +121,14 @@ exports.createBook = async (req, res) => {
     }
 
     const finalAuthorId = author_id || 1;
-    const finalUploadedBy = uploaded_by || 1;
+    const finalUploadedBy = uploaded_by || 2; // Default to Employee (id: 2)
     const finalPdfUrl = file_pdf_url || 'assets/sample_book.pdf';
+    const bookStatus = status || 'pending'; // 🟢 Default status is 'pending' requiring Admin approval
 
     const [result] = await pool.query(
-      `INSERT INTO books (title, author_id, language, page_count, file_size_bytes, description, cover_image_url, file_pdf_url, uploaded_by, is_free, is_hidden, readers_count, likes_count)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, FALSE, ?, ?)`,
-      [title, finalAuthorId, language || 'LA', page_count || 0, file_size_bytes || 0, description || null, cover_image_url || null, finalPdfUrl, finalUploadedBy, is_free ? 1 : 0, readers_count || 0, likes_count || 0]
+      `INSERT INTO books (title, author_id, language, page_count, file_size_bytes, description, cover_image_url, file_pdf_url, uploaded_by, status, is_free, is_hidden, readers_count, likes_count)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, FALSE, ?, ?)`,
+      [title, finalAuthorId, language || 'LA', page_count || 0, file_size_bytes || 0, description || null, cover_image_url || null, finalPdfUrl, finalUploadedBy, bookStatus, is_free ? 1 : 0, readers_count || 0, likes_count || 0]
     );
 
     const book_id = result.insertId;
@@ -118,7 +142,12 @@ exports.createBook = async (req, res) => {
       await pool.query('INSERT INTO book_categories (book_id, category_id) VALUES (?, 1) ON DUPLICATE KEY UPDATE book_id=book_id', [book_id]);
     }
 
-    res.status(201).json({ success: true, message: 'Book created successfully', book_id });
+    res.status(201).json({
+      success: true,
+      message: 'Book created successfully and pending Admin approval',
+      book_id,
+      status: bookStatus
+    });
   } catch (error) {
     console.error('Create Book Error:', error);
     res.status(500).json({ success: false, message: error.message });
@@ -129,7 +158,11 @@ exports.createBook = async (req, res) => {
 exports.updateBook = async (req, res) => {
   try {
     const { id } = req.params;
-    const { title, author_id, language, page_count, description, cover_image_url, file_pdf_url, is_free, is_hidden, category_ids, category_id, readers_count, likes_count } = req.body;
+    const {
+      title, author_id, language, page_count, description,
+      cover_image_url, file_pdf_url, is_free, is_hidden, category_ids,
+      category_id, readers_count, likes_count, status, approved_by, rejection_reason
+    } = req.body;
 
     // 1. Fetch current book record to check existing files
     const [existingRows] = await pool.query('SELECT cover_image_url, file_pdf_url FROM books WHERE book_id = ?', [id]);
@@ -138,19 +171,15 @@ exports.updateBook = async (req, res) => {
     }
     const currentBook = existingRows[0];
 
-    // 2. If new cover_image_url is provided and points to a different file, delete the old cover file
+    // 2. Delete old files if cover or PDF changed
     if (cover_image_url && !isSameFilePath(cover_image_url, currentBook.cover_image_url)) {
-      console.log(`🔍 Cover file changed for book_id ${id}. Deleting old cover: ${currentBook.cover_image_url}`);
       deleteOldFile(currentBook.cover_image_url);
     }
-
-    // 3. If new file_pdf_url is provided and points to a different file, delete the old PDF file
     if (file_pdf_url && !isSameFilePath(file_pdf_url, currentBook.file_pdf_url)) {
-      console.log(`🔍 PDF file changed for book_id ${id}. Deleting old PDF: ${currentBook.file_pdf_url}`);
       deleteOldFile(currentBook.file_pdf_url);
     }
 
-    // 4. Perform database update
+    // 3. Perform database update
     await pool.query(
       `UPDATE books 
        SET title = COALESCE(?, title),
@@ -163,7 +192,10 @@ exports.updateBook = async (req, res) => {
            is_free = COALESCE(?, is_free),
            is_hidden = COALESCE(?, is_hidden),
            readers_count = COALESCE(?, readers_count),
-           likes_count = COALESCE(?, likes_count)
+           likes_count = COALESCE(?, likes_count),
+           status = COALESCE(?, status),
+           approved_by = COALESCE(?, approved_by),
+           rejection_reason = COALESCE(?, rejection_reason)
        WHERE book_id = ?`,
       [
         title || null, author_id || null, language || null, page_count || null,
@@ -172,11 +204,12 @@ exports.updateBook = async (req, res) => {
         is_hidden !== undefined ? (is_hidden ? 1 : 0) : null,
         readers_count !== undefined ? readers_count : null,
         likes_count !== undefined ? likes_count : null,
+        status || null, approved_by || null, rejection_reason || null,
         id
       ]
     );
 
-    // 5. Update book_categories mapping if provided
+    // 4. Update book_categories mapping if provided
     const targetCategories = category_ids || (category_id ? [category_id] : null);
     if (targetCategories && Array.isArray(targetCategories) && targetCategories.length > 0) {
       await pool.query('DELETE FROM book_categories WHERE book_id = ?', [id]);
@@ -190,6 +223,40 @@ exports.updateBook = async (req, res) => {
     res.json({ success: true, message: 'Book updated successfully' });
   } catch (error) {
     console.error('Update Book Error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// PUT /api/books/:id/status (Admin Approve or Reject Book)
+exports.updateBookStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status, approved_by, rejection_reason } = req.body;
+
+    if (!['pending', 'approved', 'rejected'].includes(status)) {
+      return res.status(400).json({ success: false, message: 'Invalid status. Must be pending, approved, or rejected' });
+    }
+
+    const finalApprovedBy = approved_by || 1; // Default to Admin ID: 1
+    const finalReason = status === 'rejected' ? (rejection_reason || 'เอกสารไม่ตรงตามข้อกำหนด') : null;
+
+    await pool.query(
+      `UPDATE books 
+       SET status = ?, approved_by = ?, rejection_reason = ?
+       WHERE book_id = ?`,
+      [status, finalApprovedBy, finalReason, id]
+    );
+
+    res.json({
+      success: true,
+      message: `Book status updated to '${status}' successfully`,
+      book_id: id,
+      status,
+      approved_by: finalApprovedBy,
+      rejection_reason: finalReason
+    });
+  } catch (error) {
+    console.error('Update Book Status Error:', error);
     res.status(500).json({ success: false, message: error.message });
   }
 };

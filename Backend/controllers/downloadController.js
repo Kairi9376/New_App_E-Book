@@ -65,3 +65,30 @@ exports.recordDownload = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
+// DELETE /api/downloads/:download_id
+exports.deleteDownload = async (req, res) => {
+  try {
+    const { download_id } = req.params;
+    const { user_id } = req.query;
+
+    let query = 'DELETE FROM downloads WHERE download_id = ?';
+    let params = [download_id];
+
+    if (user_id) {
+      query += ' AND user_id = ?';
+      params.push(user_id);
+    }
+
+    const [result] = await pool.query(query, params);
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ success: false, message: 'Download record not found' });
+    }
+
+    res.json({ success: true, message: 'Download deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+

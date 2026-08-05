@@ -57,12 +57,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     await NotificationService.deleteNotification(id);
   }
 
-  void _onNotificationTap(NotificationItem item) async {
+  void _onNotificationTap(NotificationItem item) {
     if (!item.isRead) {
-      await NotificationService.markAsRead(item.id);
+      NotificationService.markAsRead(item.id);
+      if (mounted) setState(() {});
     }
-
-    if (!mounted) return;
 
     // Navigation based on notification type
     switch (item.type) {

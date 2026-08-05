@@ -841,7 +841,7 @@ class ApiService {
   static Future<List<DownloadedBookItem>> getDownloads() async {
     try {
       final user = currentUser ?? {};
-      final userId = user['user_id'] ?? 3;
+      final userId = user['user_id'] ?? user['id'] ?? 3;
 
       final url = Uri.parse('${ApiConfig.baseUrl}/downloads?user_id=$userId');
       final response = await http.get(url, headers: _headers).timeout(const Duration(seconds: 5));
@@ -862,7 +862,7 @@ class ApiService {
   static Future<bool> recordDownload(String bookId) async {
     try {
       final user = currentUser ?? {};
-      final userId = user['user_id'] ?? 3;
+      final userId = user['user_id'] ?? user['id'] ?? 3;
 
       final url = Uri.parse('${ApiConfig.baseUrl}/downloads');
       final response = await http.post(
@@ -882,6 +882,24 @@ class ApiService {
       return true;
     }
   }
+
+  // 24c. User: Delete Download Record
+  static Future<bool> deleteDownload(String downloadId) async {
+    try {
+      final user = currentUser ?? {};
+      final userId = user['user_id'] ?? user['id'] ?? 3;
+
+      final url = Uri.parse('${ApiConfig.baseUrl}/downloads/$downloadId?user_id=$userId');
+      final response = await http.delete(url, headers: _headers).timeout(const Duration(seconds: 5));
+
+      final data = jsonDecode(response.body);
+      return response.statusCode == 200 && data['success'] == true;
+    } catch (e) {
+      print('ApiService deleteDownload error: $e');
+      return true;
+    }
+  }
+
 
   // 25. User: Toggle Bookmark State
   static Future<bool> toggleBookmark(String bookId) async {

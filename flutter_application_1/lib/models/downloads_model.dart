@@ -9,6 +9,7 @@ class DownloadedBookItem {
   final int fileSizeBytes;
   final int likeCount;
   final int viewCount;
+  final double rating;
   final String imagePath;
   final String? pdfUrl;
   final String? description;
@@ -21,10 +22,11 @@ class DownloadedBookItem {
     required this.title,
     required this.author,
     required this.category,
-    this.pageCount = 120,
+    this.pageCount = 0,
     this.fileSizeBytes = 0,
     this.likeCount = 0,
     this.viewCount = 0,
+    this.rating = 0.0,
     required this.imagePath,
     this.pdfUrl,
     this.description,
@@ -32,8 +34,12 @@ class DownloadedBookItem {
   });
 
   String get formattedFileSize {
-    if (fileSizeBytes <= 0) return '2.5 MB';
+    if (fileSizeBytes <= 0) return '0.0 MB';
     final mb = fileSizeBytes / (1024 * 1024);
+    if (mb < 0.1) {
+      final kb = fileSizeBytes / 1024;
+      return '${kb.toStringAsFixed(0)} KB';
+    }
     return '${mb.toStringAsFixed(1)} MB';
   }
 
@@ -50,10 +56,11 @@ class DownloadedBookItem {
 
     int? dId = int.tryParse(map['download_id']?.toString() ?? '');
     int? bId = int.tryParse(map['book_id']?.toString() ?? map['id']?.toString() ?? '');
-    int pCount = int.tryParse(map['page_count']?.toString() ?? map['pageCount']?.toString() ?? '') ?? 120;
-    int fSize = int.tryParse(map['file_size_bytes']?.toString() ?? map['fileSizeBytes']?.toString() ?? '') ?? 0;
-    int likes = int.tryParse(map['likes_count']?.toString() ?? map['like_count']?.toString() ?? '150') ?? 150;
-    int views = int.tryParse(map['readers_count']?.toString() ?? map['view_count']?.toString() ?? '420') ?? 420;
+    int pCount = int.tryParse(map['page_count']?.toString() ?? map['pageCount']?.toString() ?? '0') ?? 0;
+    int fSize = int.tryParse(map['file_size_bytes']?.toString() ?? map['fileSizeBytes']?.toString() ?? '0') ?? 0;
+    int likes = int.tryParse(map['likes_count']?.toString() ?? map['like_count']?.toString() ?? map['likes']?.toString() ?? map['likeCount']?.toString() ?? '0') ?? 0;
+    int views = int.tryParse(map['readers_count']?.toString() ?? map['view_count']?.toString() ?? map['views']?.toString() ?? map['readers']?.toString() ?? map['viewCount']?.toString() ?? '0') ?? 0;
+    double parsedRating = double.tryParse(map['rating']?.toString() ?? '0.0') ?? 0.0;
 
     return DownloadedBookItem(
       id: (map['download_id'] ?? map['book_id'] ?? map['id'] ?? '').toString(),
@@ -62,10 +69,11 @@ class DownloadedBookItem {
       title: map['title'] ?? '',
       author: map['author_name'] ?? map['author'] ?? 'ບໍ່ລະບຸຜູ້ແຕ່ງ',
       category: (map['category_name'] ?? map['category'] ?? map['categories'] ?? 'ທົ່ວໄປ').toString(),
-      pageCount: pCount > 0 ? pCount : 120,
+      pageCount: pCount,
       fileSizeBytes: fSize,
       likeCount: likes,
       viewCount: views,
+      rating: parsedRating,
       imagePath: cover.isNotEmpty ? cover : 'assets/sample_cover.png',
       pdfUrl: pdf,
       description: map['description'] ?? '',
@@ -84,6 +92,7 @@ class DownloadedBookItem {
       'file_size_bytes': fileSizeBytes,
       'likes_count': likeCount,
       'readers_count': viewCount,
+      'rating': rating,
       'cover_image_url': imagePath,
       'file_pdf_url': pdfUrl,
       'description': description,
@@ -96,23 +105,34 @@ class MockDownloadsData {
   static List<DownloadedBookItem> downloadedItems = [
     DownloadedBookItem(
       id: '1',
+      downloadId: 1,
       bookId: 4,
-      title: 'ໜັງສືສັງຄົມ',
+      title: 'ປຶ້ມສັງຄົມສຶກສາ',
       author: 'ດຣ.ຈອນ ວົງວິໄລ',
       category: 'ສັງຄົມ',
-      pageCount: 120,
+      pageCount: 180,
+      fileSizeBytes: 12000000,
+      likeCount: 95,
+      viewCount: 210,
+      rating: 4.8,
       imagePath: 'assets/sample_cover.png',
       pdfUrl: 'assets/sample_book.pdf',
     ),
     DownloadedBookItem(
       id: '2',
+      downloadId: 2,
       bookId: 3,
       title: 'Quantum Mechanics',
       author: 'Dr. Elias Thorne',
-      category: 'ເຕັກໂນໂລຊີ',
-      pageCount: 150,
+      category: 'ເຕັກໂນໂລຊີ, ວິທະຍາສາດ',
+      pageCount: 450,
+      fileSizeBytes: 38000000,
+      likeCount: 19,
+      viewCount: 64,
+      rating: 4.9,
       imagePath: 'assets/sample_cover.png',
       pdfUrl: 'assets/sample_book.pdf',
     ),
   ];
 }
+

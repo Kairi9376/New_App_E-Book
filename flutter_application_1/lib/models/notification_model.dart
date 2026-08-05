@@ -46,7 +46,9 @@ class NotificationItem {
     }
 
     return NotificationItem(
-      id: map['id']?.toString() ?? DateTime.now().millisecondsSinceEpoch.toString(),
+      id: map['notification_id']?.toString() ??
+          map['id']?.toString() ??
+          DateTime.now().millisecondsSinceEpoch.toString(),
       title: map['title'] ?? 'ການແຈ້ງເຕືອນ',
       message: map['message'] ?? '',
       type: nType,
