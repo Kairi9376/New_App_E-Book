@@ -125,7 +125,7 @@ class _MembershipPackageScreenState extends State<MembershipPackageScreen> {
               ),
               const SizedBox(height: 16),
               const Text(
-                'ສະຫງວນສິດเฉพาะນັກຮຽນ/ນັກສຶກສາ',
+                'ສະຫງວນສິດສະເພາະນັກຮຽນ/ນັກສຶກສາ',
                 style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -239,12 +239,12 @@ class _MembershipPackageScreenState extends State<MembershipPackageScreen> {
                 final tempName =
                     'slip_${DateTime.now().millisecondsSinceEpoch}.jpg';
 
-                // 1. ตั้งค่า local data ก่อน
+                // 1. ຕັ້ງຄ່າ local data ກ່ອນ
                 slipBytes = bytes;
                 slipPath = tempName;
                 slipUrl = tempName;
 
-                // 2. อัปโหลดไฟล์ไปที่ Server
+                // 2. ອັບໂຫຼດໄຟລ໌ໄປທີ່ Server
                 final result = await ApiService.uploadFile(
                   bytes: picked.bytes,
                   filename: picked.name,
@@ -671,7 +671,7 @@ class _MembershipPackageScreenState extends State<MembershipPackageScreen> {
                       : const Icon(Icons.send_rounded,
                           size: 18, color: Colors.white),
                   label: Text(isSubmitting
-                      ? 'ກຳລັງສົ່ງข้อมูล...'
+                      ? 'ກຳລັງສົ່ງຂໍ້ມູນ...'
                       : 'ຢືນຢັນການຊຳລະເງິນ'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
@@ -814,7 +814,7 @@ class _MembershipPackageScreenState extends State<MembershipPackageScreen> {
                 ),
                 SizedBox(height: 2),
                 Text(
-                  'ບັນຊີຂອງທ່ານຕ້ອງได้รับการອະນຸມັດ KYC จากแอดมินก่อนจึงจะสามารถทำรายการชำระเงินได้',
+                  'ບັນຊີຂອງທ່ານຕ້ອງໄດ້ຮັບການອະນຸມັດ KYC ຈາກແອດມິນກ່ອນ ຈຶ່ງຈະສາມາດທຳລາຍການຊຳລະເງິນໄດ້',
                   style: TextStyle(fontSize: 12, color: Color(0xFFB45309)),
                 ),
               ],
@@ -829,7 +829,7 @@ class _MembershipPackageScreenState extends State<MembershipPackageScreen> {
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10)),
             ),
-            child: const Text('ยื่น KYC',
+            child: const Text('ຍື່ນ KYC',
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
           ),
         ],
@@ -912,7 +912,7 @@ class _MembershipPackageScreenState extends State<MembershipPackageScreen> {
                   const Icon(Icons.calendar_today_rounded,
                       size: 16, color: AppColors.primary),
                   const SizedBox(width: 8),
-                  Text('ระยะเวลาใช้งาน: $startDateStr ถึง $endDateStr',
+                  Text('ໄລຍະເວລາໃຊ້ງານ: $startDateStr ຫາ $endDateStr',
                       style: const TextStyle(
                           fontSize: 13, fontWeight: FontWeight.w500)),
                 ],
@@ -925,7 +925,7 @@ class _MembershipPackageScreenState extends State<MembershipPackageScreen> {
             child: ElevatedButton.icon(
               onPressed: () => Navigator.pop(context),
               icon: const Icon(Icons.menu_book_rounded, color: Colors.white),
-              label: const Text('เริ่มอ่าน e-Book PDF ได้ทันที',
+              label: const Text('ເລີ່ມອ່ານ e-Book PDF ໄດ້ທັນທີ',
                   style: TextStyle(fontWeight: FontWeight.bold)),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
@@ -1003,7 +1003,7 @@ class _MembershipPackageScreenState extends State<MembershipPackageScreen> {
           const SizedBox(height: 10),
           _buildInfoTile(Icons.workspace_premium_rounded, 'ແພັກເກັດ', pkgName),
           const SizedBox(height: 8),
-          _buildInfoTile(Icons.payments_rounded, 'จำนวนเงิน', amountFormatted),
+          _buildInfoTile(Icons.payments_rounded, 'ຈຳນວນເງິນ', amountFormatted),
           const SizedBox(height: 14),
           if (slipUrl.isNotEmpty) ...[
             const Text('ສະລິບການໂອນເງິນ:',
@@ -1346,7 +1346,7 @@ class _MembershipPackageScreenState extends State<MembershipPackageScreen> {
                   isStudentPkg
                       ? 'ແພັກເກັດພິເສດນັກຮຽນ (Student Pro)'
                       : (index == 0
-                          ? 'ແພັກເກັດยอดนิยม (Popular)'
+                          ? 'ແພັກເກັດຍອດນິຍົມ (Popular)'
                           : 'ແພັກເກັດຄຸ້ມຄ່າ (Best Value)'),
                   style: TextStyle(
                     fontSize: 11,
@@ -1409,10 +1409,10 @@ class _MembershipPackageScreenState extends State<MembershipPackageScreen> {
                 const SizedBox(height: 16),
 
                 // Features list
-                _buildFeatureRow('ເຂົ້າເຖິງຄັງ e-Book PDF ทั่วไป'),
-                _buildFeatureRow('ດາວໂຫຼດໄວ້ອ່ານອອບໄລນ໌ได้'),
+                _buildFeatureRow('ເຂົ້າເຖິງຄັງ e-Book PDF ທົ່ວໄປ'),
+                _buildFeatureRow('ດາວໂຫຼດໄວ້ອ່ານອອບໄລນ໌ໄດ້'),
                 if (isStudentPkg)
-                  _buildFeatureRow('ສ່ວນຫຼຸດພິເສດสำหรับນັກຮຽນ/ນັກສຶກສາ'),
+                  _buildFeatureRow('ສ່ວນຫຼຸດພິເສດສຳລັບນັກຮຽນ/ນັກສຶກສາ'),
                 if (days >= 365)
                   _buildFeatureRow('ເຂົ້າເຖິງປຶ້ມທຸກເລົ່ມຕະຫຼອດ 365 ວັນ'),
 
@@ -1472,30 +1472,30 @@ class _MembershipPackageScreenState extends State<MembershipPackageScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: const [
-          Text('คำถามที่พบบ่อย (FAQ)',
+          Text('ຄຳຖາມທີ່ພົບເລື້ອຍ (FAQ)',
               style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.bold,
                   color: AppColors.textPrimary)),
           SizedBox(height: 12),
-          Text('Q: ทำไมต้องยืนยันตัวตน KYC ก่อนสมัครแพ็กเกจ?',
+          Text('Q: ຍ້ອນຫຍັງຕ້ອງຢືນຢັນຕົວຕົນ KYC ກ່ອນສະໝັກແພັກເກັດ?',
               style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
                   color: AppColors.primary)),
           SizedBox(height: 2),
           Text(
-              'A: เพื่อยืนยันสิทธิ์การใช้งานของสมาชิก และป้องกันการละเมิดลิขสิทธิ์หนังสือ e-Book ตามกฎหมาย',
+              'A: ເພື່ອຢືນຢັນສິດການໃຊ້ງານຂອງສະມາຊິກ ແລະ ປ້ອງກັນການລະເມີດລິຂະສິດໜັງສື e-Book ຕາມກົດໝາຍ',
               style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
           SizedBox(height: 10),
-          Text('Q: แพ็กเกจนักเรียน (Student Special) ใช้เอกสารอะไรบ้าง?',
+          Text('Q: ແພັກເກັດນັກຮຽນ (Student Special) ໃຊ້ເອກະສານຫຍັງແດ່?',
               style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
                   color: AppColors.primary)),
           SizedBox(height: 2),
           Text(
-              'A: สามารถใช้บัตรนักเรียน/นักศึกษา หรือหนังสือรับรองสถานะการศึกษาเพื่อรับส่วนลดพิเศษได้ทันที',
+              'A: ສາມາດໃຊ້ບັດນັກຮຽນ/ນັກສຶກສາ ຫຼື ໜັງສືຢັ້ງຢືນສະຖານະການສຶກສາເພື່ອຮັບສ່ວນຫຼຸດພິເສດໄດ້ທັນທີ',
               style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
         ],
       ),

@@ -347,7 +347,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
     }
   }
 
-  /// Opens Interactive Page Selector Dialog (เลือกหน้า Page 1, Page 2, Page 3 ... Page N ...)
+  /// Opens Interactive Page Selector Dialog (ເລືອກໜ້າ Page 1, Page 2, Page 3 ... Page N ...)
   void _openPageSelectorModal() {
     _jumpPageController.text = _currentPage.toString();
     _setIframePointerEvents(false);
@@ -437,7 +437,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
                                 _changePage(target);
                               } else {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text('ກະລຸນາປ້ອນໜ້າ 1 ถึง $_totalPages'), backgroundColor: Colors.orange),
+                                  SnackBar(content: Text('ກະລຸນາປ້ອນໜ້າ 1 ຫາ $_totalPages'), backgroundColor: Colors.orange),
                                 );
                               }
                             },

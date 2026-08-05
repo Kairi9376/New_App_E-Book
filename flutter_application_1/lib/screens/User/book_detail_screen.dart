@@ -494,8 +494,9 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                           ),
                           const SizedBox(height: 24),
 
-                          // Table of Contents Section (สารบัญ / รายการหน้า PDF)
+                          // Table of Contents Section (ສາລະບັນ / ລາຍການໜ້າ PDF)
                           _buildTableOfContentsSection(),
+
 
                           const SizedBox(height: 30),
                         ],

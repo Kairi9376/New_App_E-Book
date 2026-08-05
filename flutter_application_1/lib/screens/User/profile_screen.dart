@@ -172,7 +172,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               NotificationService.addNotification(
                 context,
                 title: '👤 ອັບເດດຮູບໂປຣໄຟລ໌ສຳເລັດ',
-                message: 'ຮູບໂປຣໄຟລ໌ໃໝ່ຂອງທ່ານຖືກບັນທຶກເຂົ້າสู่ระบบແລ້ວ',
+                message: 'ຮູບໂປຣໄຟລ໌ໃໝ່ຂອງທ່ານຖືກບັນທຶກເຂົ້າສູ່ລະບົບແລ້ວ',
                 type: NotificationType.system,
               );
             });
@@ -248,7 +248,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   const Divider(height: 1),
                   SwitchListTile(
                     title: const Text('ໂໝດກາງຄືນ (Dark Mode)', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
-                    subtitle: const Text('ປ່ຽນธีມແອັບເປັນໂໝດກາງຄືນ', style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+                    subtitle: const Text('ປ່ຽນທີມແອັບເປັນໂໝດກາງຄືນ', style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
                     value: _darkModeEnabled,
                     activeColor: AppColors.primary,
                     onChanged: (val) async {
@@ -262,7 +262,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ListTile(
                     leading: const Icon(Icons.cleaning_services_rounded, color: Colors.amber),
                     title: const Text('ລ້າງໄຟລ໌ແຄຊ (Clear PDF Cache)', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
-                    subtitle: const Text('ລົບໄຟລ໌ PDF ຊົ່ວຄາວ (ขนาดประมาณ 24.5 MB)', style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+                    subtitle: const Text('ລົບໄຟລ໌ PDF ຊົ່ວຄາວ (ຂະໜາດປະມານ 24.5 MB)', style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
                     onTap: () async {
                       final prefs = await SharedPreferences.getInstance();
                       await prefs.remove('cached_pdfs');
@@ -375,7 +375,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         if (newPass != confirmPass) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
-                              content: Text('ລະຫັດຜ່ານໃໝ່ບໍ່ตรงกัน'),
+                              content: Text('ລະຫັດຜ່ານໃໝ່ບໍ່ກົງກັນ'),
                               backgroundColor: Colors.redAccent,
                             ),
                           );
@@ -394,7 +394,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             Navigator.pop(ctx);
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
-                                content: Text('ປ່ຽນລະຫັດຜ່ານໃນระบบสำเร็จแล้ว!'),
+                                content: Text('ປ່ຽນລະຫັດຜ່ານໃນລະບົບສຳເລັດແລ້ວ!'),
                                 backgroundColor: Color(0xFF10B981),
                               ),
                             );
@@ -408,7 +408,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             setDialogState(() => isSaving = false);
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
-                                content: Text('ບໍ່ສາມາດອັບເດດລະຫັດຜ່ານໄດ້'),
+                                content: Text('ບໍ່ສາມາດອັບເດດຂໍ້ມູນໄດ້'),
                                 backgroundColor: Colors.redAccent,
                               ),
                             );
@@ -523,7 +523,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       children: [
                         Expanded(
                           child: ChoiceChip(
-                            label: const Center(child: Text('ชาย (Male)', style: TextStyle(fontSize: 12))),
+                            label: const Center(child: Text('ຊາຍ (Male)', style: TextStyle(fontSize: 12))),
                             selected: selectedGender == 'male',
                             onSelected: (sel) {
                               if (sel) setDialogState(() => selectedGender = 'male');
@@ -535,7 +535,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         const SizedBox(width: 6),
                         Expanded(
                           child: ChoiceChip(
-                            label: const Center(child: Text('หญิง (Female)', style: TextStyle(fontSize: 12))),
+                            label: const Center(child: Text('ຍິງ (Female)', style: TextStyle(fontSize: 12))),
                             selected: selectedGender == 'female',
                             onSelected: (sel) {
                               if (sel) setDialogState(() => selectedGender = 'female');
@@ -645,14 +645,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             NotificationService.addNotification(
                               context,
                               title: '👤 ອັບເດດຂໍ້ມູນສ່ວນຕົວສຳເລັດ',
-                              message: 'ຂໍ້ມູນຂອງທ່ານได้รับการບັນທຶກຮຽບຮ້ອຍແລ້ວ',
+                              message: 'ຂໍ້ມູນຂອງທ່ານໄດ້ຮັບການບັນທຶກຮຽບຮ້ອຍແລ້ວ',
                               type: NotificationType.system,
                             );
                           } else {
                             setDialogState(() => isSaving = false);
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
-                                content: Text('ບໍ່ສາມາດອັບເດດຂໍ້ມູນได้'),
+                                content: Text('ບໍ່ສາມາດອັບເດດຂໍ້ມູນໄດ້'),
                                 backgroundColor: Colors.redAccent,
                               ),
                             );
@@ -954,7 +954,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               ),
                               SizedBox(height: 2),
                               Text(
-                                'ອ່ານ ແລະ ໂຫຼດ e-Book PDF ได้แบบไม่จำกัด',
+                                'ອ່ານ ແລະ ໂຫຼດ e-Book PDF ໄດ້ແບບບໍ່ຈຳກັດ',
                                 style: TextStyle(
                                   fontSize: 12,
                                   color: Color(0xFFC7D2FE),
@@ -972,7 +972,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       children: const [
                         Icon(Icons.check_circle_outline_rounded, color: Colors.amber, size: 16),
                         SizedBox(width: 6),
-                        Text('ເຂົ້າເຖິງຄลังປຶ້ມ VIP ຫຼາຍກວ່າ 1,000+ ເຫຼັ້ມ', style: TextStyle(fontSize: 12, color: Colors.white)),
+                        Text('ເຂົ້າເຖິງຄັງປຶ້ມ VIP ຫຼາຍກວ່າ 1,000+ ເຫຼັ້ມ', style: TextStyle(fontSize: 12, color: Colors.white)),
                       ],
                     ),
                     const SizedBox(height: 6),

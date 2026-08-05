@@ -36,10 +36,10 @@ class _SearchScreenState extends State<SearchScreen> {
   final List<String> _popularSearches = [
     'ນິຍາຍ',
     'ເຕັກໂນໂລຊີ',
-    'ການเงิน',
+    'ການເງິນ',
     'ທຸລະກິດ',
     'ພັດທະນາຕົນເອງ',
-    'ประวัติศาสตร์',
+    'ປະຫວັດສາດ',
   ];
 
   @override
@@ -122,7 +122,7 @@ class _SearchScreenState extends State<SearchScreen> {
             textInputAction: TextInputAction.search,
             onSubmitted: (_) => _performSearch(),
             decoration: InputDecoration(
-              hintText: 'ຄົ້ນຫາຊື່ປຶ້ມ, ຊື່ຜູ້ແຕ່ງ หรือ หมวดหมู่...',
+              hintText: 'ຄົ້ນຫາຊື່ປຶ້ມ, ຊື່ຜູ້ແຕ່ງ ຫຼື ໝວດໝູ່...',
               hintStyle: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
               prefixIcon: const Icon(Icons.search_rounded, color: AppColors.primary, size: 22),
               suffixIcon: _searchController.text.isNotEmpty
@@ -434,7 +434,7 @@ class _SearchScreenState extends State<SearchScreen> {
                 style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
               ),
               Text(
-                'เรียงตามความนิยม',
+                'ຈັດລຽງຕາມຄວາມນິຍົມ',
                 style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
               ),
             ],

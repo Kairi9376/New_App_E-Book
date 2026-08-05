@@ -845,7 +845,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
     if (displayBooks.isEmpty) {
       return const SizedBox(
         height: 100,
-        child: Center(child: Text('ບໍ່ພົບປຶ້ມຍອດນິຍົມในขณะนี้')),
+        child: Center(child: Text('ບໍ່ພົບປຶ້ມຍອດນິຍົມໃນຂະນະນີ້')),
       );
     }
 
@@ -1064,7 +1064,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                       ),
                     ),
                     child: const Text(
-                      'อ่านเลย',
+                      'ອ່ານເລີຍ',
                       style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
                     ),
                   ),

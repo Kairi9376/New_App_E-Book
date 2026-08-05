@@ -269,7 +269,7 @@ class _KycSubmissionScreenState extends State<KycSubmissionScreen> {
       NotificationService.addNotification(
         context,
         title: '🛡️ ສົ່ງຂໍ້ມູນຢືນຢັນຕົວຕົນ (KYC) ສຳເລັດແລ້ວ',
-        message: 'ຂໍ້ມູນເອກະສານຂອງທ່ານຖືກສົ່ງເຂົ້າสู่ระบบແລ້ວ ກະລຸນາລໍຖ້າການກວດສອບ ແລະ ອະນຸມັດຈາກແອດມິນ',
+        message: 'ຂໍ້ມູນເອກະສານຂອງທ່ານຖືກສົ່ງເຂົ້າສູ່ລະບົບແລ້ວ ກະລຸນາລໍຖ້າການກວດສອບ ແລະ ອະນຸມັດຈາກແອດມິນ',
         type: NotificationType.kyc,
       );
     }
@@ -1037,7 +1037,7 @@ class _KycSubmissionScreenState extends State<KycSubmissionScreen> {
             const SizedBox(height: 18),
 
             const Text(
-              '2. ປ້ອນຂໍ້ມູນส่วนຕົວ',
+              '2. ປ້ອນຂໍ້ມູນສ່ວນຕົວ',
               style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
             ),
             const SizedBox(height: 12),

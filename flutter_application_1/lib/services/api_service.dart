@@ -356,32 +356,32 @@ class ApiService {
       {
         'user_id': 1,
         'email': 'admin@gmail.com',
-        'first_name': 'ผู้ดูแล',
-        'last_name': 'ระบบ (Admin)',
+        'first_name': 'ຜູ້ດູແລ',
+        'last_name': 'ລະບົບ (Admin)',
         'role': 'admin',
         'status': 'active'
       },
       {
         'user_id': 2,
         'email': 'employee@gmail.com',
-        'first_name': 'พนักงาน',
-        'last_name': 'จัดการคลัง',
+        'first_name': 'ພະນັກງານ',
+        'last_name': 'ຈັດການຄັງ',
         'role': 'employee',
         'status': 'active'
       },
       {
         'user_id': 3,
         'email': 'user1234@gmail.com',
-        'first_name': 'สมชาย',
-        'last_name': 'ใจดี',
+        'first_name': 'ສົມຊາຍ',
+        'last_name': 'ໃຈດີ',
         'role': 'user',
         'status': 'active'
       },
       {
         'user_id': 4,
         'email': 'member@gmail.com',
-        'first_name': 'พรีเมี่ยม',
-        'last_name': 'สมาชิก',
+        'first_name': 'ພຣີມ່ຽມ',
+        'last_name': 'ສະມາຊິກ',
         'role': 'user',
         'status': 'active'
       },
@@ -821,7 +821,7 @@ class ApiService {
       {
         'package_id': 2,
         'name': 'Student Special',
-        'description': 'ແພັກເກດພິເສດสำหรับນັກຮຽນ/ນັກສຶກສາ ຢືນຢັນຜ່ານ KYC',
+        'description': 'ແພັກເກັດພິເສດສຳລັບນັກຮຽນ/ນັກສຶກສາ ຢືນຢັນຜ່ານ KYC',
         'price': 29000.00,
         'duration_days': 30,
         'is_for_student': 1
@@ -917,8 +917,8 @@ class ApiService {
       print('ApiService getAuthors error: $e');
     }
     return [
-      {'author_id': 1, 'name': 'คำพูน บุญทวี'},
-      {'author_id': 2, 'name': 'ดวงจำปา'},
+      {'author_id': 1, 'name': 'ຄຳພູນ ບຸນທະວີ'},
+      {'author_id': 2, 'name': 'ດວງຈຳປາ'},
     ];
   }
 

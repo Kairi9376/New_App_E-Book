@@ -278,7 +278,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           if (mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: Text('ກະລຸນາປ້ອນລະຫັດຜ່ານຂອງ "$registeredEmail" ເພື່ອເຂົ້າสู่ระบบ'),
+                                content: Text('ກະລຸນາປ້ອນລະຫັດຜ່ານຂອງ "$registeredEmail" ເພື່ອເຂົ້າສູ່ລະບົບ'),
                                 backgroundColor: AppColors.primary,
                               ),
                             );

@@ -90,7 +90,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
                 const SizedBox(height: 10),
                 Text(
-                  'ບັນຊີຜູ້ໃຊ້ "$registeredEmail" ຖືກສ້າງຮຽບຮ້ອຍແລ້ວ!\nກະລຸນາເຂົ້າสู่ระบบດ້ວຍອີເມວ ແລະ ລະຫັດຜ່ານຂອງທ່ານ',
+                  'ບັນຊີຜູ້ໃຊ້ "$registeredEmail" ຖືກສ້າງຮຽບຮ້ອຍແລ້ວ!\nກະລຸນາເຂົ້າສູ່ລະບົບດ້ວຍອີເມວ ແລະ ລະຫັດຜ່ານຂອງທ່ານ',
                   textAlign: TextAlign.center,
                   style: const TextStyle(
                     fontSize: 13,
@@ -114,7 +114,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                     ),
                     child: const Text(
-                      'ໄປທີ່ໜ້າເຂົ້າสู่ระบบ (Go to Login)',
+                      'ໄປທີ່ໜ້າເຂົ້າສູ່ລະບົບ (Go to Login)',
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
@@ -301,7 +301,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         keyboardType: TextInputType.phone,
                         decoration: const InputDecoration(
                           labelText: 'ເບີໂທລະສັບ (Phone Number) *',
-                          hintText: '020 99887766 หรือ 2099887766',
+                          hintText: '020 99887766 ຫຼື 2099887766',
                           prefixIcon: Icon(Icons.phone_android_rounded, color: AppColors.primary),
                         ),
                         validator: (value) {
@@ -377,7 +377,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             return 'ກະລຸນາປ້ອນຢືນຢັນລະຫັດຜ່ານ';
                           }
                           if (value != _passwordController.text) {
-                            return 'ລະຫັດຜ່ານບໍ່ตรงກັນ';
+                            return 'ລະຫັດຜ່ານບໍ່ກົງກັນ';
                           }
                           return null;
                         },
