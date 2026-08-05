@@ -4,16 +4,16 @@ import '../../services/api_service.dart';
 import '../../services/file_picker_helper.dart';
 import '../../utils/image_helper.dart';
 
-class AdminUserDialog extends StatefulWidget {
+class AdminUserFormScreen extends StatefulWidget {
   final Map<String, dynamic>? user;
 
-  const AdminUserDialog({super.key, this.user});
+  const AdminUserFormScreen({super.key, this.user});
 
   @override
-  State<AdminUserDialog> createState() => _AdminUserDialogState();
+  State<AdminUserFormScreen> createState() => _AdminUserFormScreenState();
 }
 
-class _AdminUserDialogState extends State<AdminUserDialog> {
+class _AdminUserFormScreenState extends State<AdminUserFormScreen> {
   final _formKey = GlobalKey<FormState>();
 
   late TextEditingController _firstNameController;
@@ -166,410 +166,367 @@ class _AdminUserDialogState extends State<AdminUserDialog> {
         ? _firstNameController.text[0].toUpperCase()
         : 'U';
 
-    return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-      elevation: 10,
-      child: Container(
-        padding: const EdgeInsets.all(24),
-        constraints: BoxConstraints(
-          maxWidth: 520,
-          maxHeight: MediaQuery.of(context).size.height * 0.9,
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(isEditing ? 'แก้ไขข้อมูลผู้ใช้ (Edit User)' : 'เพิ่มผู้ใช้ใหม่ (Add User)'),
+        backgroundColor: AppColors.primary,
+        foregroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_rounded),
+          onPressed: () => Navigator.pop(context),
         ),
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header Row: Title & Close Button
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
+      ),
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 600),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Profile Picture Upload & Avatar Picker Section
+                Center(
+                  child: Column(
                     children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: _getRoleColor(_selectedRole).withOpacity(0.12),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Icon(
-                          isEditing ? Icons.manage_accounts_rounded : Icons.person_add_alt_1_rounded,
-                          color: _getRoleColor(_selectedRole),
-                          size: 24,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      Stack(
+                        alignment: Alignment.bottomRight,
                         children: [
-                          Text(
-                            isEditing ? 'แก้ไขข้อมูลผู้ใช้ (Edit User)' : 'เพิ่มผู้ใช้ใหม่ (Add User)',
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.textPrimary,
+                          Container(
+                            width: 90,
+                            height: 90,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: _getRoleColor(_selectedRole).withOpacity(0.1),
+                              border: Border.all(color: _getRoleColor(_selectedRole), width: 2.5),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.08),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: ClipOval(
+                              child: _profileImageUrl.isNotEmpty
+                                  ? ImageHelper.buildImage(
+                                      _profileImageUrl,
+                                      width: 90,
+                                      height: 90,
+                                      fit: BoxFit.cover,
+                                    )
+                                  : Center(
+                                      child: Text(
+                                        firstChar,
+                                        style: TextStyle(
+                                          color: _getRoleColor(_selectedRole),
+                                          fontSize: 32,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
                             ),
                           ),
-                          Text(
-                            isEditing
-                                ? 'ปรับปรุงรายละเอียดโปรไฟล์และสิทธิ์การใช้งาน'
-                                : 'สร้างบัญชีผู้ใช้ใหม่สำหรับ Admin / พนักงาน / สมาชิก',
-                            style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                          InkWell(
+                            onTap: _isUploadingImage ? null : _pickProfileImage,
+                            borderRadius: BorderRadius.circular(20),
+                            child: Container(
+                              padding: const EdgeInsets.all(7),
+                              decoration: BoxDecoration(
+                                color: AppColors.primary,
+                                shape: BoxShape.circle,
+                                border: Border.all(color: Colors.white, width: 2),
+                              ),
+                              child: _isUploadingImage
+                                  ? const SizedBox(
+                                      width: 14,
+                                      height: 14,
+                                      child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                                    )
+                                  : const Icon(Icons.camera_alt_rounded, size: 16, color: Colors.white),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      TextButton.icon(
+                        onPressed: _pickProfileImage,
+                        icon: const Icon(Icons.upload_file_rounded, size: 16),
+                        label: const Text('อัปโหลดรูปโปรไฟล์ (Upload Photo)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                      ),
+
+                      // Quick Preset Avatars
+                      const SizedBox(height: 4),
+                      SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: _presetAvatars.map((url) {
+                            final isSelected = _profileImageUrl == url;
+                            return GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  _profileImageUrl = url;
+                                  _profileImageController.text = url;
+                                });
+                              },
+                              child: Container(
+                                margin: const EdgeInsets.symmetric(horizontal: 4),
+                                padding: const EdgeInsets.all(2),
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: isSelected ? AppColors.primary : Colors.transparent,
+                                    width: 2,
+                                  ),
+                                ),
+                                child: CircleAvatar(
+                                  radius: 14,
+                                  backgroundImage: NetworkImage(url),
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // Form Section
+                Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Section Title: Personal Info
+                      const Text('ข้อมูลส่วนตัว (Personal Details)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.primary)),
+                      const SizedBox(height: 10),
+
+                      // First Name & Last Name Row
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextFormField(
+                              controller: _firstNameController,
+                              decoration: const InputDecoration(
+                                labelText: 'ชื่อ (First Name) *',
+                                prefixIcon: Icon(Icons.person_outline_rounded, color: AppColors.primary),
+                              ),
+                              validator: (val) =>
+                                  val == null || val.trim().isEmpty ? 'กรุณากรอกชื่อ' : null,
+                              onChanged: (_) => setState(() {}),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: TextFormField(
+                              controller: _lastNameController,
+                              decoration: const InputDecoration(
+                                labelText: 'นามสกุล (Last Name) *',
+                              ),
+                              validator: (val) =>
+                                  val == null || val.trim().isEmpty ? 'กรุณากรอกนามสกุล' : null,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 14),
+
+                      // Email & Phone Number Row
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextFormField(
+                              controller: _emailController,
+                              keyboardType: TextInputType.emailAddress,
+                              decoration: const InputDecoration(
+                                labelText: 'อีเมล (Email) *',
+                                hintText: 'example@gmail.com',
+                                prefixIcon: Icon(Icons.email_outlined, color: AppColors.primary),
+                              ),
+                              validator: (val) {
+                                if (val == null || val.trim().isEmpty) return 'กรุณากรอกอีเมล';
+                                if (!val.contains('@')) return 'รูปแบบอีเมลไม่ถูกต้อง';
+                                return null;
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: TextFormField(
+                              controller: _phoneController,
+                              keyboardType: TextInputType.phone,
+                              decoration: const InputDecoration(
+                                labelText: 'เบอร์โทรศัพท์ (Phone)',
+                                hintText: '020-XXXX-XXXX',
+                                prefixIcon: Icon(Icons.phone_outlined, color: AppColors.primary),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
+
+                      // Section Title: Security & Role
+                      const Text('สิทธิ์และระบบความปลอดภัย (Security & Role)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.primary)),
+                      const SizedBox(height: 10),
+
+                      // Role & Account Status Dropdowns Row
+                      Row(
+                        children: [
+                          // Role Selection
+                          Expanded(
+                            child: DropdownButtonFormField<String>(
+                              value: _selectedRole,
+                              decoration: const InputDecoration(
+                                labelText: 'สิทธิ์การใช้งาน (Role) *',
+                                prefixIcon: Icon(Icons.security_rounded, color: AppColors.primary),
+                                contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+                              ),
+                              items: const [
+                                DropdownMenuItem(value: 'user', child: Text('User (ผู้ใช้ทั่วไป)')),
+                                DropdownMenuItem(value: 'employee', child: Text('Employee (พนักงาน)')),
+                                DropdownMenuItem(value: 'admin', child: Text('Admin (ผู้ดูแลระบบ)')),
+                              ],
+                              onChanged: (val) {
+                                if (val != null) {
+                                  setState(() => _selectedRole = val);
+                                }
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+
+                          // Account Status Selection
+                          Expanded(
+                            child: DropdownButtonFormField<String>(
+                              value: _selectedStatus,
+                              decoration: const InputDecoration(
+                                labelText: 'สถานะบัญชี (Status) *',
+                                contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+                              ),
+                              items: const [
+                                DropdownMenuItem(
+                                  value: 'active',
+                                  child: Text('Active (ปกติ)', style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
+                                ),
+                                DropdownMenuItem(
+                                  value: 'suspended',
+                                  child: Text('Suspended (ระงับ)', style: TextStyle(color: Colors.orange, fontWeight: FontWeight.bold)),
+                                ),
+                                DropdownMenuItem(
+                                  value: 'banned',
+                                  child: Text('Banned (บล็อก)', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+                                ),
+                              ],
+                              onChanged: (val) {
+                                if (val != null) {
+                                  setState(() => _selectedStatus = val);
+                                }
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 14),
+
+                      // Password Input Field with Eye Toggle
+                      TextFormField(
+                        controller: _passwordController,
+                        obscureText: _obscurePassword,
+                        decoration: InputDecoration(
+                          labelText: isEditing ? 'รหัสผ่านใหม่ (ว่างไว้หากไม่ต้องการเปลี่ยน)' : 'รหัสผ่าน (Password) *',
+                          hintText: '••••••••',
+                          prefixIcon: const Icon(Icons.lock_outline_rounded, color: AppColors.primary),
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _obscurePassword ? Icons.visibility_off_rounded : Icons.visibility_rounded,
+                              color: AppColors.textSecondary,
+                            ),
+                            onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                          ),
+                        ),
+                        validator: (val) {
+                          if (!isEditing && (val == null || val.trim().isEmpty)) {
+                            return 'กรุณากรอกรหัสผ่านสำหรับบัญชีใหม่';
+                          }
+                          if (val != null && val.isNotEmpty && val.length < 6) {
+                            return 'รหัสผ่านต้องมีความยาวอย่างน้อย 6 ตัวอักษร';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 14),
+
+                      // Student & Premiere Member Status Switch
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF8FAFC),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFFE2E8F0)),
+                        ),
+                        child: SwitchListTile(
+                          title: const Text(
+                            'สถานะนักเรียน / สมาชิกพรีเมี่ยม (Student / Premiere Member)',
+                            style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                          ),
+                          subtitle: const Text(
+                            'เปิดใช้งานสิทธิ์ส่วนลดและสิทธิพิเศษสำหรับนักเรียนนักศึกษา',
+                            style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                          ),
+                          value: _isStudent,
+                          activeColor: AppColors.primary,
+                          onChanged: (val) => setState(() => _isStudent = val),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+
+                      // Action Buttons Row
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: _isLoading ? null : () => Navigator.pop(context),
+                              style: OutlinedButton.styleFrom(
+                                minimumSize: const Size(double.infinity, 48),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              child: const Text('ยกเลิก (Cancel)'),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: _isLoading ? null : _onSave,
+                              style: ElevatedButton.styleFrom(
+                                minimumSize: const Size(double.infinity, 48),
+                                backgroundColor: AppColors.primary,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              child: _isLoading
+                                  ? const SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                                    )
+                                  : Text(isEditing ? 'บันทึกการแก้ไข' : 'สร้างบัญชีผู้ใช้'),
+                            ),
                           ),
                         ],
                       ),
                     ],
                   ),
-                  IconButton(
-                    onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.close_rounded, color: AppColors.textSecondary),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              const Divider(height: 1),
-              const SizedBox(height: 20),
-
-              // Profile Picture Upload & Avatar Picker Section
-              Center(
-                child: Column(
-                  children: [
-                    Stack(
-                      alignment: Alignment.bottomRight,
-                      children: [
-                        Container(
-                          width: 90,
-                          height: 90,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: _getRoleColor(_selectedRole).withOpacity(0.1),
-                            border: Border.all(color: _getRoleColor(_selectedRole), width: 2.5),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.08),
-                                blurRadius: 10,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: ClipOval(
-                            child: _profileImageUrl.isNotEmpty
-                                ? ImageHelper.buildImage(
-                                    _profileImageUrl,
-                                    width: 90,
-                                    height: 90,
-                                    fit: BoxFit.cover,
-                                  )
-                                : Center(
-                                    child: Text(
-                                      firstChar,
-                                      style: TextStyle(
-                                        color: _getRoleColor(_selectedRole),
-                                        fontSize: 32,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ),
-                          ),
-                        ),
-                        InkWell(
-                          onTap: _isUploadingImage ? null : _pickProfileImage,
-                          borderRadius: BorderRadius.circular(20),
-                          child: Container(
-                            padding: const EdgeInsets.all(7),
-                            decoration: BoxDecoration(
-                              color: AppColors.primary,
-                              shape: BoxShape.circle,
-                              border: Border.all(color: Colors.white, width: 2),
-                            ),
-                            child: _isUploadingImage
-                                ? const SizedBox(
-                                    width: 14,
-                                    height: 14,
-                                    child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                                  )
-                                : const Icon(Icons.camera_alt_rounded, size: 16, color: Colors.white),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    TextButton.icon(
-                      onPressed: _pickProfileImage,
-                      icon: const Icon(Icons.upload_file_rounded, size: 16),
-                      label: const Text('อัปโหลดรูปโปรไฟล์ (Upload Photo)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                    ),
-
-                    // Quick Preset Avatars
-                    const SizedBox(height: 4),
-                    SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: _presetAvatars.map((url) {
-                          final isSelected = _profileImageUrl == url;
-                          return GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                _profileImageUrl = url;
-                                _profileImageController.text = url;
-                              });
-                            },
-                            child: Container(
-                              margin: const EdgeInsets.symmetric(horizontal: 4),
-                              padding: const EdgeInsets.all(2),
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: isSelected ? AppColors.primary : Colors.transparent,
-                                  width: 2,
-                                ),
-                              ),
-                              child: CircleAvatar(
-                                radius: 14,
-                                backgroundImage: NetworkImage(url),
-                              ),
-                            ),
-                          );
-                        }).toList(),
-                      ),
-                    ),
-                  ],
                 ),
-              ),
-              const SizedBox(height: 20),
-
-              // Form Section
-              Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Section Title: Personal Info
-                    const Text('ข้อมูลส่วนตัว (Personal Details)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.primary)),
-                    const SizedBox(height: 10),
-
-                    // First Name & Last Name Row
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextFormField(
-                            controller: _firstNameController,
-                            decoration: const InputDecoration(
-                              labelText: 'ชื่อ (First Name) *',
-                              prefixIcon: Icon(Icons.person_outline_rounded, color: AppColors.primary),
-                            ),
-                            validator: (val) =>
-                                val == null || val.trim().isEmpty ? 'กรุณากรอกชื่อ' : null,
-                            onChanged: (_) => setState(() {}),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: TextFormField(
-                            controller: _lastNameController,
-                            decoration: const InputDecoration(
-                              labelText: 'นามสกุล (Last Name) *',
-                            ),
-                            validator: (val) =>
-                                val == null || val.trim().isEmpty ? 'กรุณากรอกนามสกุล' : null,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 14),
-
-                    // Email & Phone Number Row
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextFormField(
-                            controller: _emailController,
-                            keyboardType: TextInputType.emailAddress,
-                            decoration: const InputDecoration(
-                              labelText: 'อีเมล (Email) *',
-                              hintText: 'example@gmail.com',
-                              prefixIcon: Icon(Icons.email_outlined, color: AppColors.primary),
-                            ),
-                            validator: (val) {
-                              if (val == null || val.trim().isEmpty) return 'กรุณากรอกอีเมล';
-                              if (!val.contains('@')) return 'รูปแบบอีเมลไม่ถูกต้อง';
-                              return null;
-                            },
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: TextFormField(
-                            controller: _phoneController,
-                            keyboardType: TextInputType.phone,
-                            decoration: const InputDecoration(
-                              labelText: 'เบอร์โทรศัพท์ (Phone)',
-                              hintText: '020-XXXX-XXXX',
-                              prefixIcon: Icon(Icons.phone_outlined, color: AppColors.primary),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
-
-                    // Section Title: Security & Role
-                    const Text('สิทธิ์และระบบความปลอดภัย (Security & Role)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.primary)),
-                    const SizedBox(height: 10),
-
-                    // Role & Account Status Dropdowns Row
-                    Row(
-                      children: [
-                        // Role Selection
-                        Expanded(
-                          child: DropdownButtonFormField<String>(
-                            value: _selectedRole,
-                            decoration: const InputDecoration(
-                              labelText: 'สิทธิ์การใช้งาน (Role) *',
-                              prefixIcon: Icon(Icons.security_rounded, color: AppColors.primary),
-                              contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 12),
-                            ),
-                            items: const [
-                              DropdownMenuItem(value: 'user', child: Text('User (ผู้ใช้ทั่วไป)')),
-                              DropdownMenuItem(value: 'employee', child: Text('Employee (พนักงาน)')),
-                              DropdownMenuItem(value: 'admin', child: Text('Admin (ผู้ดูแลระบบ)')),
-                            ],
-                            onChanged: (val) {
-                              if (val != null) {
-                                setState(() => _selectedRole = val);
-                              }
-                            },
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-
-                        // Account Status Selection
-                        Expanded(
-                          child: DropdownButtonFormField<String>(
-                            value: _selectedStatus,
-                            decoration: const InputDecoration(
-                              labelText: 'สถานะบัญชี (Status) *',
-                              contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 12),
-                            ),
-                            items: const [
-                              DropdownMenuItem(
-                                value: 'active',
-                                child: Text('Active (ปกติ)', style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
-                              ),
-                              DropdownMenuItem(
-                                value: 'suspended',
-                                child: Text('Suspended (ระงับ)', style: TextStyle(color: Colors.orange, fontWeight: FontWeight.bold)),
-                              ),
-                              DropdownMenuItem(
-                                value: 'banned',
-                                child: Text('Banned (บล็อก)', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
-                              ),
-                            ],
-                            onChanged: (val) {
-                              if (val != null) {
-                                setState(() => _selectedStatus = val);
-                              }
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 14),
-
-                    // Password Input Field with Eye Toggle
-                    TextFormField(
-                      controller: _passwordController,
-                      obscureText: _obscurePassword,
-                      decoration: InputDecoration(
-                        labelText: isEditing ? 'รหัสผ่านใหม่ (ว่างไว้หากไม่ต้องการเปลี่ยน)' : 'รหัสผ่าน (Password) *',
-                        hintText: '••••••••',
-                        prefixIcon: const Icon(Icons.lock_outline_rounded, color: AppColors.primary),
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            _obscurePassword ? Icons.visibility_off_rounded : Icons.visibility_rounded,
-                            color: AppColors.textSecondary,
-                          ),
-                          onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
-                        ),
-                      ),
-                      validator: (val) {
-                        if (!isEditing && (val == null || val.trim().isEmpty)) {
-                          return 'กรุณากรอกรหัสผ่านสำหรับบัญชีใหม่';
-                        }
-                        if (val != null && val.isNotEmpty && val.length < 6) {
-                          return 'รหัสผ่านต้องมีความยาวอย่างน้อย 6 ตัวอักษร';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 14),
-
-                    // Student & Premiere Member Status Switch
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF8FAFC),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: const Color(0xFFE2E8F0)),
-                      ),
-                      child: SwitchListTile(
-                        title: const Text(
-                          'สถานะนักเรียน / สมาชิกพรีเมี่ยม (Student / Premiere Member)',
-                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
-                        ),
-                        subtitle: const Text(
-                          'เปิดใช้งานสิทธิ์ส่วนลดและสิทธิพิเศษสำหรับนักเรียนนักศึกษา',
-                          style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
-                        ),
-                        value: _isStudent,
-                        activeColor: AppColors.primary,
-                        onChanged: (val) => setState(() => _isStudent = val),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-
-                    // Action Buttons Row
-                    Row(
-                      children: [
-                        Expanded(
-                          child: OutlinedButton(
-                            onPressed: _isLoading ? null : () => Navigator.pop(context),
-                            style: OutlinedButton.styleFrom(
-                              minimumSize: const Size(double.infinity, 48),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                            child: const Text('ยกเลิก (Cancel)'),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: ElevatedButton(
-                            onPressed: _isLoading ? null : _onSave,
-                            style: ElevatedButton.styleFrom(
-                              minimumSize: const Size(double.infinity, 48),
-                              backgroundColor: AppColors.primary,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                            child: _isLoading
-                                ? const SizedBox(
-                                    width: 20,
-                                    height: 20,
-                                    child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                                  )
-                                : Text(isEditing ? 'บันทึกการแก้ไข' : 'สร้างบัญชีผู้ใช้'),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

@@ -36,7 +36,8 @@ flutter_application_1/
 │       ├── profile_screen.dart         # หน้าโปรไฟล์ผู้ใช้
 │       ├── admin/                      # ส่วนของผู้ดูแลระบบ (Admin)
 │       │   ├── admin_dashboard_screen.dart  # แดชบอร์ด Admin (ผู้ใช้, รายงาน, ตั้งค่า)
-│       │   └── admin_book_dialog.dart       # Dialog เพิ่ม/แก้ไขหนังสือแบบเร็ว
+│       │   ├── admin_book_dialog.dart       # Full Screen ฟอร์มเพิ่ม/แก้ไขหนังสือ (AdminBookFormScreen)
+│       │   └── admin_user_dialog.dart       # Full Screen ฟอร์มเพิ่ม/แก้ไขผู้ใช้ (AdminUserFormScreen)
 │       └── employee/                   # ส่วนของพนักงาน (Employee / Staff)
 │           ├── employee_dashboard_screen.dart # แดชบอร์ดพนักงาน (คลัง PDF)
 │           └── add_book_screen.dart          # หน้าฟอร์มเพิ่มหนังสือ PDF เต็มรูปแบบ
@@ -69,6 +70,54 @@ flutter_application_1/
 
 ### C. การรองรับไฟล์ PDF
 - ระบบพนักงานออกแบบมาสำหรับการแนบไฟล์เอกสาร PDF (`.pdf`) รองรับขนาดไฟล์สูงสุด 100MB พร้อมระบบจำลอง Progress และ Live Preview
+
+### D. ⛔ ห้ามใช้ showDialog สำหรับฟอร์มที่ซับซ้อนบน Flutter Web (Critical)
+- บน Flutter Web การใช้ `showDialog()` สำหรับฟอร์มที่มี `GlobalKey<FormState>`, Dropdown, หรือ File Upload **จะทำให้เกิดข้อผิดพลาดร้ายแรง:**
+  - `Cannot hit test a render box that has never been laid out (RenderErrorBox DISPOSED)`
+  - `Multiple widgets used the same GlobalKey`
+- **สาเหตุ:** Dialog อยู่ใน Overlay Tree ร่วมกับหน้าหลัก → เมื่อปิด Dialog, `MouseTracker` ของ Flutter Web ยังพยายาม `hitTest()` ที่ตำแหน่ง Widget ที่กำลัง Dispose → Crash ทันที
+- **กฎเหล็ก:** ฟอร์มเพิ่ม/แก้ไขข้อมูล (Book, User, etc.) **ต้องใช้ `Navigator.push` + `Scaffold` (Full Screen Page) เสมอ** ตามรูปแบบฝั่ง Employee:
+  ```dart
+  // ✅ ถูกต้อง — Full Screen (ไม่มีปัญหาบน Web)
+  void _openAddBookScreen() async {
+    final result = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(builder: (_) => const AdminBookFormScreen()),
+    );
+    if (result == true && mounted) _fetchAdminData();
+  }
+
+  // ❌ ห้ามใช้ — Dialog (Crash บน Web)
+  void _openAddBookDialog() async {
+    final result = await showDialog(
+      context: context,
+      builder: (ctx) => const AdminBookDialog(),  // ⛔ ห้าม!
+    );
+  }
+  ```
+- **Loading Indicator:** ห้ามใช้ `showDialog` ซ้อนสำหรับแสดง Loading ภายในฟอร์ม ให้ใช้ `_isSaving` state + `Stack` overlay ภายในหน้า Scaffold แทน
+- **Navigator.pop:** ต้อง pop **ครั้งเดียว** ด้วย `Navigator.pop(context, true)` เท่านั้น ห้าม pop 2 ครั้งติดกัน (ปิด Loading Dialog + ปิดฟอร์ม) เพราะจะเกิด Race Condition กับ MouseTracker
+
+### E. กฎการใช้ `const` กับ Widget ที่มี Non-Const Constructor
+- `CircularProgressIndicator()` **ไม่ใช่** const constructor → ห้ามครอบ Widget ตัวนอกด้วย `const` ถ้าข้างในมี `CircularProgressIndicator`
+- วิธีที่ถูกต้อง: ย้าย `const` ลงมาวางที่ `children: const [...]` โดยตรง หรือใส่ `const` เฉพาะ Widget ลูกที่เป็น const ได้:
+  ```dart
+  // ✅ ถูกต้อง
+  Column(
+    children: const [
+      CircularProgressIndicator(),
+      SizedBox(height: 14),
+      Text('Loading...', style: TextStyle(fontWeight: FontWeight.bold)),
+    ],
+  )
+
+  // ❌ ผิด — จะเกิด error "The constructor being called isn't a const constructor"
+  const Column(
+    children: [
+      CircularProgressIndicator(),  // ⛔ ไม่ใช่ const constructor!
+    ],
+  )
+  ```
 
 ---
 

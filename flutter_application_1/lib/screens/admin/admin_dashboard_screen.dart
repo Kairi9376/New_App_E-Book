@@ -6,8 +6,8 @@ import '../../models/book_model.dart';
 import '../../models/kyc_model.dart';
 import '../../services/api_service.dart';
 import '../../services/api_config.dart';
-import 'admin_book_dialog.dart';
-import 'admin_user_dialog.dart';
+import 'admin_book_dialog.dart'; // AdminBookFormScreen
+import 'admin_user_dialog.dart'; // AdminUserFormScreen
 import '../login_screen.dart';
 import '../User/pdf_viewer_screen.dart';
 import '../../utils/image_helper.dart';
@@ -189,56 +189,44 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     );
   }
 
-  void _openAddBookDialog() {
-    showDialog(
-      context: context,
-      builder: (ctx) => const AdminBookDialog(),
-    ).then((val) {
-      if (val != null) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) _fetchAdminData();
-        });
-      }
-    });
+  void _openAddBookDialog() async {
+    final result = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(builder: (_) => const AdminBookFormScreen()),
+    );
+    if (result == true && mounted) {
+      _fetchAdminData();
+    }
   }
 
-  void _openEditBookDialog(BookModel book, int index) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AdminBookDialog(book: book),
-    ).then((val) {
-      if (val != null) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) _fetchAdminData();
-        });
-      }
-    });
+  void _openEditBookDialog(BookModel book, int index) async {
+    final result = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(builder: (_) => AdminBookFormScreen(book: book)),
+    );
+    if (result == true && mounted) {
+      _fetchAdminData();
+    }
   }
 
-  void _openCreateUserDialog() {
-    showDialog(
-      context: context,
-      builder: (ctx) => const AdminUserDialog(),
-    ).then((val) {
-      if (val != null) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) _fetchAdminData();
-        });
-      }
-    });
+  void _openCreateUserDialog() async {
+    final result = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(builder: (_) => const AdminUserFormScreen()),
+    );
+    if (result == true && mounted) {
+      _fetchAdminData();
+    }
   }
 
-  void _openEditUserDialog(Map<String, dynamic> user, int index) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AdminUserDialog(user: user),
-    ).then((val) {
-      if (val != null) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) _fetchAdminData();
-        });
-      }
-    });
+  void _openEditUserDialog(Map<String, dynamic> user, int index) async {
+    final result = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(builder: (_) => AdminUserFormScreen(user: user)),
+    );
+    if (result == true && mounted) {
+      _fetchAdminData();
+    }
   }
 
   void _openCreatePackageDialog() {
