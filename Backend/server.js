@@ -49,13 +49,6 @@ app.post('/api/upload', upload.fields([
 ]), (req, res) => {
   try {
     const files = req.files;
-    const { old_file_url, old_cover_url, old_pdf_url } = req.body;
-
-    // Delete old files if passed in request body
-    if (old_file_url) deleteOldFile(old_file_url);
-    if (old_cover_url) deleteOldFile(old_cover_url);
-    if (old_pdf_url) deleteOldFile(old_pdf_url);
-
     const responseData = {};
 
     for (const key in files) {

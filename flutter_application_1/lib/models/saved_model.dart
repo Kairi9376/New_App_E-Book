@@ -49,8 +49,8 @@ class SavedBookItem {
       parsedRating = double.tryParse(map['rating'].toString()) ?? 0.0;
     }
 
-    int parsedLikes = int.tryParse(map['like_count']?.toString() ?? map['likes']?.toString() ?? map['likeCount']?.toString() ?? '124') ?? 124;
-    int parsedViews = int.tryParse(map['view_count']?.toString() ?? map['views']?.toString() ?? map['readers']?.toString() ?? map['viewCount']?.toString() ?? '350') ?? 350;
+    int parsedLikes = int.tryParse(map['likes_count']?.toString() ?? map['like_count']?.toString() ?? map['likes']?.toString() ?? map['likeCount']?.toString() ?? '0') ?? 0;
+    int parsedViews = int.tryParse(map['readers_count']?.toString() ?? map['view_count']?.toString() ?? map['views']?.toString() ?? map['readers']?.toString() ?? map['viewCount']?.toString() ?? '0') ?? 0;
 
     String cover = map['cover_image_url'] ?? map['imagePath'] ?? '';
     if (cover.startsWith('/uploads/') || cover.startsWith('uploads/')) {
@@ -74,13 +74,14 @@ class SavedBookItem {
       rating: parsedRating,
       likeCount: parsedLikes,
       viewCount: parsedViews,
-      category: map['category_name'] ?? map['category'] ?? 'ທົ່ວໄປ',
+      category: (map['category_name'] ?? map['category'] ?? map['categories'] ?? 'ທົ່ວໄປ').toString(),
       imagePath: cover.isNotEmpty ? cover : 'assets/sample_cover.png',
       pdfUrl: pdf,
       description: map['description'] ?? '',
       isBookmarked: true,
     );
   }
+
 
   Map<String, dynamic> toMap() {
     return {

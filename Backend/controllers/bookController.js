@@ -4,7 +4,7 @@ const { deleteOldFile, isSameFilePath } = require('../utils/fileUtils');
 // GET /api/books
 exports.getAllBooks = async (req, res) => {
   try {
-    const { search, language, category_id, is_free, is_hidden, status, uploaded_by, role } = req.query;
+    const { search, language, category_id, is_free, is_free_download, is_hidden, status, uploaded_by, role } = req.query;
 
     let query = `
       SELECT b.*, a.name AS author_name, 
@@ -44,6 +44,12 @@ exports.getAllBooks = async (req, res) => {
     if (is_free !== undefined) {
       query += ` AND b.is_free = ?`;
       params.push(is_free === 'true' || is_free === '1' ? 1 : 0);
+    }
+
+    // Filter by Free download
+    if (is_free_download !== undefined) {
+      query += ` AND b.is_free_download = ?`;
+      params.push(is_free_download === 'true' || is_free_download === '1' ? 1 : 0);
     }
 
     // Filter by Employee Uploader
@@ -116,7 +122,7 @@ exports.createBook = async (req, res) => {
     const {
       title, author_id, language, page_count, file_size_bytes,
       description, cover_image_url, file_pdf_url, uploaded_by,
-      is_free, category_ids, category_id, readers_count, likes_count, status
+      is_free, is_free_download, category_ids, category_id, readers_count, likes_count, status
     } = req.body;
 
     if (!title) {
@@ -129,9 +135,9 @@ exports.createBook = async (req, res) => {
     const bookStatus = status || 'pending'; // 🟢 Default status is 'pending' requiring Admin approval
 
     const [result] = await pool.query(
-      `INSERT INTO books (title, author_id, language, page_count, file_size_bytes, description, cover_image_url, file_pdf_url, uploaded_by, status, is_free, is_hidden, readers_count, likes_count)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, FALSE, ?, ?)`,
-      [title, finalAuthorId, language || 'LA', page_count || 0, file_size_bytes || 0, description || null, cover_image_url || null, finalPdfUrl, finalUploadedBy, bookStatus, is_free ? 1 : 0, readers_count || 0, likes_count || 0]
+      `INSERT INTO books (title, author_id, language, page_count, file_size_bytes, description, cover_image_url, file_pdf_url, uploaded_by, status, is_free, is_free_download, is_hidden, readers_count, likes_count)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, FALSE, ?, ?)`,
+      [title, finalAuthorId, language || 'LA', page_count || 0, file_size_bytes || 0, description || null, cover_image_url || null, finalPdfUrl, finalUploadedBy, bookStatus, is_free ? 1 : 0, is_free_download ? 1 : 0, readers_count || 0, likes_count || 0]
     );
 
     const book_id = result.insertId;
@@ -163,7 +169,7 @@ exports.updateBook = async (req, res) => {
     const { id } = req.params;
     const {
       title, author_id, language, page_count, description,
-      cover_image_url, file_pdf_url, is_free, is_hidden, category_ids,
+      cover_image_url, file_pdf_url, is_free, is_free_download, is_hidden, category_ids,
       category_id, readers_count, likes_count, status, approved_by, rejection_reason
     } = req.body;
 
@@ -193,6 +199,7 @@ exports.updateBook = async (req, res) => {
            cover_image_url = COALESCE(?, cover_image_url),
            file_pdf_url = COALESCE(?, file_pdf_url),
            is_free = COALESCE(?, is_free),
+           is_free_download = COALESCE(?, is_free_download),
            is_hidden = COALESCE(?, is_hidden),
            readers_count = COALESCE(?, readers_count),
            likes_count = COALESCE(?, likes_count),
@@ -204,6 +211,7 @@ exports.updateBook = async (req, res) => {
         title || null, author_id || null, language || null, page_count || null,
         description || null, cover_image_url || null, file_pdf_url || null,
         is_free !== undefined ? (is_free ? 1 : 0) : null,
+        is_free_download !== undefined ? (is_free_download ? 1 : 0) : null,
         is_hidden !== undefined ? (is_hidden ? 1 : 0) : null,
         readers_count !== undefined ? readers_count : null,
         likes_count !== undefined ? likes_count : null,

@@ -36,7 +36,11 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   final List<Map<String, dynamic>> _masterCategories = [];
   final List<Map<String, dynamic>> _auditLogs = [];
 
+  String _bookStatusFilter = 'ທັງໝົດ';
   bool _isLoading = true;
+
+  int get _pendingBooksCount =>
+      _adminBooks.where((b) => b.status.toLowerCase() == 'pending').length;
 
   @override
   void initState() {
@@ -49,11 +53,11 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
     try {
       final results = await Future.wait([
-        ApiService.getBooks(),
+        ApiService.getBooks(role: 'admin', status: 'all'),
         ApiService.getUsers(),
         ApiService.getKycList(),
         ApiService.getSubscriptions(),
-        ApiService.getPackages(),
+        ApiService.getPackages(showAll: true),
         ApiService.getCategories(),
         ApiService.getAuthors(),
         ApiService.getAuditLogs(),
@@ -574,7 +578,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                       child: Row(
                         children: [
-                          _buildNavTab(0, Icons.menu_book_rounded, 'ຄັງຫນັງສື', count: _adminBooks.length),
+                          _buildNavTab(0, Icons.menu_book_rounded, 'ຄັງຫນັງສື', count: _adminBooks.length, badge: _pendingBooksCount),
                           _buildNavTab(1, Icons.people_alt_rounded, 'ຜູ້ໃຊ້/ພະນັກງານ', count: _adminUsers.length),
                           _buildNavTab(2, Icons.verified_user_rounded, 'KYC & Student', badge: _pendingKycCount),
                           _buildNavTab(3, Icons.receipt_long_rounded, 'ສະລິບໂອນເງິນ', badge: _pendingSlipCount),
@@ -754,32 +758,60 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   Widget _buildBookManagementTab(bool isMobile) {
     final filtered = _adminBooks.where((b) {
       final matchesSearch = b.title.toLowerCase().contains(_searchQuery.toLowerCase()) || b.author.toLowerCase().contains(_searchQuery.toLowerCase());
-      return matchesSearch;
+      final matchesStatus = _bookStatusFilter == 'ທັງໝົດ' || b.status.toLowerCase() == _bookStatusFilter.toLowerCase();
+      return matchesSearch && matchesStatus;
     }).toList();
 
     return Column(
       children: [
         // Quick Stats Banner
-        Row(
-          children: [
-            _buildStatSummaryBanner(title: 'หนังสือทั้งหมด', value: '${_adminBooks.length} เล่ม', icon: Icons.menu_book_rounded, color: AppColors.primary),
-            const SizedBox(width: 8),
-            _buildStatSummaryBanner(title: 'อ่านฟรี', value: '${_adminBooks.where((b) => b.isFree).length} เล่ม', icon: Icons.card_giftcard_rounded, color: Colors.green),
-          ],
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: [
+              _buildStatSummaryBanner(title: 'หนังสือทั้งหมด', value: '${_adminBooks.length} เล่ม', icon: Icons.menu_book_rounded, color: AppColors.primary),
+              const SizedBox(width: 8),
+              _buildStatSummaryBanner(title: 'รออนุมัติ', value: '$_pendingBooksCount เล่ม', icon: Icons.hourglass_top_rounded, color: Colors.orange.shade800),
+              const SizedBox(width: 8),
+              _buildStatSummaryBanner(title: 'อนุมัติแล้ว', value: '${_adminBooks.where((b) => b.status.toLowerCase() == 'approved').length} เล่ม', icon: Icons.check_circle_rounded, color: Colors.green),
+            ],
+          ),
         ),
         const SizedBox(height: 12),
 
-        // Search Bar
-        TextField(
-          onChanged: (val) => setState(() => _searchQuery = val),
-          decoration: InputDecoration(
-            hintText: 'ค้นหาชื่อหนังสือ หรือผู้แต่ง...',
-            prefixIcon: const Icon(Icons.search_rounded),
-            contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
-            fillColor: Colors.white,
-            filled: true,
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
-          ),
+        // Search Bar & Status Filter
+        Row(
+          children: [
+            Expanded(
+              child: TextField(
+                onChanged: (val) => setState(() => _searchQuery = val),
+                decoration: InputDecoration(
+                  hintText: 'ค้นหาชื่อหนังสือ หรือผู้แต่ง...',
+                  prefixIcon: const Icon(Icons.search_rounded),
+                  contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
+                  fillColor: Colors.white,
+                  filled: true,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFFE2E8F0))),
+              child: DropdownButton<String>(
+                value: _bookStatusFilter,
+                underline: const SizedBox(),
+                items: [
+                  const DropdownMenuItem(value: 'ທັງໝົດ', child: Text('ทังหมด', style: TextStyle(fontSize: 12))),
+                  DropdownMenuItem(value: 'pending', child: Text('รออนุมัติ ($_pendingBooksCount)', style: TextStyle(fontSize: 12, color: Colors.orange.shade900, fontWeight: FontWeight.bold))),
+                  const DropdownMenuItem(value: 'approved', child: Text('อนุมัติแล้ว', style: TextStyle(fontSize: 12, color: Colors.green))),
+                  const DropdownMenuItem(value: 'rejected', child: Text('ไม่อนุมัติ', style: TextStyle(fontSize: 12, color: Colors.red))),
+                ],
+                onChanged: (val) => setState(() => _bookStatusFilter = val!),
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 12),
 
@@ -793,12 +825,16 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                     itemCount: filtered.length,
                     itemBuilder: (ctx, idx) {
                       final book = filtered[idx];
+                      final isPending = book.status.toLowerCase() == 'pending';
+                      final isApproved = book.status.toLowerCase() == 'approved';
+                      final isRejected = book.status.toLowerCase() == 'rejected';
+
                       return Container(
                         margin: const EdgeInsets.only(bottom: 10),
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(14),
-                          border: Border.all(color: const Color(0xFFE2E8F0)),
+                          border: Border.all(color: isPending ? Colors.orange.shade300 : const Color(0xFFE2E8F0), width: isPending ? 1.5 : 1.0),
                         ),
                         child: ListTile(
                           contentPadding: const EdgeInsets.all(10),
@@ -813,15 +849,37 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                             children: [
                               const SizedBox(height: 2),
                               Text('ผู้แต่ง: ${book.author}', style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                              if (book.uploaderName != null)
+                                Text('ผู้เพิ่ม: ${book.uploaderName}', style: const TextStyle(fontSize: 11, color: AppColors.primary)),
                               const SizedBox(height: 4),
-                              Row(
+                              Wrap(
+                                spacing: 4,
+                                runSpacing: 4,
                                 children: [
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: isApproved
+                                          ? Colors.green.shade50
+                                          : (isRejected ? Colors.red.shade50 : Colors.orange.shade50),
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: Text(
+                                      isApproved ? 'อนุมัติแล้ว' : (isRejected ? 'ไม่อนุมัติ' : 'รออนุมัติ'),
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
+                                        color: isApproved
+                                            ? Colors.green.shade700
+                                            : (isRejected ? Colors.red.shade700 : Colors.orange.shade900),
+                                      ),
+                                    ),
+                                  ),
                                   Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                     decoration: BoxDecoration(color: const Color(0xFFEFF6FF), borderRadius: BorderRadius.circular(6)),
                                     child: Text(book.tags.isNotEmpty ? book.tags.first : "ทั่วไป", style: const TextStyle(fontSize: 10, color: AppColors.primary, fontWeight: FontWeight.bold)),
                                   ),
-                                  const SizedBox(width: 6),
                                   if (book.isFree)
                                     Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -835,14 +893,27 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                           trailing: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              IconButton(
-                                icon: const Icon(Icons.edit_rounded, color: Colors.blueAccent, size: 20),
-                                onPressed: () => _openEditBookDialog(book, idx),
-                              ),
-                              IconButton(
-                                icon: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent, size: 20),
-                                onPressed: () => _deleteBook(idx),
-                              ),
+                              if (isPending) ...[
+                                IconButton(
+                                  tooltip: 'อนุมัติหนังสือ',
+                                  icon: const Icon(Icons.check_circle_rounded, color: Colors.green, size: 24),
+                                  onPressed: () => _changeBookStatus(book, 'approved'),
+                                ),
+                                IconButton(
+                                  tooltip: 'ปฏิเสธหนังสือ',
+                                  icon: const Icon(Icons.cancel_rounded, color: Colors.redAccent, size: 24),
+                                  onPressed: () => _changeBookStatus(book, 'rejected'),
+                                ),
+                              ] else ...[
+                                IconButton(
+                                  icon: const Icon(Icons.edit_rounded, color: Colors.blueAccent, size: 20),
+                                  onPressed: () => _openEditBookDialog(book, idx),
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent, size: 20),
+                                  onPressed: () => _deleteBook(idx),
+                                ),
+                              ],
                             ],
                           ),
                         ),
@@ -853,6 +924,68 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         ),
       ],
     );
+  }
+
+  Future<void> _changeBookStatus(BookModel book, String status) async {
+    String? reason;
+    if (status == 'rejected') {
+      final textController = TextEditingController();
+      final confirm = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Row(
+            children: const [
+              Icon(Icons.cancel_rounded, color: Colors.redAccent),
+              SizedBox(width: 8),
+              Text('ปฏิเสธการอนุมัติหนังสือ'),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('กรุณาระบุเหตุผลที่ไม่ผ่านการอนุมัติสำหรับหนังสือ "${book.title}":'),
+              const SizedBox(height: 10),
+              TextField(
+                controller: textController,
+                maxLines: 3,
+                decoration: InputDecoration(
+                  hintText: 'เช่น เอกสาร PDF ไม่ชัดเจน / เนื้อหาไม่ตรงตามเกณฑ์',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('ยกเลิก', style: TextStyle(color: AppColors.textSecondary)),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('ยืนยันปฏิเสธ', style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        ),
+      );
+      if (confirm != true) return;
+      reason = textController.text.trim();
+    }
+
+    final success = await ApiService.updateBookStatus(book.id, status, rejectionReason: reason);
+    if (mounted && success) {
+      await _fetchAdminData();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(status == 'approved'
+              ? 'อนุมัติหนังสือ "${book.title}" เรียบร้อยแล้ว'
+              : 'ปฏิเสธหนังสือ "${book.title}" เรียบร้อยแล้ว'),
+          backgroundColor: status == 'approved' ? Colors.green : Colors.redAccent,
+        ),
+      );
+    }
   }
 
   // --- TAB 1: USER MANAGEMENT ---
@@ -2032,8 +2165,11 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
   // --- TAB 5: EXECUTIVE REPORTS & ANALYTICS ---
   Widget _buildReportsTab(bool isMobile) {
-    // 1. Calculate Revenue Metrics
-    final approvedSubs = _subscriptions.where((s) => (s['payment_status'] ?? '').toString().toLowerCase() == 'approved').toList();
+    // 1. Calculate Revenue Metrics (Support 'active' or 'approved' status from DB)
+    final approvedSubs = _subscriptions.where((s) {
+      final st = (s['payment_status'] ?? '').toString().toLowerCase();
+      return st == 'approved' || st == 'active';
+    }).toList();
     final pendingSubs = _subscriptions.where((s) => (s['payment_status'] ?? '').toString().toLowerCase() == 'pending').toList();
     final rejectedSubs = _subscriptions.where((s) => (s['payment_status'] ?? '').toString().toLowerCase() == 'rejected').toList();
 
@@ -2047,19 +2183,19 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       pendingRevenue += double.tryParse((s['amount'] ?? s['price'] ?? 49000).toString()) ?? 49000;
     }
 
-    // 2. Calculate Reading & Book Metrics
+    // 2. Calculate Reading & Book Metrics (Using exact DB data)
     int totalViews = 0;
     int totalLikes = 0;
     for (var b in _adminBooks) {
-      totalViews += b.viewCount > 0 ? b.viewCount : 350;
-      totalLikes += b.likeCount > 0 ? b.likeCount : 124;
+      totalViews += b.viewCount;
+      totalLikes += b.likeCount;
     }
 
-    // Sort Top 5 Popular Books
+    // Sort Top 5 Popular Books by real engagement
     final sortedBooks = List<BookModel>.from(_adminBooks);
     sortedBooks.sort((a, b) {
-      final scoreA = (a.likeCount > 0 ? a.likeCount : 124) * 2 + (a.viewCount > 0 ? a.viewCount : 350);
-      final scoreB = (b.likeCount > 0 ? b.likeCount : 124) * 2 + (b.viewCount > 0 ? b.viewCount : 350);
+      final scoreA = a.likeCount * 2 + a.viewCount;
+      final scoreB = b.likeCount * 2 + b.viewCount;
       return scoreB.compareTo(scoreA);
     });
     final topBooks = sortedBooks.take(5).toList();
@@ -2221,8 +2357,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                           separatorBuilder: (_, __) => const Divider(height: 1, color: Color(0xFFF1F5F9)),
                           itemBuilder: (ctx, idx) {
                             final book = topBooks[idx];
-                            final views = book.viewCount > 0 ? book.viewCount : 350;
-                            final likes = book.likeCount > 0 ? book.likeCount : 124;
+                            final views = book.viewCount;
+                            final likes = book.likeCount;
 
                             Color rankColor = const Color(0xFF94A3B8);
                             if (idx == 0) rankColor = const Color(0xFFF59E0B); // Gold

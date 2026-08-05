@@ -153,7 +153,6 @@ class _EditBookScreenState extends State<EditBookScreen> {
       bytes: fileInfo.bytes,
       filename: fileInfo.name,
       fieldName: 'pdf',
-      oldFileUrl: widget.book.pdfUrl,
     );
 
     if (mounted) {
@@ -204,7 +203,6 @@ class _EditBookScreenState extends State<EditBookScreen> {
       bytes: fileInfo.bytes,
       filename: fileInfo.name,
       fieldName: 'cover',
-      oldFileUrl: widget.book.imagePath,
     );
 
     if (mounted) {

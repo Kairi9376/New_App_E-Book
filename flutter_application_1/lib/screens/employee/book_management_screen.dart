@@ -52,7 +52,7 @@ class _BookManagementScreenState extends State<BookManagementScreen> {
 
   Future<void> _fetchBooks() async {
     setState(() => _isLoading = true);
-    final books = await ApiService.getBooks();
+    final books = await ApiService.getBooks(status: 'all', role: 'employee');
     if (mounted) {
       setState(() {
         _employeeBooks = books;
@@ -550,10 +550,10 @@ class _BookManagementScreenState extends State<BookManagementScreen> {
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(Icons.picture_as_pdf_rounded,
+                            Icon(Icons.picture_as_pdf_rounded,
                                 size: 12, color: Color(0xFF059669)),
-                            const SizedBox(width: 4),
-                            const Text('PDF',
+                            SizedBox(width: 4),
+                            Text('PDF',
                                 style: TextStyle(
                                     fontSize: 10,
                                     color: Color(0xFF059669),
@@ -561,8 +561,57 @@ class _BookManagementScreenState extends State<BookManagementScreen> {
                           ],
                         ),
                       ),
+                      const SizedBox(width: 6),
+                      // Approval Status Badge
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: book.status.toLowerCase() == 'approved'
+                              ? Colors.green.shade50
+                              : (book.status.toLowerCase() == 'rejected'
+                                  ? Colors.red.shade50
+                                  : Colors.orange.shade50),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          book.status.toLowerCase() == 'approved'
+                              ? 'ອະນຸມັດແລ້ວ'
+                              : (book.status.toLowerCase() == 'rejected'
+                                  ? 'ບໍ່ອະນຸມັດ'
+                                  : 'ລໍຖ້າອະນຸມັດ'),
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: book.status.toLowerCase() == 'approved'
+                                ? Colors.green.shade700
+                                : (book.status.toLowerCase() == 'rejected'
+                                    ? Colors.red.shade700
+                                    : Colors.orange.shade800),
+                          ),
+                        ),
+                      ),
                     ],
                   ),
+                  if (book.status.toLowerCase() == 'rejected' &&
+                      book.rejectionReason != null &&
+                      book.rejectionReason!.isNotEmpty) ...[
+                    const SizedBox(height: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.red.shade50,
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(color: Colors.red.shade200),
+                      ),
+                      child: Text(
+                        'ເຫດຜົນທີ່ບໍ່ອະນຸມັດ: ${book.rejectionReason}',
+                        style: TextStyle(
+                            fontSize: 11, color: Colors.red.shade800),
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),

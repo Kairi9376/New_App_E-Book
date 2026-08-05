@@ -19,8 +19,6 @@ class _SavedScreenState extends State<SavedScreen> {
   String _searchQuery = '';
   int _selectedCategoryIndex = 0;
 
-  final List<String> _categories = ['ທັງໝົດ', 'ວິທະຍາສາດ', 'ສິນລະປະ', 'ເຕັກໂນໂລຊີ', 'ຊີວິດ'];
-
   @override
   void initState() {
     super.initState();
@@ -63,16 +61,21 @@ class _SavedScreenState extends State<SavedScreen> {
   }
 
   void _openBookDetail(SavedBookItem item) {
+    final parsedTags = item.category.isNotEmpty
+        ? item.category.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList()
+        : ['ທົ່ວໄປ'];
+
     final bookModel = BookModel(
       id: item.bookId?.toString() ?? item.id,
       title: item.title,
       author: item.author,
-      tags: item.category.isNotEmpty ? [item.category] : ['ທັງໝົດ'],
+      rating: item.rating,
+      ratingText: item.rating == 0.0 ? 'New' : item.rating.toStringAsFixed(1),
+      tags: parsedTags,
       imagePath: item.imagePath,
       pdfUrl: item.pdfUrl ?? 'assets/sample_book.pdf',
       likeCount: item.likeCount,
       viewCount: item.viewCount,
-      pageCount: 120,
       description: item.description ?? '',
     );
 
@@ -82,14 +85,32 @@ class _SavedScreenState extends State<SavedScreen> {
     );
   }
 
+  List<String> get _categories {
+    final cats = <String>{'ທັງໝົດ'};
+    for (final item in _savedList) {
+      if (item.category.isNotEmpty) {
+        final parts = item.category.split(',');
+        for (var p in parts) {
+          final trimmed = p.trim();
+          if (trimmed.isNotEmpty) cats.add(trimmed);
+        }
+      }
+    }
+    return cats.toList();
+  }
+
   List<SavedBookItem> get _filteredList {
+    final catList = _categories;
+    final safeIndex = (_selectedCategoryIndex < catList.length) ? _selectedCategoryIndex : 0;
+    final selectedCat = catList[safeIndex];
+
     return _savedList.where((book) {
       final matchesSearch = _searchQuery.isEmpty ||
           book.title.toLowerCase().contains(_searchQuery.toLowerCase()) ||
           book.author.toLowerCase().contains(_searchQuery.toLowerCase());
 
-      final matchesCategory = _selectedCategoryIndex == 0 ||
-          book.category == _categories[_selectedCategoryIndex];
+      final matchesCategory = safeIndex == 0 ||
+          book.category.toLowerCase().contains(selectedCat.toLowerCase());
 
       return matchesSearch && matchesCategory;
     }).toList();
@@ -102,6 +123,7 @@ class _SavedScreenState extends State<SavedScreen> {
   @override
   Widget build(BuildContext context) {
     final displayList = _filteredList;
+    final categoriesList = _categories;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 18.0, vertical: 16.0),
@@ -167,14 +189,14 @@ class _SavedScreenState extends State<SavedScreen> {
             height: 34,
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
-              itemCount: _categories.length,
+              itemCount: categoriesList.length,
               itemBuilder: (context, idx) {
                 final isSelected = _selectedCategoryIndex == idx;
                 return Padding(
                   padding: const EdgeInsets.only(right: 8),
                   child: ChoiceChip(
                     selected: isSelected,
-                    label: Text(_categories[idx]),
+                    label: Text(categoriesList[idx]),
                     labelStyle: TextStyle(
                       fontSize: 12,
                       fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
@@ -243,6 +265,10 @@ class _SavedScreenState extends State<SavedScreen> {
   }
 
   Widget _buildSavedCard(SavedBookItem item, int index) {
+    final catBadgeList = item.category.isNotEmpty
+        ? item.category.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList()
+        : ['ທົ່ວໄປ'];
+
     return InkWell(
       onTap: () => _openBookDetail(item),
       borderRadius: BorderRadius.circular(16),
@@ -308,21 +334,29 @@ class _SavedScreenState extends State<SavedScreen> {
             ),
             const SizedBox(height: 10),
 
-            // Category Tag
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-              decoration: BoxDecoration(
-                color: const Color(0xFFE2EDFF),
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: Text(
-                item.category,
-                style: const TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.primary,
+            // Category Badges
+            Wrap(
+              spacing: 4,
+              runSpacing: 4,
+              children: catBadgeList.map(
+                (catName) => Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE2EDFF),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    catName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.primary,
+                    ),
+                  ),
                 ),
-              ),
+              ).toList(),
             ),
             const SizedBox(height: 6),
 
@@ -394,3 +428,4 @@ class _SavedScreenState extends State<SavedScreen> {
     );
   }
 }
+

@@ -148,7 +148,6 @@ class _AdminBookDialogState extends State<AdminBookDialog> {
       bytes: fileInfo.bytes,
       filename: fileInfo.name,
       fieldName: 'pdf',
-      oldFileUrl: _pdfUrlController.text.isNotEmpty ? _pdfUrlController.text : null,
     );
 
     if (mounted) {
@@ -185,7 +184,6 @@ class _AdminBookDialogState extends State<AdminBookDialog> {
       bytes: fileInfo.bytes,
       filename: fileInfo.name,
       fieldName: 'cover',
-      oldFileUrl: _coverUrlController.text.isNotEmpty ? _coverUrlController.text : null,
     );
 
     if (mounted) {

@@ -59,7 +59,7 @@ CREATE TABLE IF NOT EXISTS categories (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- 5. ຕາຕະລາງປຶ້ມ (Books - อัปเดตเพิ่มระบบอนุมัติจาก Admin)
+-- 5. ຕາຕະລາງປຶ້ມ (Books - อัปเดตเพิ่ม is_free_download)
 CREATE TABLE IF NOT EXISTS books (
     book_id INT AUTO_INCREMENT PRIMARY KEY,
     title VARCHAR(255) NOT NULL,
@@ -74,10 +74,13 @@ CREATE TABLE IF NOT EXISTS books (
     status ENUM('pending', 'approved', 'rejected') DEFAULT 'pending', -- 🟢 สถานะการอนุมัติ
     approved_by INT,                       -- 🟢 FK ไปยัง users (Admin ผู้อนุมัติ)
     rejection_reason TEXT,                 -- 🟢 เหตุผลที่ไม่อนุมัติ (ถ้ามี)
-    is_free BOOLEAN DEFAULT FALSE,
+    is_free BOOLEAN DEFAULT FALSE,         -- 🟢 อ่านออนไลน์ฟรีทุกคน
+    is_free_download BOOLEAN DEFAULT FALSE, -- 🟢 ดาวน์โหลดฟรีทุกคน (ถ้า FALSE ต้องมีแพ็กเกจ)
     is_hidden BOOLEAN DEFAULT FALSE,       -- ซ่อนหนังสือฉุกเฉิน (แม้จะอนุมัติแล้ว)
+    is_deleted BOOLEAN DEFAULT FALSE,      -- Soft delete (ไม่แสดงหนังสือที่ถูกลบ)
     readers_count INT DEFAULT 0,           -- จำนวนผู้เข้าอ่านทั้งหมด
     likes_count INT DEFAULT 0,             -- จำนวนคนกดใจทั้งหมด
+    rating DECIMAL(3,1) DEFAULT 5.0,        -- คะแนนเรตติ้ง ( default 5.0 )
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (author_id) REFERENCES authors(author_id),
@@ -222,13 +225,13 @@ INSERT INTO packages (package_id, name, description, price, duration_days, is_fo
 (3, 'Premium Yearly', 'ເຂົ້າເຖິງປຶ້ມທຸກເລົ່ມໃນຄັງແບບບໍ່ຈຳກັດ 365 ວັນ', 490000.00, 365, FALSE, TRUE)
 ON DUPLICATE KEY UPDATE name=name;
 
--- 5. Insert Books (มี status, approved_by, rejection_reason, readers_count, likes_count)
-INSERT INTO books (book_id, title, author_id, language, page_count, file_size_bytes, description, cover_image_url, file_pdf_url, uploaded_by, status, approved_by, rejection_reason, is_free, is_hidden, readers_count, likes_count) VALUES
-(1, 'The Happiness Effect', 1, 'EN', 240, 15400000, 'ປຶ້ມຖ່າຍທອດເລື່ອງราวການສ້າງຄວາມສຸກ ແລະ ການມອງໂລກໃນແງ່ດີ', 'assets/happiness_cover.jpg', 'assets/sample_book.pdf', 2, 'approved', 1, NULL, TRUE, FALSE, 125, 42),
-(2, 'High School Science (ວິທະຍາສາດ)', 4, 'LA', 310, 22100000, 'ຕຳລາຮຽນວິທະຍາສາດລະດັບມັດທະຍົມປາຍ ຄອບຄຸມພື້ນຖານຟິຊິກ ເຄມີ ຊີວະວິທະຍາ', 'assets/science_cover.jpg', 'assets/sample_book.pdf', 2, 'approved', 1, NULL, TRUE, FALSE, 88, 31),
-(3, 'Quantum Mechanics', 2, 'EN', 450, 38000000, 'ເຈາະລຶກທິດສະດີຄວອນຕຳ ແລະ ກົນລະສາດສະໄໝໃໝ່', 'assets/quantum_cover.jpg', 'assets/sample_book.pdf', 2, 'approved', 1, NULL, FALSE, FALSE, 64, 19),
-(4, 'ປຶ້ມສັງຄົມສຶກສາ', 3, 'LA', 180, 12000000, 'ຄວາມຮູ້ກ່ຽວກັບສັງຄົມ ວັດທະນະທຳ ແລະ ພູມສາດ', 'assets/social_cover.jpg', 'assets/sample_book.pdf', 2, 'approved', 1, NULL, TRUE, FALSE, 210, 95),
-(5, 'Advances in Physics (ລໍຖ້າອະນຸມັດ)', 2, 'EN', 280, 18500000, 'ຕຳລາຟິຊິກຂັ້ນສູງ ສຳລັບນັກຮຽນ ແລະ ນັກວິໄຈ', 'assets/quantum_cover.jpg', 'assets/sample_book.pdf', 2, 'pending', NULL, NULL, TRUE, FALSE, 0, 0)
+-- 5. Insert Books (มี is_free, is_free_download, status, approved_by, rejection_reason, readers_count, likes_count)
+INSERT INTO books (book_id, title, author_id, language, page_count, file_size_bytes, description, cover_image_url, file_pdf_url, uploaded_by, status, approved_by, rejection_reason, is_free, is_free_download, is_hidden, readers_count, likes_count) VALUES
+(1, 'The Happiness Effect', 1, 'EN', 240, 15400000, 'ປຶ້ມຖ່າຍທອດເລື່ອງราวການສ້າງຄວາມສຸກ ແລະ ການມອງໂລກໃນແງ່ດີ', 'assets/happiness_cover.jpg', 'assets/sample_book.pdf', 2, 'approved', 1, NULL, TRUE, TRUE, FALSE, 125, 42),
+(2, 'High School Science (ວິທະຍາສາດ)', 4, 'LA', 310, 22100000, 'ຕຳລາຮຽນວິທະຍາສາດລະດັບມັດທະຍົມປາຍ ຄອບຄຸມພື້ນຖານຟິຊິກ ເຄມີ ຊີວະວິທະຍາ', 'assets/science_cover.jpg', 'assets/sample_book.pdf', 2, 'approved', 1, NULL, TRUE, FALSE, FALSE, 88, 31),
+(3, 'Quantum Mechanics', 2, 'EN', 450, 38000000, 'ເຈາະລຶກທິດສະດີຄວອນຕຳ ແລະ ກົນລະສາດສະໄໝໃໝ່', 'assets/quantum_cover.jpg', 'assets/sample_book.pdf', 2, 'approved', 1, NULL, FALSE, FALSE, FALSE, 64, 19),
+(4, 'ປຶ້ມສັງຄົມສຶກສາ', 3, 'LA', 180, 12000000, 'ຄວາມຮູ້ກ່ຽວກັບສັງຄົມ ວັດທະນະທຳ ແລະ ພູມສາດ', 'assets/social_cover.jpg', 'assets/sample_book.pdf', 2, 'approved', 1, NULL, TRUE, TRUE, FALSE, 210, 95),
+(5, 'Advances in Physics (ລໍຖ້າອະນຸມັດ)', 2, 'EN', 280, 18500000, 'ຕຳລາຟິຊິກຂັ້ນສູງ ສຳລັບນັກຮຽນ ແລະ ນັກວິໄຈ', 'assets/quantum_cover.jpg', 'assets/sample_book.pdf', 2, 'pending', NULL, NULL, TRUE, FALSE, FALSE, 0, 0)
 ON DUPLICATE KEY UPDATE title=title;
 
 -- 6. Insert Book Categories

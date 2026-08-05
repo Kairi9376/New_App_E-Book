@@ -53,6 +53,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       setState(() {
         _userProfile = profile;
         _userSubscription = liveSub;
+        _avatarPath = profile['profile_image_url'] ?? profile['avatar'];
         _userKyc = liveKyc ?? KycModel(
           id: 'kyc_$userId',
           userId: userId.toString(),
@@ -115,36 +116,63 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _changeAvatarImage() async {
     setState(() => _isUploadingAvatar = true);
     try {
-      final picked = await FilePickerHelper.pickFile(accept: 'image/*');
-      await Future.delayed(const Duration(milliseconds: 100));
-
+      final picked = await FilePickerHelper.pickFile(accept: 'image/*,.jpg,.jpeg,.png');
       if (picked != null) {
         final bytes = Uint8List.fromList(picked.bytes);
         final result = await ApiService.uploadFile(
           bytes: picked.bytes,
           filename: picked.name,
-          fieldName: 'avatar',
+          fieldName: 'profile',
         );
 
-        if (mounted) {
-          setState(() {
-            _avatarBytes = bytes;
-            if (result['success'] == true && result['path'] != null) {
-              _avatarPath = result['url'] ?? result['path'];
-            }
+        if (result['success'] == true) {
+          final uploadedPath = result['url'] ?? result['path'] ?? 'uploads/profiles/${picked.name}';
+          final rawUserId = _userProfile['user_id'] ?? _userProfile['id'];
+          final int userId = rawUserId != null ? (int.tryParse(rawUserId.toString()) ?? 3) : 3;
+
+          // Save new profile picture URL to MySQL database
+          await ApiService.updateUser(userId, {
+            'profile_image_url': uploadedPath,
           });
-          NotificationService.addNotification(
-            context,
-            title: '👤 ອັບເດດຮູບໂປຣໄຟລ໌ສຳເລັດ',
-            message: 'ຮູບໂປຣໄຟລ໌ໃໝ່ຂອງທ່ານຖືກບັນທຶກເຂົ້າสู่ระบบແລ້ວ',
-            type: NotificationType.system,
-          );
+
+          // Sync in memory user model
+          if (ApiService.currentUser != null) {
+            ApiService.currentUser!['profile_image_url'] = uploadedPath;
+          }
+          _userProfile['profile_image_url'] = uploadedPath;
+
+          if (mounted) {
+            setState(() {
+              _avatarBytes = bytes;
+              _avatarPath = uploadedPath;
+            });
+
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('ອັບເດດຮູບໂປຣໄຟລ໌ສຳເລັດ!'),
+                backgroundColor: Color(0xFF10B981),
+              ),
+            );
+
+            NotificationService.addNotification(
+              context,
+              title: '👤 ອັບເດດຮູບໂປຣໄຟລ໌ສຳເລັດ',
+              message: 'ຮູບໂປຣໄຟລ໌ໃໝ່ຂອງທ່ານຖືກບັນທຶກເຂົ້າสู่ระบบແລ້ວ',
+              type: NotificationType.system,
+            );
+          }
+        } else {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('ອັບໂຫຼດຮູບບໍ່ສຳເລັດ: ${result['message'] ?? 'Unknown error'}'), backgroundColor: Colors.redAccent),
+            );
+          }
         }
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('ເກີດຂໍ້ຜິດພາດໃນການອັບໂຫຼດຮູບ: $e'), backgroundColor: Colors.redAccent),
+          SnackBar(content: Text('ເກີດຂໍ້ຜິດພາດในระบบ: $e'), backgroundColor: Colors.redAccent),
         );
       }
     } finally {
@@ -393,18 +421,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       shape: BoxShape.circle,
                       border: Border.all(color: const Color(0xFFE2E8F0), width: 2),
                     ),
-                    child: CircleAvatar(
-                      radius: 50,
-                      backgroundColor: AppColors.primary.withOpacity(0.12),
-                      backgroundImage: _avatarBytes != null
-                          ? MemoryImage(_avatarBytes!)
-                          : (_avatarPath != null && _avatarPath!.isNotEmpty ? NetworkImage(_avatarPath!) : null) as ImageProvider?,
-                      child: (_avatarBytes == null && (_avatarPath == null || _avatarPath!.isEmpty))
-                          ? Text(
-                              firstName.isNotEmpty ? firstName[0].toUpperCase() : 'U',
-                              style: const TextStyle(fontSize: 36, fontWeight: FontWeight.bold, color: AppColors.primary),
-                            )
-                          : null,
+                    child: ClipOval(
+                      child: SizedBox(
+                        width: 100,
+                        height: 100,
+                        child: ImageHelper.buildImage(
+                          _avatarPath,
+                          bytes: _avatarBytes,
+                          width: 100,
+                          height: 100,
+                          fit: BoxFit.cover,
+                          placeholder: Container(
+                            color: AppColors.primary.withOpacity(0.12),
+                            child: Center(
+                              child: Text(
+                                firstName.isNotEmpty ? firstName[0].toUpperCase() : 'U',
+                                style: const TextStyle(fontSize: 36, fontWeight: FontWeight.bold, color: AppColors.primary),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
                     ),
                   ),
                   Positioned(

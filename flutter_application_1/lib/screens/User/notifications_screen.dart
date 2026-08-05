@@ -66,16 +66,21 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     // Navigation based on notification type
     switch (item.type) {
       case NotificationType.kyc:
-      case NotificationType.subscription:
         Navigator.push(
           context,
           MaterialPageRoute(
             builder: (_) => KycSubmissionScreen(
-              // ส่ง object KycModel เริ่มต้น หรือข้อมูลล่าสุดเข้าไป
-              currentKyc:
-                  KycModel.empty(), 
+              currentKyc: KycModel.empty(),
             ),
           ),
+        );
+        break;
+
+      case NotificationType.subscription:
+      case NotificationType.promo:
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const MembershipPackageScreen()),
         );
         break;
 
@@ -91,12 +96,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         }
         break;
 
-      case NotificationType.promo:
       case NotificationType.system:
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const MembershipPackageScreen()),
-        );
+      default:
+        Navigator.pop(context);
         break;
     }
   }

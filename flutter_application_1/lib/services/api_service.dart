@@ -6,6 +6,7 @@ import '../models/history_model.dart';
 import '../models/saved_model.dart';
 import '../models/downloads_model.dart';
 import '../models/kyc_model.dart';
+import '../models/notification_model.dart';
 import 'api_config.dart';
 
 class ApiService {
@@ -153,14 +154,28 @@ class ApiService {
   }
 
   // 3. Books: Fetch all books
-  static Future<List<BookModel>> getBooks(
-      {String? search, String? categoryId, bool? isFree}) async {
+  static Future<List<BookModel>> getBooks({
+    String? search,
+    String? categoryId,
+    bool? isFree,
+    String? status,
+    String? uploadedBy,
+    String? role,
+  }) async {
     try {
       final queryParams = <String, String>{};
       if (search != null && search.isNotEmpty) queryParams['search'] = search;
       if (categoryId != null && categoryId.isNotEmpty)
         queryParams['category_id'] = categoryId;
       if (isFree != null) queryParams['is_free'] = isFree ? 'true' : 'false';
+      if (status != null && status.isNotEmpty) queryParams['status'] = status;
+      if (uploadedBy != null && uploadedBy.isNotEmpty)
+        queryParams['uploaded_by'] = uploadedBy;
+
+      final userRole = role ?? currentUser?['role'];
+      if (userRole != null && userRole.toString().isNotEmpty) {
+        queryParams['role'] = userRole.toString();
+      }
 
       final uri = Uri.parse('${ApiConfig.baseUrl}/books')
           .replace(queryParameters: queryParams);
@@ -544,6 +559,35 @@ class ApiService {
     }
   }
 
+  // 12.1 Books: Update Book Approval Status (For Admin)
+  static Future<bool> updateBookStatus(
+    dynamic bookId,
+    String status, {
+    int? approvedBy,
+    String? rejectionReason,
+  }) async {
+    try {
+      final url = Uri.parse('${ApiConfig.baseUrl}/books/$bookId/status');
+      final response = await http
+          .put(
+            url,
+            headers: _headers,
+            body: jsonEncode({
+              'status': status,
+              'approved_by': approvedBy ?? currentUser?['user_id'] ?? 1,
+              if (rejectionReason != null) 'rejection_reason': rejectionReason,
+            }),
+          )
+          .timeout(const Duration(seconds: 5));
+
+      final data = jsonDecode(response.body);
+      return response.statusCode == 200 && data['success'] == true;
+    } catch (e) {
+      print('ApiService updateBookStatus error: $e');
+      return false;
+    }
+  }
+
   // 13. Books: Delete book (For Admin)
   static Future<bool> deleteBook(String bookId) async {
     try {
@@ -747,9 +791,11 @@ class ApiService {
   }
 
   // 17. Packages: Fetch all packages
-  static Future<List<Map<String, dynamic>>> getPackages() async {
+  static Future<List<Map<String, dynamic>>> getPackages(
+      {bool showAll = false}) async {
     try {
-      final url = Uri.parse('${ApiConfig.baseUrl}/packages');
+      final url = Uri.parse
+          ('${ApiConfig.baseUrl}/packages${showAll ? '?all=true' : ''}');
       final response = await http
           .get(url, headers: _headers)
           .timeout(const Duration(seconds: 5));
@@ -807,6 +853,48 @@ class ApiService {
       return response.statusCode == 201 && data['success'] == true;
     } catch (e) {
       print('ApiService createPackage error: $e');
+      return false;
+    }
+  }
+
+  // 18.1 Packages: Update package status (For Admin)
+  static Future<bool> updatePackageStatus(
+      dynamic packageId, bool isActive) async {
+    try {
+      final url = Uri.parse('${ApiConfig.baseUrl}/packages/$packageId/status');
+      final response = await http
+          .put(
+            url,
+            headers: _headers,
+            body: jsonEncode({'is_active': isActive}),
+          )
+          .timeout(const Duration(seconds: 5));
+
+      final data = jsonDecode(response.body);
+      return response.statusCode == 200 && data['success'] == true;
+    } catch (e) {
+      print('ApiService updatePackageStatus error: $e');
+      return false;
+    }
+  }
+
+  // 18.2 Packages: Update full package details (For Admin)
+  static Future<bool> updatePackage(
+      dynamic packageId, Map<String, dynamic> pkgData) async {
+    try {
+      final url = Uri.parse('${ApiConfig.baseUrl}/packages/$packageId');
+      final response = await http
+          .put(
+            url,
+            headers: _headers,
+            body: jsonEncode(pkgData),
+          )
+          .timeout(const Duration(seconds: 5));
+
+      final data = jsonDecode(response.body);
+      return response.statusCode == 200 && data['success'] == true;
+    } catch (e) {
+      print('ApiService updatePackage error: $e');
       return false;
     }
   }
@@ -1052,6 +1140,26 @@ class ApiService {
     }
   }
 
+  // 24c. User: Delete Download Record
+  static Future<bool> deleteDownload(String downloadId) async {
+    try {
+      final user = currentUser ?? {};
+      final userId = user['user_id'] ?? 3;
+
+      final url = Uri.parse(
+          '${ApiConfig.baseUrl}/downloads/$downloadId?user_id=$userId');
+      final response = await http
+          .delete(url, headers: _headers)
+          .timeout(const Duration(seconds: 5));
+
+      final data = jsonDecode(response.body);
+      return response.statusCode == 200 && data['success'] == true;
+    } catch (e) {
+      print('ApiService deleteDownload error: $e');
+      return true;
+    }
+  }
+
   // 25. User: Toggle Bookmark State
   static Future<bool> toggleBookmark(String bookId) async {
     try {
@@ -1077,6 +1185,11 @@ class ApiService {
       print('ApiService toggleBookmark error: $e');
       return true;
     }
+  }
+
+  // 25b. User: Toggle Like State
+  static Future<bool> toggleLike(String bookId) async {
+    return toggleBookmark(bookId);
   }
 
   // 26. User: Get Full Profile Details
@@ -1106,6 +1219,80 @@ class ApiService {
           'created_at': '2026-11-04',
           'expires_at': '2026-12-04',
         };
+  }
+
+  // 27. Notifications API
+  static final List<NotificationItem> _userNotifications =
+      List.from(MockNotificationsData.items);
+
+  static Future<List<NotificationItem>> getNotifications() async {
+    try {
+      final user = currentUser ?? {};
+      final userId = user['user_id'] ?? user['id'] ?? 3;
+      final url = Uri.parse('${ApiConfig.baseUrl}/notifications/user/$userId');
+      final response = await http
+          .get(url, headers: _headers)
+          .timeout(const Duration(seconds: 4));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['success'] == true && data['notifications'] is List) {
+          final List list = data['notifications'];
+          return list.map((item) => NotificationItem.fromMap(item)).toList();
+        }
+      }
+      return List.from(_userNotifications);
+    } catch (_) {
+      return List.from(_userNotifications);
+    }
+  }
+
+  static Future<bool> markNotificationAsRead(String id) async {
+    try {
+      final index = _userNotifications.indexWhere((n) => n.id == id);
+      if (index != -1) {
+        _userNotifications[index] =
+            _userNotifications[index].copyWith(isRead: true);
+      }
+      final url = Uri.parse('${ApiConfig.baseUrl}/notifications/$id/read');
+      await http
+          .put(url, headers: _headers)
+          .timeout(const Duration(seconds: 3));
+      return true;
+    } catch (_) {
+      return true;
+    }
+  }
+
+  static Future<bool> markAllNotificationsAsRead() async {
+    try {
+      for (int i = 0; i < _userNotifications.length; i++) {
+        _userNotifications[i] = _userNotifications[i].copyWith(isRead: true);
+      }
+      final user = currentUser ?? {};
+      final userId = user['user_id'] ?? user['id'] ?? 3;
+      final url = Uri.parse(
+          '${ApiConfig.baseUrl}/notifications/user/$userId/read-all');
+      await http
+          .put(url, headers: _headers)
+          .timeout(const Duration(seconds: 3));
+      return true;
+    } catch (_) {
+      return true;
+    }
+  }
+
+  static Future<bool> deleteNotification(String id) async {
+    try {
+      _userNotifications.removeWhere((n) => n.id == id);
+      final url = Uri.parse('${ApiConfig.baseUrl}/notifications/$id');
+      await http
+          .delete(url, headers: _headers)
+          .timeout(const Duration(seconds: 3));
+      return true;
+    } catch (_) {
+      return true;
+    }
   }
 
   // Helper Fallback Mock Books

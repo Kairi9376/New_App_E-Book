@@ -25,7 +25,7 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
   }
 
   Future<void> _fetchDashboardStats() async {
-    final books = await ApiService.getBooks();
+    final books = await ApiService.getBooks(status: 'all', role: 'employee');
     if (mounted) {
       setState(() {
         _totalBooks = books.length;

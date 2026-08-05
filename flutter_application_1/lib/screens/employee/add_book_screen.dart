@@ -111,7 +111,6 @@ class _EmployeeAddBookScreenState extends State<EmployeeAddBookScreen> {
       bytes: fileInfo.bytes,
       filename: fileInfo.name,
       fieldName: 'pdf',
-      oldFileUrl: _pdfFileUrl,
     );
 
     if (mounted) {
@@ -150,7 +149,6 @@ class _EmployeeAddBookScreenState extends State<EmployeeAddBookScreen> {
       bytes: fileInfo.bytes,
       filename: fileInfo.name,
       fieldName: 'cover',
-      oldFileUrl: _coverImagePath,
     );
 
     if (mounted) {

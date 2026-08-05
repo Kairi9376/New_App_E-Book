@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:ui';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import '../../theme/app_theme.dart';
@@ -19,6 +20,16 @@ import 'notifications_screen.dart';
 import '../../services/notification_service.dart';
 import '../../models/notification_model.dart';
 
+class MouseTouchScrollBehavior extends MaterialScrollBehavior {
+  @override
+  Set<PointerDeviceKind> get dragDevices => {
+        PointerDeviceKind.touch,
+        PointerDeviceKind.mouse,
+        PointerDeviceKind.trackpad,
+        PointerDeviceKind.stylus,
+      };
+}
+
 class UserHomeScreen extends StatefulWidget {
   const UserHomeScreen({super.key});
 
@@ -33,6 +44,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
   List<BookModel> _fetchedBooks = [];
   bool _isLoadingBooks = true;
   KycStatus _kycStatus = KycStatus.notSubmitted;
+  final ScrollController _categoryScrollController = ScrollController();
 
   List<Map<String, dynamic>> _fetchedCategories = [
     {'category_id': null, 'name': 'ທັງໝົດ'}
@@ -280,12 +292,25 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
 
     return Row(
       children: [
-        CircleAvatar(
-          radius: 23,
-          backgroundColor: AppColors.primary.withOpacity(0.12),
-          child: Text(
-            firstName.isNotEmpty ? firstName[0].toUpperCase() : 'U',
-            style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary, fontSize: 18),
+        ClipOval(
+          child: SizedBox(
+            width: 46,
+            height: 46,
+            child: ImageHelper.buildImage(
+              user['profile_image_url'],
+              width: 46,
+              height: 46,
+              fit: BoxFit.cover,
+              placeholder: Container(
+                color: AppColors.primary.withOpacity(0.12),
+                child: Center(
+                  child: Text(
+                    firstName.isNotEmpty ? firstName[0].toUpperCase() : 'U',
+                    style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary, fontSize: 18),
+                  ),
+                ),
+              ),
+            ),
           ),
         ),
         const SizedBox(width: 12),
@@ -517,40 +542,248 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
     );
   }
 
+  @override
+  void dispose() {
+    _categoryScrollController.dispose();
+    super.dispose();
+  }
+
+  void _openAllCategoriesModal() {
+    final searchCtrl = TextEditingController();
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            final query = searchCtrl.text.trim().toLowerCase();
+            final filteredCats = _fetchedCategories.asMap().entries.where((entry) {
+              final name = (entry.value['name'] ?? '').toString().toLowerCase();
+              return name.contains(query);
+            }).toList();
+
+            return Container(
+              height: MediaQuery.of(context).size.height * 0.75,
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+              ),
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2)),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: const [
+                          Icon(Icons.category_rounded, color: AppColors.primary, size: 22),
+                          SizedBox(width: 8),
+                          Text('ໝວດໝູ່ທັງໝົດ (All Categories)', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                        ],
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close_rounded, color: AppColors.textSecondary),
+                        onPressed: () => Navigator.pop(ctx),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: searchCtrl,
+                    onChanged: (_) => setModalState(() {}),
+                    decoration: InputDecoration(
+                      hintText: 'ຄົ້ນຫາໝວດໝູ່...',
+                      prefixIcon: const Icon(Icons.search_rounded, color: AppColors.primary),
+                      filled: true,
+                      fillColor: const Color(0xFFF1F5F9),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Expanded(
+                    child: filteredCats.isEmpty
+                        ? const Center(child: Text('ບໍ່ພົບໝວດໝູ່ທີ່ຄົ້ນຫາ', style: TextStyle(color: AppColors.textSecondary)))
+                        : GridView.builder(
+                            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 2,
+                              childAspectRatio: 2.6,
+                              crossAxisSpacing: 10,
+                              mainAxisSpacing: 10,
+                            ),
+                            itemCount: filteredCats.length,
+                            itemBuilder: (context, idx) {
+                              final entry = filteredCats[idx];
+                              final index = entry.key;
+                              final cat = entry.value;
+                              final isSelected = _selectedCategoryIndex == index;
+                              final catName = cat['name']?.toString() ?? 'ທັງໝົດ';
+
+                              return InkWell(
+                                onTap: () {
+                                  Navigator.pop(ctx);
+                                  setState(() {
+                                    _selectedCategoryIndex = index;
+                                  });
+                                  _loadBackendData();
+                                  if (_categoryScrollController.hasClients) {
+                                    _categoryScrollController.animateTo(
+                                      (index * 90.0).clamp(0.0, _categoryScrollController.position.maxScrollExtent),
+                                      duration: const Duration(milliseconds: 300),
+                                      curve: Curves.easeOut,
+                                    );
+                                  }
+                                },
+                                borderRadius: BorderRadius.circular(12),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                  decoration: BoxDecoration(
+                                    color: isSelected ? AppColors.primary : const Color(0xFFF8FAFC),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: isSelected ? AppColors.primary : const Color(0xFFE2E8F0),
+                                    ),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        index == 0 ? Icons.apps_rounded : Icons.menu_book_rounded,
+                                        size: 18,
+                                        color: isSelected ? Colors.white : AppColors.primary,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Text(
+                                          catName,
+                                          style: TextStyle(
+                                            fontSize: 13,
+                                            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                                            color: isSelected ? Colors.white : AppColors.textPrimary,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                      if (isSelected)
+                                        const Icon(Icons.check_circle_rounded, size: 16, color: Colors.white),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
   // --- 3. Category Horizontal Filter ---
   Widget _buildCategoryChips() {
     return SizedBox(
-      height: 38,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        itemCount: _fetchedCategories.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 10),
-        itemBuilder: (context, index) {
-          final isSelected = _selectedCategoryIndex == index;
-          final catName = _fetchedCategories[index]['name']?.toString() ?? 'ທັງໝົດ';
-          return ChoiceChip(
-            label: Text(catName),
-            selected: isSelected,
-            selectedColor: AppColors.primary,
-            backgroundColor: const Color(0xFFEFF3F8),
-            labelStyle: TextStyle(
-              color: isSelected ? Colors.white : const Color(0xFF64748B),
-              fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-              fontSize: 13,
+      height: 40,
+      child: Row(
+        children: [
+          Expanded(
+            child: ScrollConfiguration(
+              behavior: MouseTouchScrollBehavior(),
+              child: ListView.separated(
+                controller: _categoryScrollController,
+                scrollDirection: Axis.horizontal,
+                physics: const BouncingScrollPhysics(),
+                itemCount: _fetchedCategories.length + 1,
+                separatorBuilder: (_, __) => const SizedBox(width: 8),
+                itemBuilder: (context, index) {
+                  if (index == _fetchedCategories.length) {
+                    return InkWell(
+                      onTap: _openAllCategoriesModal,
+                      borderRadius: BorderRadius.circular(20),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFEFF6FF),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+                        ),
+                        child: Row(
+                          children: const [
+                            Icon(Icons.grid_view_rounded, size: 15, color: AppColors.primary),
+                            SizedBox(width: 5),
+                            Text('ທັງໝົດ...', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 12)),
+                          ],
+                        ),
+                      ),
+                    );
+                  }
+
+                  final isSelected = _selectedCategoryIndex == index;
+                  final catName = _fetchedCategories[index]['name']?.toString() ?? 'ທັງໝົດ';
+
+                  return ChoiceChip(
+                    label: Text(catName),
+                    selected: isSelected,
+                    selectedColor: AppColors.primary,
+                    backgroundColor: const Color(0xFFEFF3F8),
+                    elevation: isSelected ? 1 : 0,
+                    shadowColor: AppColors.primary.withOpacity(0.3),
+                    labelStyle: TextStyle(
+                      color: isSelected ? Colors.white : const Color(0xFF475569),
+                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                      fontSize: 13,
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 0),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                      side: BorderSide.none,
+                    ),
+                    onSelected: (selected) {
+                      setState(() {
+                        _selectedCategoryIndex = index;
+                      });
+                      _loadBackendData();
+                    },
+                  );
+                },
+              ),
             ),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
-              side: BorderSide.none,
+          ),
+          const SizedBox(width: 6),
+          // Shortcut Grid View Modal Button
+          Tooltip(
+            message: 'ໝວດໝູ່ທັງໝົດ',
+            child: InkWell(
+              onTap: _openAllCategoriesModal,
+              borderRadius: BorderRadius.circular(12),
+              child: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                  boxShadow: [
+                    BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 4, offset: const Offset(0, 2)),
+                  ],
+                ),
+                child: const Icon(Icons.grid_view_rounded, color: AppColors.primary, size: 20),
+              ),
             ),
-            onSelected: (selected) {
-              setState(() {
-                _selectedCategoryIndex = index;
-              });
-              _loadBackendData();
-            },
-          );
-        },
+          ),
+        ],
       ),
     );
   }

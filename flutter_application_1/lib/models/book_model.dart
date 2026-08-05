@@ -24,6 +24,9 @@ class BookModel {
   final bool isFree;
   final bool isHidden;
   final bool isDeleted;
+  final String status; // 'pending', 'approved', 'rejected'
+  final String? rejectionReason;
+  final String? uploaderName;
   final String? createdAt;
 
   BookModel({
@@ -52,6 +55,9 @@ class BookModel {
     this.isFree = true,
     this.isHidden = false,
     this.isDeleted = false,
+    this.status = 'approved',
+    this.rejectionReason,
+    this.uploaderName,
     this.createdAt,
   });
 
@@ -171,6 +177,11 @@ class BookModel {
       isDeleted: map['is_deleted'] == 1 ||
           map['is_deleted'] == true ||
           map['isDeleted'] == true,
+      status: map['status']?.toString() ?? 'approved',
+      rejectionReason: map['rejection_reason']?.toString(),
+      uploaderName: map['uploader_first_name'] != null
+          ? '${map['uploader_first_name']} ${map['uploader_last_name'] ?? ''}'.trim()
+          : map['uploaderName']?.toString(),
       createdAt: map['created_at']?.toString(),
     );
   }

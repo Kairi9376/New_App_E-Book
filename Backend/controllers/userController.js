@@ -1,5 +1,5 @@
 const { pool } = require('../config/db');
-const { deleteOldFile } = require('../utils/fileUtils');
+const { deleteOldFile, isSameFilePath } = require('../utils/fileUtils');
 
 // GET /api/users
 exports.getAllUsers = async (req, res) => {
@@ -44,7 +44,7 @@ exports.updateUserProfile = async (req, res) => {
     const currentProfileImage = existingRows[0].profile_image_url;
 
     // Delete old profile picture if new profile_image_url is provided and different
-    if (profile_image_url && profile_image_url !== currentProfileImage) {
+    if (profile_image_url && !isSameFilePath(profile_image_url, currentProfileImage)) {
       deleteOldFile(currentProfileImage);
     }
 
