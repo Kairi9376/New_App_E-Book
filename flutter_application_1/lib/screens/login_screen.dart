@@ -153,13 +153,13 @@ class _LoginScreenState extends State<LoginScreen> {
                         controller: _emailController,
                         keyboardType: TextInputType.emailAddress,
                         decoration: const InputDecoration(
-                          labelText: 'ອີເມວ / ບັນຊີຜູ້ໃຊ້',
-                          hintText: 'example@gmail.com',
-                          prefixIcon: Icon(Icons.person_outline, color: AppColors.primary),
+                          labelText: 'ອີເມວ ຫຼື ເບີໂທລະສັບ (Email or Phone)',
+                          hintText: 'example@gmail.com ຫຼື 020 99887766',
+                          prefixIcon: Icon(Icons.person_outline_rounded, color: AppColors.primary),
                         ),
                         validator: (value) {
                           if (value == null || value.trim().isEmpty) {
-                            return 'ກະລຸນາປ້ອນອີເມວ ຫຼື ບັນຊີຜູ້ໃຊ້';
+                            return 'ກະລຸນາປ້ອນອີເມວ ຫຼື ເບີໂທລະສັບ';
                           }
                           return null;
                         },

@@ -25,6 +25,7 @@ class _AdminBookDialogState extends State<AdminBookDialog> {
 
   String _selectedLanguage = 'LA';
   bool _isFree = true;
+  bool _isFreeDownload = false;
   bool _isHidden = false;
 
   bool _isUploadingPdf = false;
@@ -58,9 +59,10 @@ class _AdminBookDialogState extends State<AdminBookDialog> {
     _coverUrlController = TextEditingController(text: widget.book?.imagePath ?? '');
     _pdfUrlController = TextEditingController(text: widget.book?.pdfUrl ?? '');
 
-    _selectedLanguage = 'LA';
+    _selectedLanguage = widget.book?.language ?? 'LA';
     _isFree = widget.book?.isFree ?? true;
-    _isHidden = false;
+    _isFreeDownload = widget.book?.isFreeDownload ?? false;
+    _isHidden = widget.book?.isHidden ?? false;
 
     _fetchFormData();
   }
@@ -283,6 +285,7 @@ class _AdminBookDialogState extends State<AdminBookDialog> {
           'cover_image_url': coverUrl.isNotEmpty ? coverUrl : null,
           'file_pdf_url': pdfUrl.isNotEmpty ? pdfUrl : null,
           'is_free': _isFree,
+          'is_free_download': _isFreeDownload,
           'is_hidden': _isHidden,
         });
       } else {
@@ -301,6 +304,7 @@ class _AdminBookDialogState extends State<AdminBookDialog> {
           'file_pdf_url': pdfUrl.isNotEmpty ? pdfUrl : 'assets/sample_book.pdf',
           'uploaded_by': adminId,
           'is_free': _isFree,
+          'is_free_download': _isFreeDownload,
           'category_ids': categoryIdsList,
         });
       }
@@ -328,6 +332,8 @@ class _AdminBookDialogState extends State<AdminBookDialog> {
         tags: _dbCategories.where((c) => _selectedCategoryIds.contains(c['category_id'])).map((c) => c['name'].toString()).toList(),
         description: description,
         isFree: _isFree,
+        isFreeDownload: _isFreeDownload,
+        isHidden: _isHidden,
       );
 
       Navigator.pop(context, savedBook);
@@ -380,7 +386,10 @@ class _AdminBookDialogState extends State<AdminBookDialog> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       child: Container(
         padding: const EdgeInsets.all(22),
-        constraints: const BoxConstraints(maxWidth: 640),
+        constraints: BoxConstraints(
+          maxWidth: 640,
+          maxHeight: MediaQuery.of(context).size.height * 0.9,
+        ),
         child: _isLoadingData
             ? SizedBox(
                 height: 220,
@@ -748,10 +757,19 @@ class _AdminBookDialogState extends State<AdminBookDialog> {
                                 SwitchListTile(
                                   dense: true,
                                   title: const Text('ອ່ານຟຣີ (Free Access)', style: TextStyle(fontWeight: FontWeight.bold)),
-                                  subtitle: const Text('ເປີດໃຫ້ສະມາຊິກທົ່ວໄປອ່ານໄດ້ໂດຍບໍ່ຕ້ອງสมัครสมาชิก'),
+                                  subtitle: const Text('ເປີດໃຫ້ສະມາຊິກທົ່ວໄປອ່ານໄດ້ໂດຍບໍ່ຕ້ອງສະໝັກສະມາຊິກ'),
                                   value: _isFree,
                                   activeColor: Colors.green,
                                   onChanged: (val) => setState(() => _isFree = val),
+                                ),
+                                const Divider(height: 1),
+                                SwitchListTile(
+                                  dense: true,
+                                  title: const Text('ດາວໂຫຼດຟຣີ (Free PDF Download)', style: TextStyle(fontWeight: FontWeight.bold)),
+                                  subtitle: const Text('ເປີດໃຫ້ດາວໂຫຼດຟຣີທຸກຄົນ (ຫາກປິດໄວ້ เฉพาะสมาชิก VIP/Premiere ເທົ່ານັ້ນທີ່ດາວໂຫຼດໄດ້)'),
+                                  value: _isFreeDownload,
+                                  activeColor: const Color(0xFF2563EB),
+                                  onChanged: (val) => setState(() => _isFreeDownload = val),
                                 ),
                                 const Divider(height: 1),
                                 SwitchListTile(

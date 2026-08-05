@@ -29,6 +29,7 @@ class _EditBookScreenState extends State<EditBookScreen> {
   // State Variables
   late String _selectedLanguage;
   late bool _isFree;
+  late bool _isFreeDownload;
   late bool _isHidden;
 
   // File Upload States
@@ -72,6 +73,7 @@ class _EditBookScreenState extends State<EditBookScreen> {
     _selectedLanguage =
         widget.book.language.isEmpty ? 'LA' : widget.book.language;
     _isFree = widget.book.isFree;
+    _isFreeDownload = widget.book.isFreeDownload;
     _isHidden = widget.book.isHidden;
     _selectedCategoryIds = Set<int>.from(widget.book.categoryIds);
     _selectedAuthorId = widget.book.authorId;
@@ -313,6 +315,7 @@ class _EditBookScreenState extends State<EditBookScreen> {
           : null,
       'file_size_bytes': _fileSizeBytes,
       'is_free': _isFree,
+      'is_free_download': _isFreeDownload,
       'is_hidden': _isHidden,
     });
 
@@ -840,6 +843,19 @@ class _EditBookScreenState extends State<EditBookScreen> {
                                 activeColor: Colors.green,
                                 onChanged: (val) =>
                                     setState(() => _isFree = val),
+                              ),
+                              const Divider(height: 1),
+                              SwitchListTile(
+                                dense: true,
+                                title: const Text('ດາວໂຫຼດຟຣີ (Free PDF Download)',
+                                    style:
+                                        TextStyle(fontWeight: FontWeight.bold)),
+                                subtitle: const Text(
+                                    'ເປີດໃຫ້ດາວໂຫຼດຟຣີທຸກຄົນ (ຫາກປິດໄວ້ เฉพาะสมาชิก VIP/Premiere ເທົ່ານັ້ນທີ່ດາວໂຫຼດໄດ້)'),
+                                value: _isFreeDownload,
+                                activeColor: const Color(0xFF2563EB),
+                                onChanged: (val) =>
+                                    setState(() => _isFreeDownload = val),
                               ),
                               const Divider(height: 1),
                               SwitchListTile(

@@ -79,7 +79,7 @@ class ApiService {
           .post(
             url,
             headers: {'Content-Type': 'application/json'},
-            body: jsonEncode({'email': email, 'password': password}),
+            body: jsonEncode({'email': email, 'login_input': email, 'password': password}),
           )
           .timeout(const Duration(seconds: 5));
 

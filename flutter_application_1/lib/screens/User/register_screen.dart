@@ -15,6 +15,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   final _firstNameController = TextEditingController();
   final _lastNameController = TextEditingController();
+  final _phoneController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
@@ -27,6 +28,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   void dispose() {
     _firstNameController.dispose();
     _lastNameController.dispose();
+    _phoneController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
@@ -41,6 +43,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       final res = await ApiService.register({
         'first_name': _firstNameController.text.trim(),
         'last_name': _lastNameController.text.trim(),
+        'phone_number': _phoneController.text.trim(),
         'email': _emailController.text.trim().toLowerCase(),
         'password': _passwordController.text.trim(),
         'role': 'user', // Strictly General User Role
@@ -276,7 +279,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         controller: _emailController,
                         keyboardType: TextInputType.emailAddress,
                         decoration: const InputDecoration(
-                          labelText: 'ອີເມວ (Email)',
+                          labelText: 'ອີເມວ (Email) *',
                           hintText: 'example@gmail.com',
                           prefixIcon: Icon(Icons.email_outlined, color: AppColors.primary),
                         ),
@@ -286,6 +289,27 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           }
                           if (!value.contains('@')) {
                             return 'ຮູບແບບອີເມວບໍ່ຖືກຕ້ອງ';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Phone Number Field
+                      TextFormField(
+                        controller: _phoneController,
+                        keyboardType: TextInputType.phone,
+                        decoration: const InputDecoration(
+                          labelText: 'ເບີໂທລະສັບ (Phone Number) *',
+                          hintText: '020 99887766 หรือ 2099887766',
+                          prefixIcon: Icon(Icons.phone_android_rounded, color: AppColors.primary),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return 'ກະລຸນາປ້ອນເບີໂທລະສັບ';
+                          }
+                          if (value.trim().length < 6) {
+                            return 'ເບີໂທລະສັບບໍ່ຖືກຕ້ອງ';
                           }
                           return null;
                         },

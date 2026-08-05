@@ -5,13 +5,15 @@ const jwt = require('jsonwebtoken');
 // POST /api/auth/login
 exports.login = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, phone, phone_number, login_input, password } = req.body;
+    const inputVal = (email || phone || phone_number || login_input || '').trim();
 
-    if (!email || !password) {
-      return res.status(400).json({ success: false, message: 'ກະລຸນາກອກອີເມວ ແລະ ລະຫັດຜ່ານ' });
+    if (!inputVal || !password) {
+      return res.status(400).json({ success: false, message: 'ກະລຸນາກອກອີເມວ/ເບີໂທລະສັບ ແລະ ລະຫັດຜ່ານ' });
     }
 
-    const cleanEmail = email.trim().toLowerCase();
+    const cleanInput = inputVal.toLowerCase();
+    const rawInput = inputVal;
     const cleanPassword = password.trim();
 
     const mockAccounts = {
@@ -24,7 +26,13 @@ exports.login = async (req, res) => {
     let user = null;
 
     try {
-      const [rows] = await pool.query('SELECT * FROM users WHERE LOWER(email) = ?', [cleanEmail]);
+      const [rows] = await pool.query(
+        `SELECT * FROM users 
+         WHERE LOWER(email) = ? 
+            OR phone_number = ? 
+            OR REPLACE(phone_number, ' ', '') = ?`,
+        [cleanInput, rawInput, rawInput.replace(/\s+/g, '')]
+      );
       if (rows.length > 0) {
         user = rows[0];
       }

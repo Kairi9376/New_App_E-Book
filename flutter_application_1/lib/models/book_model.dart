@@ -22,6 +22,7 @@ class BookModel {
   final bool isRecommended;
   final bool isBookmarked;
   final bool isFree;
+  final bool isFreeDownload;
   final bool isHidden;
   final bool isDeleted;
   final String status; // 'pending', 'approved', 'rejected'
@@ -53,6 +54,7 @@ class BookModel {
     this.isRecommended = false,
     this.isBookmarked = false,
     this.isFree = true,
+    this.isFreeDownload = false,
     this.isHidden = false,
     this.isDeleted = false,
     this.status = 'approved',
@@ -171,6 +173,9 @@ class BookModel {
       isFree: map['is_free'] == 1 ||
           map['is_free'] == true ||
           map['isFree'] == true,
+      isFreeDownload: map['is_free_download'] == 1 ||
+          map['is_free_download'] == true ||
+          map['isFreeDownload'] == true,
       isHidden: map['is_hidden'] == 1 ||
           map['is_hidden'] == true ||
           map['isHidden'] == true,
@@ -214,6 +219,7 @@ class BookModel {
       'isRecommended': isRecommended,
       'isBookmarked': isBookmarked,
       'is_free': isFree,
+      'is_free_download': isFreeDownload ? 1 : 0,
       'is_hidden': isHidden,
       'is_deleted': isDeleted,
       'created_at': createdAt,

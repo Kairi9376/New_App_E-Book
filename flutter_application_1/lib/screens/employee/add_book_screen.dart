@@ -21,6 +21,7 @@ class _EmployeeAddBookScreenState extends State<EmployeeAddBookScreen> {
   // State Variables
   String _selectedLanguage = 'LA';
   bool _isFree = true;
+  bool _isFreeDownload = false;
 
   // File Upload States
   String? _pdfFileName;
@@ -249,6 +250,7 @@ class _EmployeeAddBookScreenState extends State<EmployeeAddBookScreen> {
       'file_pdf_url': _pdfFileUrl ?? _pdfFileName ?? 'assets/sample_book.pdf',
       'uploaded_by': userId,
       'is_free': _isFree,
+      'is_free_download': _isFreeDownload,
       'category_ids': categoryIdsList,
     });
 
@@ -605,19 +607,32 @@ class _EmployeeAddBookScreenState extends State<EmployeeAddBookScreen> {
 
                         // Section 4: Access Type
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                           decoration: BoxDecoration(
                             color: const Color(0xFFF8FAFC),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(color: const Color(0xFFE2E8F0)),
                           ),
-                          child: SwitchListTile(
-                            dense: true,
-                            title: const Text('ອ່ານຟຣີ (Free Access)', style: TextStyle(fontWeight: FontWeight.bold)),
-                            subtitle: const Text('ເປີດໃຫ້ສະມາຊິກທົ່ວໄປອ່ານໄດ້ໂດຍບໍ່ຕ້ອງสมัครสมาชิก'),
-                            value: _isFree,
-                            activeColor: Colors.green,
-                            onChanged: (val) => setState(() => _isFree = val),
+                          child: Column(
+                            children: [
+                              SwitchListTile(
+                                dense: true,
+                                title: const Text('ອ່ານຟຣີ (Free Access)', style: TextStyle(fontWeight: FontWeight.bold)),
+                                subtitle: const Text('ເປີດໃຫ້ສະມາຊິກທົ່ວໄປອ່ານໄດ້ໂດຍບໍ່ຕ້ອງສະໝັກສະມາຊິກ'),
+                                value: _isFree,
+                                activeColor: Colors.green,
+                                onChanged: (val) => setState(() => _isFree = val),
+                              ),
+                              const Divider(height: 1),
+                              SwitchListTile(
+                                dense: true,
+                                title: const Text('ດາວໂຫຼດຟຣີ (Free PDF Download)', style: TextStyle(fontWeight: FontWeight.bold)),
+                                subtitle: const Text('ເປີດໃຫ້ດາວໂຫຼດຟຣີທຸກຄົນ (ຫາກປິດໄວ້ เฉพาะสมาชิก VIP/Premiere ເທົ່ານັ້ນທີ່ດາວໂຫຼດໄດ້)'),
+                                value: _isFreeDownload,
+                                activeColor: const Color(0xFF2563EB),
+                                onChanged: (val) => setState(() => _isFreeDownload = val),
+                              ),
+                            ],
                           ),
                         ),
                         const SizedBox(height: 24),

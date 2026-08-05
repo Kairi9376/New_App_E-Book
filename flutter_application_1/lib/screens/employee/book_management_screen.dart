@@ -562,6 +562,39 @@ class _BookManagementScreenState extends State<BookManagementScreen> {
                         ),
                       ),
                       const SizedBox(width: 6),
+                      // Download Permission Badge
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: book.isFreeDownload
+                              ? const Color(0xFFEFF6FF)
+                              : const Color(0xFFF3E8FF),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              book.isFreeDownload ? Icons.download_done_rounded : Icons.lock_rounded,
+                              size: 11,
+                              color: book.isFreeDownload ? const Color(0xFF2563EB) : const Color(0xFF7C3AED),
+                            ),
+                            const SizedBox(width: 3),
+                            Text(
+                              book.isFreeDownload ? 'ໂຫຼດຟຣີ' : 'เฉพาะVIP',
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                color: book.isFreeDownload
+                                    ? const Color(0xFF2563EB)
+                                    : const Color(0xFF7C3AED),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 6),
                       // Approval Status Badge
                       Container(
                         padding: const EdgeInsets.symmetric(
