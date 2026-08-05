@@ -117,35 +117,44 @@ class _KycSubmissionScreenState extends State<KycSubmissionScreen> {
         );
 
         if (mounted) {
-          if (result['success'] == true && result['path'] != null) {
-            setState(() {
-              _idCardBytes = bytes;
-              _idCardImagePath = result['url'] ?? result['path'];
-            });
-          } else {
-            setState(() => _idCardBytes = bytes);
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('ອັບໂຫຼດລົ້ມເຫຼວ: ${result['message'] ?? 'Unknown error'}'), backgroundColor: Colors.redAccent),
-            );
-            return;
-          }
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('ອັບໂຫຼດຮູບເອກະສານສຳເລັດ!'),
-              backgroundColor: Color(0xFF10B981),
-              duration: Duration(seconds: 2),
-            ),
-          );
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!mounted) return;
+            if (result['success'] == true && result['path'] != null) {
+              setState(() {
+                _idCardBytes = bytes;
+                _idCardImagePath = result['url'] ?? result['path'];
+              });
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('ອັບໂຫຼດຮູບເອກະສານສຳເລັດ!'),
+                  backgroundColor: Color(0xFF10B981),
+                  duration: Duration(seconds: 2),
+                ),
+              );
+            } else {
+              setState(() => _idCardBytes = bytes);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('ອັບໂຫຼດລົ້ມເຫຼວ: ${result['message'] ?? 'Unknown error'}'), backgroundColor: Colors.redAccent),
+              );
+            }
+          });
         }
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('ເກີດຂໍ້ຜິດພາດໃນການອັບໂຫຼດ: $e'), backgroundColor: Colors.redAccent),
-        );
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('ເກີດຂໍ້ຜິດພາດໃນການອັບໂຫຼດ: $e'), backgroundColor: Colors.redAccent),
+          );
+        });
       }
     } finally {
-      if (mounted) setState(() => _isUploadingDoc = false);
+      if (mounted) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) setState(() => _isUploadingDoc = false);
+        });
+      }
     }
   }
 
@@ -164,35 +173,44 @@ class _KycSubmissionScreenState extends State<KycSubmissionScreen> {
         );
 
         if (mounted) {
-          if (result['success'] == true && result['path'] != null) {
-            setState(() {
-              _selfieBytes = bytes;
-              _selfieImagePath = result['url'] ?? result['path'];
-            });
-          } else {
-            setState(() => _selfieBytes = bytes);
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('ອັບໂຫຼດລົ້ມເຫຼວ: ${result['message'] ?? 'Unknown error'}'), backgroundColor: Colors.redAccent),
-            );
-            return;
-          }
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('ອັບໂຫຼດຮູບຖ່າຍເຊວຟີສຳເລັດ!'),
-              backgroundColor: Color(0xFF10B981),
-              duration: Duration(seconds: 2),
-            ),
-          );
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!mounted) return;
+            if (result['success'] == true && result['path'] != null) {
+              setState(() {
+                _selfieBytes = bytes;
+                _selfieImagePath = result['url'] ?? result['path'];
+              });
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('ອັບໂຫຼດຮູບເຊວຟີສຳເລັດ!'),
+                  backgroundColor: Color(0xFF10B981),
+                  duration: Duration(seconds: 2),
+                ),
+              );
+            } else {
+              setState(() => _selfieBytes = bytes);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('ອັບໂຫຼດລົ້ມເຫຼວ: ${result['message'] ?? 'Unknown error'}'), backgroundColor: Colors.redAccent),
+              );
+            }
+          });
         }
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('ເກີດຂໍ້ຜິດພາດໃນການອັບໂຫຼດ: $e'), backgroundColor: Colors.redAccent),
-        );
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('ເກີດຂໍ້ຜິດພາດໃນການອັບໂຫຼດ: $e'), backgroundColor: Colors.redAccent),
+          );
+        });
       }
     } finally {
-      if (mounted) setState(() => _isUploadingSelfie = false);
+      if (mounted) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) setState(() => _isUploadingSelfie = false);
+        });
+      }
     }
   }
 

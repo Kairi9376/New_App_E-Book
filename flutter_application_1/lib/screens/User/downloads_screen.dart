@@ -1,3 +1,4 @@
+import 'dart:ui' show PointerDeviceKind;
 import 'package:flutter/material.dart';
 import '../../theme/app_theme.dart';
 import '../../models/downloads_model.dart';
@@ -5,6 +6,16 @@ import '../../models/book_model.dart';
 import '../../services/api_service.dart';
 import '../../utils/image_helper.dart';
 import 'book_detail_screen.dart';
+
+class MouseTouchScrollBehavior extends MaterialScrollBehavior {
+  @override
+  Set<PointerDeviceKind> get dragDevices => {
+        PointerDeviceKind.touch,
+        PointerDeviceKind.mouse,
+        PointerDeviceKind.trackpad,
+        PointerDeviceKind.stylus,
+      };
+}
 
 class DownloadsScreen extends StatefulWidget {
   const DownloadsScreen({super.key});
@@ -191,33 +202,37 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
           ),
           const SizedBox(height: 12),
 
-          // Category Chips Bar
+          // Category Chips Bar (Scrollable for Desktop & Web & Mobile)
           SizedBox(
             height: 34,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              itemCount: _categories.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 8),
-              itemBuilder: (context, index) {
-                final isSelected = _selectedCategoryIndex == index;
-                return ChoiceChip(
-                  label: Text(_categories[index]),
-                  selected: isSelected,
-                  selectedColor: AppColors.primary,
-                  backgroundColor: const Color(0xFFEFF3F8),
-                  labelStyle: TextStyle(
-                    color: isSelected ? Colors.white : const Color(0xFF64748B),
-                    fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                    fontSize: 12,
-                  ),
-                  side: BorderSide.none,
-                  onSelected: (selected) {
-                    if (selected) {
-                      setState(() => _selectedCategoryIndex = index);
-                    }
-                  },
-                );
-              },
+            child: ScrollConfiguration(
+              behavior: MouseTouchScrollBehavior(),
+              child: ListView.separated(
+                physics: const BouncingScrollPhysics(),
+                scrollDirection: Axis.horizontal,
+                itemCount: _categories.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 8),
+                itemBuilder: (context, index) {
+                  final isSelected = _selectedCategoryIndex == index;
+                  return ChoiceChip(
+                    label: Text(_categories[index]),
+                    selected: isSelected,
+                    selectedColor: AppColors.primary,
+                    backgroundColor: const Color(0xFFEFF3F8),
+                    labelStyle: TextStyle(
+                      color: isSelected ? Colors.white : const Color(0xFF64748B),
+                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                      fontSize: 12,
+                    ),
+                    side: BorderSide.none,
+                    onSelected: (selected) {
+                      if (selected) {
+                        setState(() => _selectedCategoryIndex = index);
+                      }
+                    },
+                  );
+                },
+              ),
             ),
           ),
           const SizedBox(height: 16),

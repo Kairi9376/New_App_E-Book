@@ -167,11 +167,25 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   }
 
   Widget _buildPlaceholder(double? width, double? height) {
-    return Container(
+    return SizedBox(
       width: width,
       height: height,
-      color: const Color(0xFFE2E8F0),
-      child: const Icon(Icons.menu_book_rounded, color: AppColors.primary, size: 28),
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          Image.asset(
+            'assets/BookCover.jpg',
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => Container(color: const Color(0xFFE2E8F0)),
+          ),
+          Container(
+            color: Colors.black.withOpacity(0.25),
+          ),
+          const Center(
+            child: Icon(Icons.menu_book_rounded, color: Colors.white, size: 28),
+          ),
+        ],
+      ),
     );
   }
 
@@ -180,7 +194,11 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       context: context,
       builder: (ctx) => const AdminBookDialog(),
     ).then((val) {
-      if (val == true) _fetchAdminData();
+      if (val != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _fetchAdminData();
+        });
+      }
     });
   }
 
@@ -189,7 +207,11 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       context: context,
       builder: (ctx) => AdminBookDialog(book: book),
     ).then((val) {
-      if (val == true) _fetchAdminData();
+      if (val != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _fetchAdminData();
+        });
+      }
     });
   }
 
@@ -198,7 +220,11 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       context: context,
       builder: (ctx) => const AdminUserDialog(),
     ).then((val) {
-      if (val == true) _fetchAdminData();
+      if (val != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _fetchAdminData();
+        });
+      }
     });
   }
 
@@ -207,7 +233,11 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       context: context,
       builder: (ctx) => AdminUserDialog(user: user),
     ).then((val) {
-      if (val == true) _fetchAdminData();
+      if (val != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _fetchAdminData();
+        });
+      }
     });
   }
 
@@ -567,47 +597,55 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
-          : Column(
-              children: [
-                // Top Header Nav for Web/Tablet Mode
-                if (!isMobile)
-                  Container(
-                    color: Colors.white,
-                    child: SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      child: Row(
-                        children: [
-                          _buildNavTab(0, Icons.menu_book_rounded, 'ຄັງຫນັງສື', count: _adminBooks.length, badge: _pendingBooksCount),
-                          _buildNavTab(1, Icons.people_alt_rounded, 'ຜູ້ໃຊ້/ພະນັກງານ', count: _adminUsers.length),
-                          _buildNavTab(2, Icons.verified_user_rounded, 'KYC & Student', badge: _pendingKycCount),
-                          _buildNavTab(3, Icons.receipt_long_rounded, 'ສະລິບໂອນເງິນ', badge: _pendingSlipCount),
-                          _buildNavTab(4, Icons.settings_applications_rounded, 'ລະບົບ & ແພັກເກັດ'),
-                          _buildNavTab(5, Icons.analytics_rounded, 'ລາຍງານ & ສະຖິຕິ'),
-                        ],
-                      ),
-                    ),
-                  ),
-                if (!isMobile) const Divider(height: 1),
+          : LayoutBuilder(
+              builder: (context, constraints) {
+                return ConstrainedBox(
+                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                  child: Column(
+                    key: const ValueKey('main_scaffold_body_column'),
+                    children: [
+                      // Top Header Nav for Web/Tablet Mode
+                      if (!isMobile)
+                        Container(
+                          color: Colors.white,
+                          child: SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            child: Row(
+                              children: [
+                                _buildNavTab(0, Icons.menu_book_rounded, 'ຄັງຫນັງສື', count: _adminBooks.length, badge: _pendingBooksCount),
+                                _buildNavTab(1, Icons.people_alt_rounded, 'ຜູ້ໃຊ້/ພະນັກງານ', count: _adminUsers.length),
+                                _buildNavTab(2, Icons.verified_user_rounded, 'KYC & Student', badge: _pendingKycCount),
+                                _buildNavTab(3, Icons.receipt_long_rounded, 'ສະລິບໂອນເງິນ', badge: _pendingSlipCount),
+                                _buildNavTab(4, Icons.settings_applications_rounded, 'ລະບົບ & ແພັກເກັດ'),
+                                _buildNavTab(5, Icons.analytics_rounded, 'ລາຍງານ & ສະຖິຕິ'),
+                              ],
+                            ),
+                          ),
+                        ),
+                      if (!isMobile) const Divider(height: 1),
 
-                // Content Tab Body
-                Expanded(
-                  child: Padding(
-                    padding: EdgeInsets.all(isMobile ? 12 : 16),
-                    child: IndexedStack(
-                      index: _selectedTab,
-                      children: [
-                        _buildBookManagementTab(isMobile),
-                        _buildUserManagementTab(isMobile),
-                        _buildKycApprovalTab(isMobile),
-                        _buildSubscriptionApprovalTab(isMobile),
-                        _buildSystemMasterTab(isMobile),
-                        _buildReportsTab(isMobile),
-                      ],
-                    ),
+                      // Content Tab Body
+                      Expanded(
+                        child: Padding(
+                          padding: EdgeInsets.all(isMobile ? 12 : 16),
+                          child: IndexedStack(
+                            index: _selectedTab,
+                            children: [
+                              _buildBookManagementTab(isMobile),
+                              _buildUserManagementTab(isMobile),
+                              _buildKycApprovalTab(isMobile),
+                              _buildSubscriptionApprovalTab(isMobile),
+                              _buildSystemMasterTab(isMobile),
+                              _buildReportsTab(isMobile),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-              ],
+                );
+              },
             ),
       floatingActionButton: _buildFab(),
       bottomNavigationBar: isMobile

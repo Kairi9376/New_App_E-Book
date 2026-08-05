@@ -3,7 +3,6 @@ import 'dart:typed_data';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import '../services/api_config.dart';
-import '../theme/app_theme.dart';
 
 class ImageHelper {
   /// Normalizes image paths to full valid URLs
@@ -78,11 +77,25 @@ class ImageHelper {
   }
 
   static Widget _buildDefaultPlaceholder(double? width, double? height) {
-    return Container(
+    return SizedBox(
       width: width,
       height: height,
-      color: Colors.blueGrey.shade100,
-      child: const Icon(Icons.book, color: AppColors.primary, size: 36),
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          Image.asset(
+            'assets/BookCover.jpg',
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => Container(color: Colors.blueGrey.shade200),
+          ),
+          Container(
+            color: Colors.black.withOpacity(0.25),
+          ),
+          const Center(
+            child: Icon(Icons.book_rounded, color: Colors.white, size: 36),
+          ),
+        ],
+      ),
     );
   }
 

@@ -119,10 +119,21 @@ class _EmployeeBookDetailScreenState extends State<EmployeeBookDetailScreen> {
   }
 
   Widget _buildPlaceholder() {
-    return Container(
-      color: Colors.grey.shade200,
-      child: const Icon(Icons.menu_book_rounded,
-          color: AppColors.primary, size: 48),
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        Image.asset(
+          'assets/BookCover.jpg',
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => Container(color: Colors.grey.shade200),
+        ),
+        Container(
+          color: Colors.black.withOpacity(0.25),
+        ),
+        const Center(
+          child: Icon(Icons.menu_book_rounded, color: Colors.white, size: 48),
+        ),
+      ],
     );
   }
 

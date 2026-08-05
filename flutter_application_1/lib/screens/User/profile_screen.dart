@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../theme/app_theme.dart';
 import '../../models/kyc_model.dart';
 import '../../services/api_service.dart';
@@ -38,7 +39,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   void initState() {
     super.initState();
+    _loadSettings();
     _fetchProfile();
+  }
+
+  Future<void> _loadSettings() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (mounted) {
+      setState(() {
+        _pushNotificationsEnabled = prefs.getBool('push_notifications') ?? true;
+        _soundEnabled = prefs.getBool('notification_sound') ?? true;
+        _darkModeEnabled = prefs.getBool('dark_mode') ?? false;
+      });
+    }
   }
 
   Future<void> _fetchProfile() async {
@@ -142,24 +155,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
           _userProfile['profile_image_url'] = uploadedPath;
 
           if (mounted) {
-            setState(() {
-              _avatarBytes = bytes;
-              _avatarPath = uploadedPath;
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (!mounted) return;
+              setState(() {
+                _avatarBytes = bytes;
+                _avatarPath = uploadedPath;
+              });
+
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('ອັບເດດຮູບໂປຣໄຟລ໌ສຳເລັດ!'),
+                  backgroundColor: Color(0xFF10B981),
+                ),
+              );
+
+              NotificationService.addNotification(
+                context,
+                title: '👤 ອັບເດດຮູບໂປຣໄຟລ໌ສຳເລັດ',
+                message: 'ຮູບໂປຣໄຟລ໌ໃໝ່ຂອງທ່ານຖືກບັນທຶກເຂົ້າสู่ระบบແລ້ວ',
+                type: NotificationType.system,
+              );
             });
-
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('ອັບເດດຮູບໂປຣໄຟລ໌ສຳເລັດ!'),
-                backgroundColor: Color(0xFF10B981),
-              ),
-            );
-
-            NotificationService.addNotification(
-              context,
-              title: '👤 ອັບເດດຮູບໂປຣໄຟລ໌ສຳເລັດ',
-              message: 'ຮູບໂປຣໄຟລ໌ໃໝ່ຂອງທ່ານຖືກບັນທຶກເຂົ້າสู่ระบบແລ້ວ',
-              type: NotificationType.system,
-            );
           }
         } else {
           if (mounted) {
@@ -171,12 +187,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('ເກີດຂໍ້ຜິດພາດในระบบ: $e'), backgroundColor: Colors.redAccent),
-        );
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('ເກີດຂໍ້ຜິດພາດໃນການອັບໂຫຼດ: $e'), backgroundColor: Colors.redAccent),
+          );
+        });
       }
     } finally {
-      if (mounted) setState(() => _isUploadingAvatar = false);
+      if (mounted) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) setState(() => _isUploadingAvatar = false);
+        });
+      }
     }
   }
 
@@ -203,9 +226,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     subtitle: const Text('ຮັບການແຈ້ງເຕືອນປຶ້ມໃໝ່ ແລະ ສະຖານະແພັກເກັດ', style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
                     value: _pushNotificationsEnabled,
                     activeColor: AppColors.primary,
-                    onChanged: (val) {
+                    onChanged: (val) async {
                       setDialogState(() => _pushNotificationsEnabled = val);
                       setState(() => _pushNotificationsEnabled = val);
+                      final prefs = await SharedPreferences.getInstance();
+                      await prefs.setBool('push_notifications', val);
                     },
                   ),
                   const Divider(height: 1),
@@ -213,9 +238,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     title: const Text('ສຽງແຈ້ງເຕືອນ (Notification Sound)', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
                     value: _soundEnabled,
                     activeColor: AppColors.primary,
-                    onChanged: (val) {
+                    onChanged: (val) async {
                       setDialogState(() => _soundEnabled = val);
                       setState(() => _soundEnabled = val);
+                      final prefs = await SharedPreferences.getInstance();
+                      await prefs.setBool('notification_sound', val);
                     },
                   ),
                   const Divider(height: 1),
@@ -224,9 +251,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     subtitle: const Text('ປ່ຽນธีມແອັບເປັນໂໝດກາງຄືນ', style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
                     value: _darkModeEnabled,
                     activeColor: AppColors.primary,
-                    onChanged: (val) {
+                    onChanged: (val) async {
                       setDialogState(() => _darkModeEnabled = val);
                       setState(() => _darkModeEnabled = val);
+                      final prefs = await SharedPreferences.getInstance();
+                      await prefs.setBool('dark_mode', val);
                     },
                   ),
                   const Divider(height: 1),
@@ -234,14 +263,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     leading: const Icon(Icons.cleaning_services_rounded, color: Colors.amber),
                     title: const Text('ລ້າງໄຟລ໌ແຄຊ (Clear PDF Cache)', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
                     subtitle: const Text('ລົບໄຟລ໌ PDF ຊົ່ວຄາວ (ขนาดประมาณ 24.5 MB)', style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
-                    onTap: () {
-                      Navigator.pop(ctx);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('ລ້າງໄຟລ໌ແຄຊ PDF ອອບໄລນ໌ສຳເລັດແລ້ວ!'),
-                          backgroundColor: Color(0xFF10B981),
-                        ),
-                      );
+                    onTap: () async {
+                      final prefs = await SharedPreferences.getInstance();
+                      await prefs.remove('cached_pdfs');
+                      if (ctx.mounted) Navigator.pop(ctx);
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('ລ້າງໄຟລ໌ແຄຊ PDF ອອບໄລນ໌ 24.5 MB ສຳເລັດແລ້ວ!'),
+                            backgroundColor: Color(0xFF10B981),
+                          ),
+                        );
+                      }
                     },
                   ),
                 ],
@@ -263,85 +296,133 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final currentPassCtrl = TextEditingController();
     final newPassCtrl = TextEditingController();
     final confirmPassCtrl = TextEditingController();
+    bool isSaving = false;
 
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Row(
-          children: const [
-            Icon(Icons.shield_rounded, color: Color(0xFF059669), size: 24),
-            SizedBox(width: 10),
-            Text('ຄວາມປອດໄພ (Security)', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
-          ],
-        ),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: currentPassCtrl,
-                obscureText: true,
-                decoration: InputDecoration(
-                  labelText: 'ລະຫັດຜ່ານປັດຈຸບັນ',
-                  prefixIcon: const Icon(Icons.lock_outline_rounded, size: 20),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                ),
+      builder: (ctx) => StatefulBuilder(
+        builder: (dialogContext, setDialogState) {
+          return AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: Row(
+              children: const [
+                Icon(Icons.shield_rounded, color: Color(0xFF059669), size: 24),
+                SizedBox(width: 10),
+                Text('ຄວາມປອດໄພ (Security)', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+              ],
+            ),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: currentPassCtrl,
+                    obscureText: true,
+                    decoration: InputDecoration(
+                      labelText: 'ລະຫັດຜ່ານປັດຈຸບັນ',
+                      prefixIcon: const Icon(Icons.lock_outline_rounded, size: 20),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: newPassCtrl,
+                    obscureText: true,
+                    decoration: InputDecoration(
+                      labelText: 'ລະຫັດຜ່ານໃໝ່',
+                      prefixIcon: const Icon(Icons.lock_reset_rounded, size: 20),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: confirmPassCtrl,
+                    obscureText: true,
+                    decoration: InputDecoration(
+                      labelText: 'ຢືນຢັນລະຫັດຜ່ານໃໝ່',
+                      prefixIcon: const Icon(Icons.lock_clock_outlined, size: 20),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: newPassCtrl,
-                obscureText: true,
-                decoration: InputDecoration(
-                  labelText: 'ລະຫັດຜ່ານໃໝ່',
-                  prefixIcon: const Icon(Icons.lock_reset_rounded, size: 20),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: isSaving ? null : () => Navigator.pop(ctx),
+                child: const Text('ຍົກເລີກ'),
               ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: confirmPassCtrl,
-                obscureText: true,
-                decoration: InputDecoration(
-                  labelText: 'ຢືນຢັນລະຫັດຜ່ານໃໝ່',
-                  prefixIcon: const Icon(Icons.lock_clock_outlined, size: 20),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                ),
+              ElevatedButton(
+                onPressed: isSaving
+                    ? null
+                    : () async {
+                        final newPass = newPassCtrl.text.trim();
+                        final confirmPass = confirmPassCtrl.text.trim();
+
+                        if (newPass.length < 6) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('ລະຫັດຜ່ານໃໝ່ຕ້ອງມີຢ່າງນ້ອຍ 6 ຕົວອັກສອນ'),
+                              backgroundColor: Colors.redAccent,
+                            ),
+                          );
+                          return;
+                        }
+
+                        if (newPass != confirmPass) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('ລະຫັດຜ່ານໃໝ່ບໍ່ตรงกัน'),
+                              backgroundColor: Colors.redAccent,
+                            ),
+                          );
+                          return;
+                        }
+
+                        setDialogState(() => isSaving = true);
+                        final user = _userProfile.isNotEmpty ? _userProfile : (ApiService.currentUser ?? {});
+                        final rawUserId = user['user_id'] ?? user['id'];
+                        final int userId = rawUserId != null ? (int.tryParse(rawUserId.toString()) ?? 3) : 3;
+
+                        final success = await ApiService.updateUser(userId, {'password': newPass});
+
+                        if (context.mounted) {
+                          if (success) {
+                            Navigator.pop(ctx);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('ປ່ຽນລະຫັດຜ່ານໃນระบบสำเร็จแล้ว!'),
+                                backgroundColor: Color(0xFF10B981),
+                              ),
+                            );
+                            NotificationService.addNotification(
+                              context,
+                              title: '🔒 ປ່ຽນລະຫັດຜ່ານສຳເລັດ',
+                              message: 'ລະຫັດຜ່ານບັນຊີຂອງທ່ານໄດ້ຮັບການອັບເດດຮຽບຮ້ອຍແລ້ວ',
+                              type: NotificationType.system,
+                            );
+                          } else {
+                            setDialogState(() => isSaving = false);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('ບໍ່ສາມາດອັບເດດລະຫັດຜ່ານໄດ້'),
+                                backgroundColor: Colors.redAccent,
+                              ),
+                            );
+                          }
+                        }
+                      },
+                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF059669)),
+                child: isSaving
+                    ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                    : const Text('ບັນທຶກລະຫັດຜ່ານ'),
               ),
             ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('ຍົກເລີກ'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              if (newPassCtrl.text.trim().isEmpty || newPassCtrl.text != confirmPassCtrl.text) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('ລະຫັດຜ່ານໃໝ່ບໍ່ตรงกัน หรือว่างเปล่า'),
-                    backgroundColor: Colors.redAccent,
-                  ),
-                );
-                return;
-              }
-              Navigator.pop(ctx);
-              NotificationService.addNotification(
-                context,
-                title: '🔒 ປ່ຽນລະຫັດຜ່ານສຳເລັດ',
-                message: 'ລະຫັດຜ່ານບັນຊີຂອງທ່ານໄດ້ຮັບການອັບເດດຮຽບຮ້ອຍແລ້ວ',
-                type: NotificationType.system,
-              );
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF059669)),
-            child: const Text('ບັນທຶກລະຫັດຜ່ານ'),
-          ),
-        ],
+          );
+        },
       ),
     );
   }
@@ -357,6 +438,236 @@ class _ProfileScreenState extends State<ProfileScreen> {
         SizedBox(height: 8),
         Text('ຕິດຕໍ່ທີມງານ: support@ebook.lao | TEL: +856 20 55512345'),
       ],
+    );
+  }
+
+  void _openEditProfileModal() {
+    final user = _userProfile.isNotEmpty ? _userProfile : (ApiService.currentUser ?? {});
+    final firstNameCtrl = TextEditingController(text: user['first_name'] ?? '');
+    final lastNameCtrl = TextEditingController(text: user['last_name'] ?? '');
+    final phoneCtrl = TextEditingController(text: user['phone_number'] ?? '');
+    String selectedGender = (user['gender'] ?? 'male').toString().toLowerCase();
+
+    DateTime? selectedBirthDate;
+    if (user['birth_date'] != null && user['birth_date'].toString().isNotEmpty) {
+      try {
+        selectedBirthDate = DateTime.parse(user['birth_date'].toString());
+      } catch (_) {}
+    }
+
+    bool isSaving = false;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (dialogContext, setDialogState) {
+          return AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: Row(
+              children: const [
+                Icon(Icons.manage_accounts_rounded, color: AppColors.primary, size: 24),
+                SizedBox(width: 10),
+                Text('ແກ້ໄຂຂໍ້ມູນສ່ວນຕົວ (Edit Profile)', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+              ],
+            ),
+            content: SingleChildScrollView(
+              child: Container(
+                constraints: const BoxConstraints(maxWidth: 420),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: firstNameCtrl,
+                            decoration: InputDecoration(
+                              labelText: 'ຊື່ (First Name)',
+                              prefixIcon: const Icon(Icons.person_outline_rounded, size: 20),
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: TextField(
+                            controller: lastNameCtrl,
+                            decoration: InputDecoration(
+                              labelText: 'ນາມສະກຸນ (Last Name)',
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+
+                    TextField(
+                      controller: phoneCtrl,
+                      keyboardType: TextInputType.phone,
+                      decoration: InputDecoration(
+                        labelText: 'ເບີໂທລະສັບ (Phone Number)',
+                        prefixIcon: const Icon(Icons.phone_outlined, size: 20),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+
+                    const Text('ເພດ (Gender)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textSecondary)),
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: ChoiceChip(
+                            label: const Center(child: Text('ชาย (Male)', style: TextStyle(fontSize: 12))),
+                            selected: selectedGender == 'male',
+                            onSelected: (sel) {
+                              if (sel) setDialogState(() => selectedGender = 'male');
+                            },
+                            selectedColor: AppColors.primary.withOpacity(0.2),
+                            side: BorderSide(color: selectedGender == 'male' ? AppColors.primary : Colors.grey.shade300),
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: ChoiceChip(
+                            label: const Center(child: Text('หญิง (Female)', style: TextStyle(fontSize: 12))),
+                            selected: selectedGender == 'female',
+                            onSelected: (sel) {
+                              if (sel) setDialogState(() => selectedGender = 'female');
+                            },
+                            selectedColor: AppColors.primary.withOpacity(0.2),
+                            side: BorderSide(color: selectedGender == 'female' ? AppColors.primary : Colors.grey.shade300),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+
+                    InkWell(
+                      onTap: () async {
+                        final pickedDate = await showDatePicker(
+                          context: context,
+                          initialDate: selectedBirthDate ?? DateTime(2000, 1, 1),
+                          firstDate: DateTime(1940),
+                          lastDate: DateTime.now(),
+                        );
+                        if (pickedDate != null) {
+                          setDialogState(() => selectedBirthDate = pickedDate);
+                        }
+                      },
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.grey.shade400),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.cake_outlined, color: AppColors.primary, size: 20),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text('ວັນເດືອນປີເກີດ (Birth Date)', style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+                                  Text(
+                                    selectedBirthDate != null
+                                        ? '${selectedBirthDate!.day.toString().padLeft(2, '0')}/${selectedBirthDate!.month.toString().padLeft(2, '0')}/${selectedBirthDate!.year}'
+                                        : 'ກະລຸນາເລືອກວັນເກີດ',
+                                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const Icon(Icons.calendar_month_rounded, color: AppColors.primary),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: isSaving ? null : () => Navigator.pop(ctx),
+                child: const Text('ຍົກເລີກ'),
+              ),
+              ElevatedButton(
+                onPressed: isSaving
+                    ? null
+                    : () async {
+                        setDialogState(() => isSaving = true);
+                        final rawUserId = user['user_id'] ?? user['id'];
+                        final int userId = rawUserId != null ? (int.tryParse(rawUserId.toString()) ?? 3) : 3;
+
+                        final updatePayload = {
+                          'first_name': firstNameCtrl.text.trim(),
+                          'last_name': lastNameCtrl.text.trim(),
+                          'phone_number': phoneCtrl.text.trim(),
+                          'gender': selectedGender,
+                          if (selectedBirthDate != null)
+                            'birth_date': selectedBirthDate!.toIso8601String().substring(0, 10),
+                        };
+
+                        final success = await ApiService.updateUser(userId, updatePayload);
+
+                        if (context.mounted) {
+                          if (success) {
+                            setState(() {
+                              _userProfile['first_name'] = firstNameCtrl.text.trim();
+                              _userProfile['last_name'] = lastNameCtrl.text.trim();
+                              _userProfile['phone_number'] = phoneCtrl.text.trim();
+                              _userProfile['gender'] = selectedGender;
+                              if (selectedBirthDate != null) {
+                                _userProfile['birth_date'] = selectedBirthDate!.toIso8601String().substring(0, 10);
+                              }
+                              if (ApiService.currentUser != null) {
+                                ApiService.currentUser!.addAll(updatePayload);
+                              }
+                            });
+
+                            Navigator.pop(ctx);
+
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('ບັນທຶກຂໍ້ມູນສ່ວນຕົວສຳເລັດ!'),
+                                backgroundColor: Color(0xFF10B981),
+                              ),
+                            );
+
+                            NotificationService.addNotification(
+                              context,
+                              title: '👤 ອັບເດດຂໍ້ມູນສ່ວນຕົວສຳເລັດ',
+                              message: 'ຂໍ້ມູນຂອງທ່ານได้รับการບັນທຶກຮຽບຮ້ອຍແລ້ວ',
+                              type: NotificationType.system,
+                            );
+                          } else {
+                            setDialogState(() => isSaving = false);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('ບໍ່ສາມາດອັບເດດຂໍ້ມູນได้'),
+                                backgroundColor: Colors.redAccent,
+                              ),
+                            );
+                          }
+                        }
+                      },
+                style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
+                child: isSaving
+                    ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                    : const Text('ບັນທຶກ (Save)'),
+              ),
+            ],
+          );
+        },
+      ),
     );
   }
 
@@ -520,6 +831,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ],
               ),
             ),
+            const SizedBox(height: 10),
+
+            // Quick Edit Profile Button
+            ElevatedButton.icon(
+              onPressed: _openEditProfileModal,
+              icon: const Icon(Icons.edit_note_rounded, size: 18),
+              label: const Text('ແກ້ໄຂຂໍ້ມູນສ່ວນຕົວ (Edit Profile)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary.withOpacity(0.1),
+                foregroundColor: AppColors.primary,
+                elevation: 0,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              ),
+            ),
             const SizedBox(height: 16),
 
             // Dynamic Formatted Dates Card
@@ -580,6 +906,115 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 );
               },
             ),
+            if (!isPremiere) ...[
+              const SizedBox(height: 16),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF1E1B4B), Color(0xFF312E81), Color(0xFF4338CA)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF4338CA).withOpacity(0.3),
+                      blurRadius: 12,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: Colors.amber.shade400.withOpacity(0.2),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.workspace_premium_rounded, color: Colors.amber, size: 28),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: const [
+                              Text(
+                                'ອັບເກຣດເປັນ Premiere Member 👑',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              SizedBox(height: 2),
+                              Text(
+                                'ອ່ານ ແລະ ໂຫຼດ e-Book PDF ได้แบบไม่จำกัด',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Color(0xFFC7D2FE),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
+                    const Divider(color: Color(0xFF4C51BF), height: 1),
+                    const SizedBox(height: 14),
+                    Row(
+                      children: const [
+                        Icon(Icons.check_circle_outline_rounded, color: Colors.amber, size: 16),
+                        SizedBox(width: 6),
+                        Text('ເຂົ້າເຖິງຄลังປຶ້ມ VIP ຫຼາຍກວ່າ 1,000+ ເຫຼັ້ມ', style: TextStyle(fontSize: 12, color: Colors.white)),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Row(
+                      children: const [
+                        Icon(Icons.check_circle_outline_rounded, color: Colors.amber, size: 16),
+                        SizedBox(width: 6),
+                        Text('ດາວໂຫຼດອ່ານອອບໄລນ໌ ໂດຍບໍ່ມີໂຄສະນາ', style: TextStyle(fontSize: 12, color: Colors.white)),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 44,
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => MembershipPackageScreen(
+                                kycStatus: _userKyc?.status ?? KycStatus.notSubmitted,
+                                userKyc: _userKyc,
+                              ),
+                            ),
+                          );
+                        },
+                        icon: const Icon(Icons.flash_on_rounded, color: Colors.black87, size: 18),
+                        label: const Text(
+                          'ສະໝັກແພັກເກັດ VIP ຕອນນີ້',
+                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black87),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.amber,
+                          elevation: 2,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
             const SizedBox(height: 24),
 
             // Settings Header
@@ -612,6 +1047,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               child: Column(
                 children: [
+                  _buildMenuItem(
+                    icon: Icons.person_outline_rounded,
+                    title: 'ແກ້ໄຂຂໍ້ມູນສ່ວນຕົວ (Edit Profile)',
+                    subtitle: 'ຊື່-ນາມສະກຸນ, ເບີໂທ, ເພດ, ວັນເດືອນປີເກີດ',
+                    onTap: _openEditProfileModal,
+                  ),
+                  const Divider(height: 1, thickness: 1, color: Color(0xFFF1F5F9)),
                   _buildMenuItem(
                     icon: Icons.verified_user_rounded,
                     title: 'ຢືນຢັນຕົວຕົນ (KYC Verification)',

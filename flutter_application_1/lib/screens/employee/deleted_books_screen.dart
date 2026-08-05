@@ -104,12 +104,25 @@ class _DeletedBooksScreenState extends State<DeletedBooksScreen> {
   }
 
   Widget _buildPlaceholder(double? width, double? height) {
-    return Container(
+    return SizedBox(
       width: width,
       height: height,
-      color: const Color(0xFFE2E8F0),
-      child: const Icon(Icons.restore_from_trash_rounded,
-          color: AppColors.primary, size: 28),
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          Image.asset(
+            'assets/BookCover.jpg',
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => Container(color: const Color(0xFFE2E8F0)),
+          ),
+          Container(
+            color: Colors.black.withOpacity(0.25),
+          ),
+          const Center(
+            child: Icon(Icons.restore_from_trash_rounded, color: Colors.white, size: 28),
+          ),
+        ],
+      ),
     );
   }
 

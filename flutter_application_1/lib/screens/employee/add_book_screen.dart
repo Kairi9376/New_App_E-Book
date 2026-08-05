@@ -116,26 +116,29 @@ class _EmployeeAddBookScreenState extends State<EmployeeAddBookScreen> {
 
     if (mounted) {
       final sizeMB = (fileInfo.size / (1024 * 1024)).toStringAsFixed(1);
-      setState(() {
-        _pdfUploadProgress = 1.0;
-        _isUploadingPdf = false;
-        _pdfFileUrl = res['url'] ?? res['path'] ?? 'uploads/pdfs/${fileInfo.name}';
-        _pdfFileSizeMB = double.tryParse(sizeMB) ?? 14.8;
-      });
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        setState(() {
+          _pdfUploadProgress = 1.0;
+          _isUploadingPdf = false;
+          _pdfFileUrl = res['url'] ?? res['path'] ?? 'uploads/pdfs/${fileInfo.name}';
+          _pdfFileSizeMB = double.tryParse(sizeMB) ?? 14.8;
+        });
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              const Icon(Icons.picture_as_pdf_rounded, color: Colors.white, size: 20),
-              const SizedBox(width: 8),
-              Expanded(child: Text('ແນບໄຟລ໌ PDF ສຳເລັດ: ${fileInfo.name} (${sizeMB}MB, ${fileInfo.pageCount} ໜ້າ)')),
-            ],
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.picture_as_pdf_rounded, color: Colors.white, size: 20),
+                const SizedBox(width: 8),
+                Expanded(child: Text('ແນບໄຟລ໌ PDF ສຳເລັດ: ${fileInfo.name} (${sizeMB}MB, ${fileInfo.pageCount} ໜ້າ)')),
+              ],
+            ),
+            backgroundColor: const Color(0xFF10B981),
+            behavior: SnackBarBehavior.floating,
           ),
-          backgroundColor: const Color(0xFF10B981),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+        );
+      });
     }
   }
 
@@ -153,18 +156,21 @@ class _EmployeeAddBookScreenState extends State<EmployeeAddBookScreen> {
     );
 
     if (mounted) {
-      setState(() {
-        _isUploadingCover = false;
-        _coverImagePath = res['url'] ?? res['path'] ?? 'uploads/covers/${fileInfo.name}';
-      });
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        setState(() {
+          _isUploadingCover = false;
+          _coverImagePath = res['url'] ?? res['path'] ?? 'uploads/covers/${fileInfo.name}';
+        });
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('ອັບໂຫຼດຮູບປົກ "${fileInfo.name}" ສຳເລັດ'),
-          backgroundColor: const Color(0xFF10B981),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('ອັບໂຫຼດຮູບປົກ "${fileInfo.name}" ສຳເລັດ'),
+            backgroundColor: const Color(0xFF10B981),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      });
     }
   }
 
@@ -277,14 +283,20 @@ class _EmployeeAddBookScreenState extends State<EmployeeAddBookScreen> {
 
   Widget _buildCoverPreview() {
     if (_coverImagePath == null || _coverImagePath!.isEmpty) {
-      return Container(
-        width: 70,
-        height: 95,
-        decoration: BoxDecoration(
-          color: Colors.grey.shade200,
-          borderRadius: BorderRadius.circular(8),
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(8),
+        child: SizedBox(
+          width: 70,
+          height: 95,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              Image.asset('assets/BookCover.jpg', fit: BoxFit.cover),
+              Container(color: Colors.black.withOpacity(0.25)),
+              const Center(child: Icon(Icons.image_outlined, color: Colors.white)),
+            ],
+          ),
         ),
-        child: const Icon(Icons.image_outlined, color: Colors.grey),
       );
     }
 
@@ -337,27 +349,33 @@ class _EmployeeAddBookScreenState extends State<EmployeeAddBookScreen> {
       ),
       body: _isLoadingData
           ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
-              child: Center(
-                child: Container(
-                  constraints: const BoxConstraints(maxWidth: 680),
-                  padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
-                        blurRadius: 15,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+          : LayoutBuilder(
+              builder: (context, constraints) {
+                return SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.all(20),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(minHeight: constraints.maxHeight - 40),
+                    child: Center(
+                      child: Container(
+                        constraints: const BoxConstraints(maxWidth: 680),
+                        padding: const EdgeInsets.all(24),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.05),
+                              blurRadius: 15,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Form(
+                          key: _formKey,
+                          child: Column(
+                            key: const ValueKey('main_scaffold_body_column'),
+                            crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // Section 1: Basic Info
                         Row(
@@ -657,6 +675,9 @@ class _EmployeeAddBookScreenState extends State<EmployeeAddBookScreen> {
                 ),
               ),
             ),
+          );
+        },
+      ),
     );
   }
 }

@@ -1,5 +1,6 @@
 const { pool } = require('../config/db');
 const { deleteOldFile, isSameFilePath } = require('../utils/fileUtils');
+const bcrypt = require('bcryptjs');
 
 // GET /api/users
 exports.getAllUsers = async (req, res) => {
@@ -30,11 +31,11 @@ exports.getUserById = async (req, res) => {
   }
 };
 
-// PUT /api/users/:id (Update User Profile & Avatar)
+// PUT /api/users/:id (Update User Profile & Avatar & Password)
 exports.updateUserProfile = async (req, res) => {
   try {
     const { id } = req.params;
-    const { first_name, last_name, phone_number, birth_date, gender, profile_image_url } = req.body;
+    const { first_name, last_name, phone_number, birth_date, gender, profile_image_url, password } = req.body;
 
     const [existingRows] = await pool.query('SELECT profile_image_url FROM users WHERE user_id = ?', [id]);
     if (existingRows.length === 0) {
@@ -48,6 +49,12 @@ exports.updateUserProfile = async (req, res) => {
       deleteOldFile(currentProfileImage);
     }
 
+    let password_hash = null;
+    if (password && password.trim().length > 0) {
+      const salt = await bcrypt.genSalt(10);
+      password_hash = await bcrypt.hash(password.trim(), salt);
+    }
+
     await pool.query(
       `UPDATE users 
        SET first_name = COALESCE(?, first_name),
@@ -55,9 +62,10 @@ exports.updateUserProfile = async (req, res) => {
            phone_number = COALESCE(?, phone_number),
            birth_date = COALESCE(?, birth_date),
            gender = COALESCE(?, gender),
-           profile_image_url = COALESCE(?, profile_image_url)
+           profile_image_url = COALESCE(?, profile_image_url),
+           password_hash = COALESCE(?, password_hash)
        WHERE user_id = ?`,
-      [first_name || null, last_name || null, phone_number || null, birth_date || null, gender || null, profile_image_url || null, id]
+      [first_name || null, last_name || null, phone_number || null, birth_date || null, gender || null, profile_image_url || null, password_hash || null, id]
     );
 
     res.json({ success: true, message: 'User profile updated successfully' });

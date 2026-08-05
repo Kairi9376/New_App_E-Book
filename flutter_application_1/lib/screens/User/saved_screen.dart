@@ -1,3 +1,4 @@
+import 'dart:ui' show PointerDeviceKind;
 import 'package:flutter/material.dart';
 import '../../theme/app_theme.dart';
 import '../../models/saved_model.dart';
@@ -5,6 +6,16 @@ import '../../models/book_model.dart';
 import '../../services/api_service.dart';
 import '../../utils/image_helper.dart';
 import 'book_detail_screen.dart';
+
+class MouseTouchScrollBehavior extends MaterialScrollBehavior {
+  @override
+  Set<PointerDeviceKind> get dragDevices => {
+        PointerDeviceKind.touch,
+        PointerDeviceKind.mouse,
+        PointerDeviceKind.trackpad,
+        PointerDeviceKind.stylus,
+      };
+}
 
 class SavedScreen extends StatefulWidget {
   const SavedScreen({super.key});
@@ -184,35 +195,39 @@ class _SavedScreenState extends State<SavedScreen> {
           ),
           const SizedBox(height: 12),
 
-          // Category Chips Bar
+          // Category Chips Bar (Scrollable for Desktop & Web & Mobile)
           SizedBox(
             height: 34,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              itemCount: categoriesList.length,
-              itemBuilder: (context, idx) {
-                final isSelected = _selectedCategoryIndex == idx;
-                return Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: ChoiceChip(
-                    selected: isSelected,
-                    label: Text(categoriesList[idx]),
-                    labelStyle: TextStyle(
-                      fontSize: 12,
-                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                      color: isSelected ? Colors.white : AppColors.textPrimary,
+            child: ScrollConfiguration(
+              behavior: MouseTouchScrollBehavior(),
+              child: ListView.builder(
+                physics: const BouncingScrollPhysics(),
+                scrollDirection: Axis.horizontal,
+                itemCount: categoriesList.length,
+                itemBuilder: (context, idx) {
+                  final isSelected = _selectedCategoryIndex == idx;
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: ChoiceChip(
+                      selected: isSelected,
+                      label: Text(categoriesList[idx]),
+                      labelStyle: TextStyle(
+                        fontSize: 12,
+                        fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                        color: isSelected ? Colors.white : AppColors.textPrimary,
+                      ),
+                      selectedColor: AppColors.primary,
+                      backgroundColor: const Color(0xFFF1F5F9),
+                      side: BorderSide.none,
+                      onSelected: (selected) {
+                        if (selected) {
+                          setState(() => _selectedCategoryIndex = idx);
+                        }
+                      },
                     ),
-                    selectedColor: AppColors.primary,
-                    backgroundColor: const Color(0xFFF1F5F9),
-                    side: BorderSide.none,
-                    onSelected: (selected) {
-                      if (selected) {
-                        setState(() => _selectedCategoryIndex = idx);
-                      }
-                    },
-                  ),
-                );
-              },
+                  );
+                },
+              ),
             ),
           ),
           const SizedBox(height: 14),

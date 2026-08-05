@@ -159,11 +159,25 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
   }
 
   Widget _buildPlaceholder(double? width, double? height) {
-    return Container(
+    return SizedBox(
       width: width,
       height: height,
-      color: Colors.amber.shade100,
-      child: const Icon(Icons.book, color: AppColors.primary, size: 48),
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          Image.asset(
+            'assets/BookCover.jpg',
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => Container(color: Colors.amber.shade100),
+          ),
+          Container(
+            color: Colors.black.withOpacity(0.25),
+          ),
+          const Center(
+            child: Icon(Icons.book_rounded, color: Colors.white, size: 48),
+          ),
+        ],
+      ),
     );
   }
 
