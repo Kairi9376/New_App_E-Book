@@ -154,24 +154,30 @@ class _AdminBookDialogState extends State<AdminBookDialog> {
 
     if (mounted) {
       final sizeMB = (fileInfo.size / (1024 * 1024)).toStringAsFixed(1);
-      setState(() {
-        _isUploadingPdf = false;
-        _pdfUploadProgress = 1.0;
-        if (res['success'] == true) {
-          _pdfUrlController.text = res['url'] ?? res['path'] ?? 'uploads/pdfs/${fileInfo.name}';
-        } else {
-          _pdfUrlController.text = 'uploads/pdfs/${fileInfo.name}';
-        }
+      Future.microtask(() {
+        if (!mounted) return;
+        setState(() {
+          _isUploadingPdf = false;
+          _pdfUploadProgress = 1.0;
+          if (res['success'] == true) {
+            _pdfUrlController.text = res['url'] ?? res['path'] ?? 'uploads/pdfs/${fileInfo.name}';
+          } else {
+            _pdfUrlController.text = 'uploads/pdfs/${fileInfo.name}';
+          }
+        });
       });
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(res['success'] == true
-              ? 'ອັບໂຫຼດ PDF "${fileInfo.name}" (${sizeMB}MB, ${fileInfo.pageCount} ໜ້າ) ສຳເລັດ'
-              : 'ເລືອກ PDF "${fileInfo.name}" ແລ້ວ'),
-          backgroundColor: Colors.green,
-        ),
-      );
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(res['success'] == true
+                ? 'ອັບໂຫຼດ PDF "${fileInfo.name}" (${sizeMB}MB, ${fileInfo.pageCount} ໜ້າ) ສຳເລັດ'
+                : 'ເລືອກ PDF "${fileInfo.name}" ແລ້ວ'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      });
     }
   }
 
@@ -189,23 +195,29 @@ class _AdminBookDialogState extends State<AdminBookDialog> {
     );
 
     if (mounted) {
-      setState(() {
-        _isUploadingCover = false;
-        if (res['success'] == true) {
-          _coverUrlController.text = res['url'] ?? res['path'] ?? 'uploads/covers/${fileInfo.name}';
-        } else {
-          _coverUrlController.text = 'uploads/covers/${fileInfo.name}';
-        }
+      Future.microtask(() {
+        if (!mounted) return;
+        setState(() {
+          _isUploadingCover = false;
+          if (res['success'] == true) {
+            _coverUrlController.text = res['url'] ?? res['path'] ?? 'uploads/covers/${fileInfo.name}';
+          } else {
+            _coverUrlController.text = 'uploads/covers/${fileInfo.name}';
+          }
+        });
       });
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(res['success'] == true
-              ? 'ອັບໂຫຼດຮູບປົກ "${fileInfo.name}" ສຳເລັດ'
-              : 'ເລືອກຮູບປົກ "${fileInfo.name}" ແລ້ວ'),
-          backgroundColor: Colors.green,
-        ),
-      );
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(res['success'] == true
+                ? 'ອັບໂຫຼດຮູບປົກ "${fileInfo.name}" ສຳເລັດ'
+                : 'ເລືອກຮູບປົກ "${fileInfo.name}" ແລ້ວ'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      });
     }
   }
 
@@ -630,6 +642,7 @@ class _AdminBookDialogState extends State<AdminBookDialog> {
 
                           // PDF Upload Box
                           Container(
+                            key: ValueKey('pdf_box_${_isUploadingPdf}'),
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
                               color: const Color(0xFFEFF6FF),
@@ -692,6 +705,7 @@ class _AdminBookDialogState extends State<AdminBookDialog> {
 
                           // Cover Upload Box with Live Preview
                           Container(
+                            key: ValueKey('cover_box_${_isUploadingCover}'),
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
                               color: const Color(0xFFF8FAFC),
