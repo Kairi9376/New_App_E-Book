@@ -67,6 +67,9 @@ exports.getAllBooks = async (req, res) => {
       params.push(is_hidden === 'true' || is_hidden === '1' ? 1 : 0);
     }
 
+    // Soft delete: ไม่แสดงหนังสือที่ถูกลบแล้ว (is_deleted = TRUE)
+    query += ` AND b.is_deleted = FALSE`;
+
     query += ` GROUP BY b.book_id ORDER BY b.book_id DESC`;
 
     const [rows] = await pool.query(query, params);
@@ -93,7 +96,7 @@ exports.getBookById = async (req, res) => {
       LEFT JOIN users r ON b.approved_by = r.user_id
       LEFT JOIN book_categories bc ON b.book_id = bc.book_id
       LEFT JOIN categories c ON bc.category_id = c.category_id
-      WHERE b.book_id = ?
+      WHERE b.book_id = ? AND b.is_deleted = FALSE
       GROUP BY b.book_id
     `, [id]);
 
@@ -272,8 +275,75 @@ exports.incrementReadersCount = async (req, res) => {
   }
 };
 
-// DELETE /api/books/:id
+// GET /api/books/deleted — ดึงหนังสือที่ soft delete แล้ว (สำหรับ Restore)
+exports.getDeletedBooks = async (req, res) => {
+  try {
+    const [rows] = await pool.query(`
+      SELECT b.*, a.name AS author_name, u.first_name AS uploader_first_name, u.last_name AS uploader_last_name,
+             GROUP_CONCAT(c.name SEPARATOR ', ') AS categories,
+             GROUP_CONCAT(c.category_id SEPARATOR ', ') AS category_ids
+      FROM books b
+      LEFT JOIN authors a ON b.author_id = a.author_id
+      LEFT JOIN users u ON b.uploaded_by = u.user_id
+      LEFT JOIN book_categories bc ON b.book_id = bc.book_id
+      LEFT JOIN categories c ON bc.category_id = c.category_id
+      WHERE b.is_deleted = TRUE
+      GROUP BY b.book_id
+      ORDER BY b.updated_at DESC
+    `);
+
+    res.json({ success: true, count: rows.length, books: rows });
+  } catch (error) {
+    console.error('Get Deleted Books Error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// PUT /api/books/:id/restore — กู้คืนหนังสือที่ soft delete แล้ว
+exports.restoreBook = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const [result] = await pool.query(
+      'UPDATE books SET is_deleted = FALSE WHERE book_id = ? AND is_deleted = TRUE',
+      [id]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ success: false, message: 'Book not found or not deleted' });
+    }
+
+    res.json({ success: true, message: 'Book restored successfully' });
+  } catch (error) {
+    console.error('Restore Book Error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// DELETE /api/books/:id — Soft Delete (เก็บไฟล์และข้อมูลไว้ กู้คืนได้)
 exports.deleteBook = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Soft delete: ตั้งค่า is_deleted = TRUE (ไม่ลบไฟล์/ข้อมูลจริง)
+    const [result] = await pool.query(
+      'UPDATE books SET is_deleted = TRUE WHERE book_id = ? AND is_deleted = FALSE',
+      [id]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ success: false, message: 'Book not found or already deleted' });
+    }
+
+    res.json({ success: true, message: 'Book soft-deleted successfully' });
+  } catch (error) {
+    console.error('Soft Delete Book Error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// DELETE /api/books/:id/permanent — Hard Delete (สำรองสำหรับ Admin ใช้ในอนาคต)
+exports.permanentDeleteBook = async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -292,9 +362,9 @@ exports.deleteBook = async (req, res) => {
     await pool.query('DELETE FROM downloads WHERE book_id = ?', [id]);
     await pool.query('DELETE FROM books WHERE book_id = ?', [id]);
 
-    res.json({ success: true, message: 'Book and associated files deleted successfully' });
+    res.json({ success: true, message: 'Book and associated files permanently deleted' });
   } catch (error) {
-    console.error('Delete Book Error:', error);
+    console.error('Permanent Delete Book Error:', error);
     res.status(500).json({ success: false, message: error.message });
   }
 };
