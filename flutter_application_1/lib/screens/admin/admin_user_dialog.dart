@@ -145,6 +145,10 @@ class _AdminUserFormScreenState extends State<AdminUserFormScreen> {
       if (mounted) {
         setState(() => _isLoading = false);
         if (success) {
+          ApiService.logAudit(
+            action: isEditing ? 'ແກ້ໄຂຂໍ້ມູນຜູ້ໃຊ້' : 'ເພີ່ມຜູ້ໃຊ້ໃໝ່',
+            details: '${isEditing ? "ແກ້ໄຂ" : "ເພີ່ມ"} ບັນຊີຜູ້ໃຊ້ "${_emailController.text.trim()}" (Role: $_selectedRole)',
+          );
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(isEditing ? 'ບັນທຶກຂໍ້ມູນຜູ້ໃຊ້ສຳເລັດແລ້ວ' : 'ສ້າງບັນຊີຜູ້ໃຊ້ໃໝ່ສຳເລັດແລ້ວ'),

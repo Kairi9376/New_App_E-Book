@@ -999,6 +999,36 @@ class ApiService {
     return [];
   }
 
+  // 21.1 Audit Logs: Record security action
+  static Future<bool> logAudit({
+    required String action,
+    required String details,
+  }) async {
+    try {
+      final user = currentUser ?? {};
+      final rawUserId = user['user_id'] ?? user['id'];
+      final int userId = rawUserId != null ? (int.tryParse(rawUserId.toString()) ?? 1) : 1;
+
+      final url = Uri.parse('${ApiConfig.baseUrl}/audit-logs');
+      final response = await http
+          .post(
+            url,
+            headers: _headers,
+            body: jsonEncode({
+              'user_id': userId,
+              'action': action,
+              'details': details,
+            }),
+          )
+          .timeout(const Duration(seconds: 5));
+
+      return response.statusCode == 200 || response.statusCode == 201;
+    } catch (e) {
+      print('ApiService logAudit error: $e');
+      return false;
+    }
+  }
+
   // 22. User: Fetch Reading History
   static Future<List<HistoryBookItem>> getHistory() async {
     try {

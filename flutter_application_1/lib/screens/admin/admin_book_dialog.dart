@@ -257,6 +257,10 @@ class _AdminBookFormScreenState extends State<AdminBookFormScreen> {
           'is_free_download': _isFreeDownload,
           'is_hidden': _isHidden,
         });
+        ApiService.logAudit(
+          action: 'ແກ້ໄຂປຶ້ມ',
+          details: 'ແກ້ໄຂຂໍ້ມູນປຶ້ມ "$title" (ID: ${widget.book!.id})',
+        );
       } else {
         final currentUser = ApiService.currentUser ?? {};
         final adminId = currentUser['user_id'] ?? 1;
@@ -275,6 +279,10 @@ class _AdminBookFormScreenState extends State<AdminBookFormScreen> {
           'is_free_download': _isFreeDownload,
           'category_ids': categoryIdsList,
         });
+        ApiService.logAudit(
+          action: 'ເພີ່ມປຶ້ມໃໝ່',
+          details: 'ເພີ່ມປຶ້ມໃໝ່ "$title" ເຂົ້າໃນລະບົບ',
+        );
       }
 
       if (!mounted) return;

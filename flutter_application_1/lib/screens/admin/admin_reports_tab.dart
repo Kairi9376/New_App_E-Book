@@ -332,11 +332,18 @@ class AdminReportsTab extends StatelessWidget {
 
           // Audit Activity Logs Section
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(18),
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(color: const Color(0xFFE2E8F0)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.03),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -345,40 +352,142 @@ class AdminReportsTab extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Row(
-                      children: const [
-                        Icon(Icons.history_rounded, color: AppColors.primary, size: 20),
-                        SizedBox(width: 8),
-                        Text('ບັນທຶກກິດຈະກຳແຍກລ່າສຸດຂອງລະບົບ (Audit Activity Logs)', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFEFF6FF),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Icon(Icons.history_toggle_off_rounded, color: AppColors.primary, size: 20),
+                        ),
+                        const SizedBox(width: 10),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: const [
+                            Text('ປະຫວັດກິດຈະກຳໃນລະບົບ (System Audit Logs)', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                            Text('ບັນທຶກການເພີ່ມ, ແກ້ໄຂ, ລົບ, ອະນຸມັດ ແລະ ປະຕິເສດ ຂອງແອດມິນ ແລະ ພະນັກງານ', style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+                          ],
+                        ),
                       ],
                     ),
-                    Text('${auditLogs.length} ລາຍການ', style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF1F5F9),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text('${auditLogs.length} ລາຍການ', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.primary)),
+                    ),
                   ],
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 16),
                 if (auditLogs.isEmpty)
-                  const Padding(
-                    padding: EdgeInsets.all(16),
-                    child: Center(child: Text('ບໍ່ມີບັນທຶກກິດຈະກຳຍ້ອນຫຼັງ', style: TextStyle(color: AppColors.textSecondary))),
+                  Container(
+                    padding: const EdgeInsets.all(24),
+                    alignment: Alignment.center,
+                    child: Column(
+                      children: const [
+                        Icon(Icons.rule_folder_outlined, size: 48, color: Colors.grey),
+                        SizedBox(height: 8),
+                        Text('ບໍ່ມີບັນທຶກກິດຈະກຳຍ້ອນຫຼັງ', style: TextStyle(fontSize: 14, color: AppColors.textSecondary, fontWeight: FontWeight.bold)),
+                        Text('ເມື່ອແອດມິນ ຫຼື ພະນັກງານ ເຮັດກິດຈະກຳໃນລະບົບ ຂໍ້ມູນຈະສະແດງຢູ່ບ່ອນນີ້', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                      ],
+                    ),
                   )
                 else
                   ListView.separated(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
-                    itemCount: auditLogs.length > 5 ? 5 : auditLogs.length,
-                    separatorBuilder: (_, __) => const Divider(height: 1, color: Color(0xFFF1F5F9)),
+                    itemCount: auditLogs.length,
+                    separatorBuilder: (_, __) => const Divider(height: 16, color: Color(0xFFF1F5F9)),
                     itemBuilder: (ctx, idx) {
                       final log = auditLogs[idx];
-                      return ListTile(
-                        dense: true,
-                        contentPadding: EdgeInsets.zero,
-                        leading: Container(
-                          padding: const EdgeInsets.all(6),
-                          decoration: BoxDecoration(color: const Color(0xFFEFF6FF), borderRadius: BorderRadius.circular(8)),
-                          child: const Icon(Icons.admin_panel_settings_outlined, size: 16, color: AppColors.primary),
-                        ),
-                        title: Text(log['action'] ?? 'ກິດຈະກຳໃນລະບົບ', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                        subtitle: Text(log['details'] ?? 'ດຳເນີນການໂດຍຜູ້ດູແລລະບົບ', style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
-                        trailing: Text(log['created_at'] != null ? log['created_at'].toString().split('T')[0] : 'ມື້ນີ້', style: const TextStyle(fontSize: 10, color: AppColors.textSecondary)),
+                      final String action = (log['action'] ?? 'ກິດຈະກຳໃນລະບົບ').toString();
+                      final String details = (log['details'] ?? '').toString();
+                      final String userFullName = (log['user_full_name'] ?? log['user_name'] ?? 'Admin/Staff').toString();
+                      final String userRole = (log['user_role'] ?? 'admin').toString();
+                      final String createdAtRaw = (log['created_at'] ?? '').toString();
+
+                      String formattedDate = 'ມື້ນີ້';
+                      if (createdAtRaw.isNotEmpty) {
+                        final parts = createdAtRaw.split('T');
+                        if (parts.length >= 2) {
+                          final datePart = parts[0];
+                          final timePart = parts[1].split('.')[0];
+                          formattedDate = '$datePart $timePart';
+                        } else {
+                          formattedDate = createdAtRaw;
+                        }
+                      }
+
+                      Color actionColor = AppColors.primary;
+                      IconData actionIcon = Icons.info_outline_rounded;
+
+                      if (action.contains('ເພີ່ມ') || action.contains('ອະນຸມັດ') || action.contains('ສ້າງ')) {
+                        actionColor = const Color(0xFF10B981);
+                        actionIcon = Icons.add_circle_outline_rounded;
+                      } else if (action.contains('ແກ້ໄຂ') || action.contains('ຈັດການ')) {
+                        actionColor = const Color(0xFFF59E0B);
+                        actionIcon = Icons.edit_note_rounded;
+                      } else if (action.contains('ລົບ') || action.contains('ປະຕິເສດ') || action.contains('ລະງັບ')) {
+                        actionColor = const Color(0xFFEF4444);
+                        actionIcon = Icons.remove_circle_outline_rounded;
+                      }
+
+                      return Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: actionColor.withOpacity(0.1),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(actionIcon, size: 18, color: actionColor),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: actionColor.withOpacity(0.12),
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      child: Text(
+                                        action,
+                                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: actionColor),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFF1F5F9),
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      child: Text(
+                                        userRole.toUpperCase(),
+                                        style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.blueGrey),
+                                      ),
+                                    ),
+                                    const Spacer(),
+                                    Text(formattedDate, style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                                  ],
+                                ),
+                                const SizedBox(height: 4),
+                                Text(details.isNotEmpty ? details : 'ບໍ່ມີລາຍລະອຽດເພີ່ມເຕີມ', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: AppColors.textPrimary)),
+                                const SizedBox(height: 2),
+                                Text('ດຳເນີນການໂດຍ: $userFullName', style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+                              ],
+                            ),
+                          ),
+                        ],
                       );
                     },
                   ),

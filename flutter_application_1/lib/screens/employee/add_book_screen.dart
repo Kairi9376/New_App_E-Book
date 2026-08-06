@@ -264,6 +264,10 @@ class _EmployeeAddBookScreenState extends State<EmployeeAddBookScreen> {
     Navigator.pop(context);
 
     if (response['success'] == true) {
+      ApiService.logAudit(
+        action: 'ພະນັກງານເພີ່ມປຶ້ມ',
+        details: 'ພະນັກງານເພີ່ມປຶ້ມ PDF ໃໝ່ "${_titleController.text.trim()}" ເຂົ້າໃນລະບົບ',
+      );
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('ບັນທຶກປຶ້ມ PDF "${_titleController.text.trim()}" ເຂົ້າ MySQL ສຳເລັດ!'),

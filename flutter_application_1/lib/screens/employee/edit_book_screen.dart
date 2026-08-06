@@ -329,10 +329,13 @@ class _EditBookScreenState extends State<EditBookScreen> {
     Navigator.pop(context); // Dismiss loading
 
     if (success) {
+      ApiService.logAudit(
+        action: 'ພະນັກງານແກ້ໄຂປຶ້ມ',
+        details: 'ພະນັກງານແກ້ໄຂປຶ້ມ PDF "${_titleController.text.trim()}" (ID: ${widget.book.id})',
+      );
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content:
-              Text('ບັນທຶກການແກ້ໄຂ "${_titleController.text.trim()}" ສຳເລັດ!'),
+          content: Text('ບັນທຶກການແກ້ໄຂ "${_titleController.text.trim()}" ສຳເລັດ!'),
           backgroundColor: const Color(0xFF10B981),
         ),
       );
