@@ -585,31 +585,40 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        elevation: 0.5,
-        backgroundColor: Colors.white,
+        elevation: 0,
+        backgroundColor: const Color(0xFF0F172A),
+        foregroundColor: Colors.white,
         title: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(color: AppColors.primary.withOpacity(0.12), borderRadius: BorderRadius.circular(10)),
-              child: const Icon(Icons.admin_panel_settings_rounded, color: AppColors.primary, size: 24),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: const [
-                  Text('Admin Control Panel', style: TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.bold)),
-                  Text('ລະບົບຄຸ້ມຄອງ E-Book & KYC', style: TextStyle(color: AppColors.textSecondary, fontSize: 11)),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF2563EB), Color(0xFF3B82F6)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(10),
+                boxShadow: [
+                  BoxShadow(color: const Color(0xFF2563EB).withOpacity(0.4), blurRadius: 8, offset: const Offset(0, 2)),
                 ],
               ),
+              child: const Icon(Icons.admin_panel_settings_rounded, color: Colors.white, size: 22),
+            ),
+            const SizedBox(width: 12),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: const [
+                Text('Enterprise Admin Portal', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 0.3)),
+                Text('ລະບົບຄຸ້ມຄອງ E-Book, KYC & Analytics', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11)),
+              ],
             ),
           ],
         ),
         actions: [
-          IconButton(icon: const Icon(Icons.refresh_rounded, color: AppColors.primary), onPressed: _fetchAdminData, tooltip: 'ຣີເຟຣຊ'),
-          IconButton(icon: const Icon(Icons.logout_rounded, color: Colors.redAccent), onPressed: _logout, tooltip: 'ອອກຈາກລະບົບ'),
-          const SizedBox(width: 4),
+          IconButton(icon: const Icon(Icons.refresh_rounded, color: Color(0xFFCBD5E1)), onPressed: _fetchAdminData, tooltip: 'ຣີເຟຣຊ'),
+          IconButton(icon: const Icon(Icons.logout_rounded, color: Color(0xFFF87171)), onPressed: _logout, tooltip: 'ອອກຈາກລະບົບ'),
+          const SizedBox(width: 8),
         ],
       ),
       body: _isLoading
@@ -1598,7 +1607,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                             final catId = cat['category_id'];
                             final catName = (cat['name'] ?? '').toString();
                             return Chip(
-                              label: Text('$catName (ID: $catId)', style: const TextStyle(fontSize: 11)),
+                              label: Text(catName, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.primary)),
                               backgroundColor: Colors.blue.shade50,
                             );
                           }).toList(),

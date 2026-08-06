@@ -406,7 +406,7 @@ class _AdminBookFormScreenState extends State<AdminBookFormScreen> {
                                     items: _dbAuthors.map((a) {
                                       return DropdownMenuItem<int>(
                                         value: a['author_id'],
-                                        child: Text('${a['name']} (ID: ${a['author_id']})', style: const TextStyle(fontSize: 13)),
+                                        child: Text(a['name'] ?? 'ບໍ່ລະບຸນັກຂຽນ', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
                                       );
                                     }).toList(),
                                     onChanged: (val) {
@@ -539,14 +539,14 @@ class _AdminBookFormScreenState extends State<AdminBookFormScreen> {
                             ),
                             const SizedBox(height: 10),
 
-                            // PDF Upload Box
+                            // PDF Upload Status & Action Box
                             Container(
                               key: ValueKey('pdf_box_$_isUploadingPdf'),
-                              padding: const EdgeInsets.all(12),
+                              padding: const EdgeInsets.all(14),
                               decoration: BoxDecoration(
-                                color: const Color(0xFFEFF6FF),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: const Color(0xFFBFDBFE)),
+                                color: _pdfUrlController.text.trim().isNotEmpty ? const Color(0xFFECFDF5) : const Color(0xFFEFF6FF),
+                                borderRadius: BorderRadius.circular(14),
+                                border: Border.all(color: _pdfUrlController.text.trim().isNotEmpty ? const Color(0xFFA7F3D0) : const Color(0xFFBFDBFE)),
                               ),
                               child: Column(
                                 children: [
@@ -556,18 +556,27 @@ class _AdminBookFormScreenState extends State<AdminBookFormScreen> {
                                         width: 44,
                                         height: 44,
                                         decoration: BoxDecoration(
-                                          color: AppColors.primary.withOpacity(0.15),
-                                          borderRadius: BorderRadius.circular(8),
+                                          color: _pdfUrlController.text.trim().isNotEmpty ? const Color(0xFF10B981).withOpacity(0.15) : AppColors.primary.withOpacity(0.15),
+                                          borderRadius: BorderRadius.circular(10),
                                         ),
-                                        child: const Icon(Icons.picture_as_pdf_rounded, color: AppColors.primary),
+                                        child: Icon(
+                                          _pdfUrlController.text.trim().isNotEmpty ? Icons.task_alt_rounded : Icons.picture_as_pdf_rounded,
+                                          color: _pdfUrlController.text.trim().isNotEmpty ? const Color(0xFF10B981) : AppColors.primary,
+                                        ),
                                       ),
                                       const SizedBox(width: 12),
                                       Expanded(
                                         child: Column(
                                           crossAxisAlignment: CrossAxisAlignment.start,
                                           children: [
-                                            const Text('ອັບໂຫຼດໄຟລ໌ PDF ຈາກເຄື່ອງ', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.primary)),
-                                            Text(_pdfFileName ?? 'ເລືອກໄຟລ໌ .pdf ຈາກ Disk', style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+                                            Text(
+                                              _pdfUrlController.text.trim().isNotEmpty ? '✓ ໄຟລ໌ PDF: ແນບໄຟລ໌ຮຽບຮ້ອຍແລ້ວ' : 'ອັບໂຫຼດໄຟລ໌ PDF ຈາກເຄື່ອງ',
+                                              style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: _pdfUrlController.text.trim().isNotEmpty ? const Color(0xFF047857) : AppColors.primary),
+                                            ),
+                                            Text(
+                                              _pdfFileName ?? (_pdfUrlController.text.trim().isNotEmpty ? 'ໄຟລ໌ PDF ພ້ອມນຳໃຊ້ແລ້ວ' : 'ເລືອກໄຟລ໌ PDF (.pdf) ຈາກ Disk'),
+                                              style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                                            ),
                                           ],
                                         ),
                                       ),
@@ -576,10 +585,11 @@ class _AdminBookFormScreenState extends State<AdminBookFormScreen> {
                                         icon: _isUploadingPdf
                                             ? const SizedBox(width: 12, height: 12, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                                             : const Icon(Icons.folder_open_rounded, size: 14),
-                                        label: Text(_isUploadingPdf ? 'ອັບໂຫຼດ...' : 'ເລືອກ PDF', style: const TextStyle(fontSize: 11)),
+                                        label: Text(_isUploadingPdf ? 'ອັບໂຫຼດ...' : (_pdfUrlController.text.trim().isNotEmpty ? 'ປ່ຽນ PDF' : 'ເລືອກ PDF'), style: const TextStyle(fontSize: 11)),
                                         style: ElevatedButton.styleFrom(
-                                          backgroundColor: AppColors.primary,
-                                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                                          backgroundColor: _pdfUrlController.text.trim().isNotEmpty ? const Color(0xFF059669) : AppColors.primary,
+                                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                                         ),
                                       ),
                                     ],
@@ -591,25 +601,19 @@ class _AdminBookFormScreenState extends State<AdminBookFormScreen> {
                                 ],
                               ),
                             ),
-                            const SizedBox(height: 8),
-
-                            TextFormField(
-                              controller: _pdfUrlController,
-                              decoration: const InputDecoration(
-                                labelText: 'ເສັ້ນທາງໄຟລ໌ PDF (Path/URL)',
-                                prefixIcon: Icon(Icons.link_rounded, color: AppColors.primary),
-                              ),
-                            ),
                             const SizedBox(height: 14),
 
                             // Cover Upload Box
                             Container(
                               key: ValueKey('cover_box_$_isUploadingCover'),
-                              padding: const EdgeInsets.all(12),
+                              padding: const EdgeInsets.all(14),
                               decoration: BoxDecoration(
-                                color: const Color(0xFFF8FAFC),
-                                borderRadius: BorderRadius.circular(12),
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(14),
                                 border: Border.all(color: const Color(0xFFE2E8F0)),
+                                boxShadow: [
+                                  BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 2)),
+                                ],
                               ),
                               child: Row(
                                 children: [
@@ -619,31 +623,25 @@ class _AdminBookFormScreenState extends State<AdminBookFormScreen> {
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        const Text('ຮູບປົກ (Cover Image Live Preview)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                                        Text(
+                                          _coverUrlController.text.trim().isNotEmpty ? '✓ ຮູບປົກ: ອັບໂຫຼດຮຽບຮ້ອຍແລ້ວ' : 'ຮູບປົກ (Cover Image Live Preview)',
+                                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: _coverUrlController.text.trim().isNotEmpty ? const Color(0xFF047857) : AppColors.textPrimary),
+                                        ),
                                         const Text('ເລືອກ JPG, PNG ຈາກເຄື່ອງ', style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
                                         const SizedBox(height: 8),
                                         OutlinedButton.icon(
                                           onPressed: _isUploadingCover ? null : _pickCoverImage,
                                           icon: const Icon(Icons.photo_library_rounded, size: 14),
-                                          label: const Text('ເລືອກຮູບປົກ', style: TextStyle(fontSize: 11)),
+                                          label: Text(_coverUrlController.text.trim().isNotEmpty ? 'ປ່ຽນຮູບປົກ' : 'ເລືອກຮູບປົກ', style: const TextStyle(fontSize: 11)),
                                           style: OutlinedButton.styleFrom(
-                                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                                           ),
                                         ),
                                       ],
                                     ),
                                   ),
                                 ],
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-
-                            TextFormField(
-                              controller: _coverUrlController,
-                              onChanged: (_) => setState(() {}),
-                              decoration: const InputDecoration(
-                                labelText: 'ເສັ້ນທາງຮູບປົກ (Cover Image Path/URL)',
-                                prefixIcon: Icon(Icons.image_search_rounded, color: AppColors.primary),
                               ),
                             ),
                             const SizedBox(height: 16),
