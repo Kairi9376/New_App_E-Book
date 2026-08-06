@@ -45,7 +45,6 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
 
   StreamSubscription<html.MessageEvent>? _messageSubscription;
   final TextEditingController _jumpPageController = TextEditingController();
-  final ScrollController _pageChipsScrollController = ScrollController();
 
   @override
   void initState() {
@@ -86,7 +85,6 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
   void dispose() {
     _messageSubscription?.cancel();
     _jumpPageController.dispose();
-    _pageChipsScrollController.dispose();
     super.dispose();
   }
 
@@ -113,7 +111,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
 <html>
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=3.0">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -130,7 +128,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
     }
     #page-card {
       position: relative;
-      box-shadow: 0 25px 30px -5px rgba(0, 0, 0, 0.4), 0 15px 15px -5px rgba(0, 0, 0, 0.3);
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.4), 0 10px 10px -5px rgba(0, 0, 0, 0.3);
       border-radius: 8px;
       overflow: hidden;
       background: white;
@@ -147,6 +145,8 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
       text-rendering: optimizeLegibility;
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
+      transform: translateZ(0);
+      backface-visibility: hidden;
     }
     #loading-text {
       position: absolute;
@@ -165,7 +165,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
 </head>
 <body>
   <div id="page-card">
-    <div id="loading-text">ກຳລັງໂຫຼດໜ້າ Ultra HD $pageNum...</div>
+    <div id="loading-text">ກຳລັງໂຫຼດໜ້າ HD $pageNum...</div>
     <canvas id="pdf-canvas"></canvas>
   </div>
 
@@ -190,11 +190,12 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
 
       pdfDoc.getPage(targetPage).then(function(page) {
         var dpr = window.devicePixelRatio || 1;
-        
+        var qualityMultiplier = Math.max(dpr * 2.5, 3.0); // HD Resolution Buffer (2.5x - 3.0x for crisp scanned text)
+
         // 1. Base unscaled page viewport (Scale 1.0)
         var unscaledViewport = page.getViewport({ scale: 1.0 });
 
-        // 2. Responsive CSS display bounds to fit container perfectly
+        // 2. Responsive CSS display bounds to fit screen container
         var screenW = window.innerWidth || document.documentElement.clientWidth || 800;
         var screenH = window.innerHeight || document.documentElement.clientHeight || 900;
         var targetCssW = screenW * 0.94;
@@ -205,15 +206,15 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
         var baseFitScale = Math.min(scaleX, scaleY);
         if (baseFitScale <= 0 || isNaN(baseFitScale)) baseFitScale = 1.0;
 
-        // Apply zoom multiplier
+        // Apply user zoom scale
         var cssScale = baseFitScale * userZoom;
         var cssViewport = page.getViewport({ scale: cssScale });
 
-        // 3. Ultra HD Canvas Resolution Buffer (3.5x Multiplier for razor-sharp vector text rendering)
-        var hdQualityMultiplier = Math.max(3.5, dpr * 3.0);
-        var renderViewport = page.getViewport({ scale: cssScale * hdQualityMultiplier });
+        // 3. Separate Canvas Physical Buffer Resolution from CSS Display Dimensions
+        var renderScale = cssScale * qualityMultiplier;
+        var renderViewport = page.getViewport({ scale: renderScale });
 
-        // Set High-DPI canvas buffer resolution
+        // Set High-DPI physical canvas dimensions
         canvas.width = Math.floor(renderViewport.width);
         canvas.height = Math.floor(renderViewport.height);
         
@@ -221,6 +222,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
         canvas.style.width = Math.floor(cssViewport.width) + "px";
         canvas.style.height = Math.floor(cssViewport.height) + "px";
 
+        // Enable high-quality image smoothing
         ctx.imageSmoothingEnabled = true;
         ctx.imageSmoothingQuality = 'high';
 
@@ -308,16 +310,6 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
         lastPageRead: newPage,
         totalPages: _totalPages,
       );
-
-      // Auto-scroll chip bar to current page
-      if (_pageChipsScrollController.hasClients) {
-        final double targetOffset = ((newPage - 1) * 65.0).clamp(0.0, _pageChipsScrollController.position.maxScrollExtent);
-        _pageChipsScrollController.animateTo(
-          targetOffset,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeOut,
-        );
-      }
 
       Future.delayed(const Duration(milliseconds: 400), () {
         if (mounted) setState(() => _isLoading = false);
@@ -882,53 +874,6 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
                       ],
                     ),
                   ),
-          ),
-
-          // ALWAYS-ACCESSIBLE HORIZONTAL PAGE CHIPS BAR
-          Container(
-            height: 44,
-            color: _isDarkMode ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9),
-            padding: const EdgeInsets.symmetric(vertical: 6),
-            child: ListView.builder(
-              controller: _pageChipsScrollController,
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              itemCount: _totalPages,
-              itemBuilder: (context, index) {
-                final pageNum = index + 1;
-                final isCurrent = pageNum == _currentPage;
-
-                return Container(
-                  margin: const EdgeInsets.only(right: 6),
-                  child: InkWell(
-                    onTap: () => _changePage(pageNum),
-                    borderRadius: BorderRadius.circular(16),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 150),
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: isCurrent ? AppColors.primary : (_isDarkMode ? const Color(0xFF334155) : Colors.white),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: isCurrent ? AppColors.primary : (_isDarkMode ? Colors.white24 : Colors.grey.shade300),
-                          width: 1,
-                        ),
-                      ),
-                      child: Center(
-                        child: Text(
-                          'ໜ້າ $pageNum',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
-                            color: isCurrent ? Colors.white : (_isDarkMode ? Colors.white70 : Colors.black87),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                );
-              },
-            ),
           ),
 
           // Bottom Single-Page Navigation Switcher

@@ -1290,18 +1290,29 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                               Text('📧 ອີເມວ: ${item.userEmail}', style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
                             ],
                           ),
-                          trailing: item.status == KycStatus.pending
-                              ? Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    IconButton(icon: const Icon(Icons.check_circle_rounded, color: Colors.green), onPressed: () => _approveKyc(item)),
-                                    IconButton(icon: const Icon(Icons.cancel_rounded, color: Colors.redAccent), onPressed: () => _showRejectKycDialog(item)),
-                                  ],
-                                )
-                              : Chip(
-                                  label: Text(item.statusText, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
-                                  backgroundColor: item.status == KycStatus.approved ? Colors.green.shade100 : Colors.red.shade100,
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Chip(
+                                label: Text(item.statusText, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+                                backgroundColor: item.status == KycStatus.approved
+                                    ? Colors.green.shade100
+                                    : (item.status == KycStatus.rejected ? Colors.red.shade100 : Colors.amber.shade100),
+                              ),
+                              if (item.status != KycStatus.approved)
+                                IconButton(
+                                  icon: const Icon(Icons.check_circle_rounded, color: Colors.green),
+                                  tooltip: 'ອະນຸມັດ KYC',
+                                  onPressed: () => _approveKyc(item),
                                 ),
+                              if (item.status != KycStatus.rejected)
+                                IconButton(
+                                  icon: const Icon(Icons.cancel_rounded, color: Colors.redAccent),
+                                  tooltip: 'ປະຕິເສດ KYC',
+                                  onPressed: () => _showRejectKycDialog(item),
+                                ),
+                            ],
+                          ),
                         ),
                       );
                     },
@@ -1953,32 +1964,36 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 ),
               ),
               const SizedBox(height: 20),
-              if (item.status == KycStatus.pending)
-                Row(
-                  children: [
+              Row(
+                children: [
+                  if (item.status != KycStatus.approved)
                     Expanded(
-                      child: ElevatedButton(
+                      child: ElevatedButton.icon(
                         onPressed: () {
                           Navigator.pop(ctx);
                           _approveKyc(item);
                         },
-                        style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
-                        child: const Text('ອະນຸມັດ KYC'),
+                        icon: const Icon(Icons.check_circle_rounded, size: 18),
+                        style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white),
+                        label: const Text('ອະນຸມັດ KYC'),
                       ),
                     ),
+                  if (item.status != KycStatus.approved && item.status != KycStatus.rejected)
                     const SizedBox(width: 10),
+                  if (item.status != KycStatus.rejected)
                     Expanded(
-                      child: OutlinedButton(
+                      child: OutlinedButton.icon(
                         onPressed: () {
                           Navigator.pop(ctx);
                           _showRejectKycDialog(item);
                         },
-                        style: OutlinedButton.styleFrom(foregroundColor: Colors.red),
-                        child: const Text('ປະຕິເສດ'),
+                        icon: const Icon(Icons.cancel_rounded, size: 18),
+                        style: OutlinedButton.styleFrom(foregroundColor: Colors.red, side: const BorderSide(color: Colors.red)),
+                        label: Text(item.status == KycStatus.approved ? 'ຍົກເລີກ / ປະຕິເສດ KYC ນີ້' : 'ປະຕິເສດ'),
                       ),
                     ),
-                  ],
-                ),
+                ],
+              ),
             ],
           ),
         ),
