@@ -7,7 +7,7 @@ class AdminReportsTab extends StatelessWidget {
   final List<Map<String, dynamic>> subscriptions;
   final List<BookModel> adminBooks;
   final List<Map<String, dynamic>> adminUsers;
-  final List<KycSubmissionItem> kycSubmissions;
+  final List<KycModel> kycSubmissions;
   final List<Map<String, dynamic>> auditLogs;
   final bool isMobile;
 
@@ -170,7 +170,7 @@ class AdminReportsTab extends StatelessWidget {
           // Charts & Analytics Grid
           Flex(
             direction: isMobile ? Axis.vertical : Axis.horizontal,
-            crossAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Left Panel: Subscription Status Breakdowns
               Expanded(

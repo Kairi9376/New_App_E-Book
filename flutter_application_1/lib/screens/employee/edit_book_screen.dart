@@ -561,11 +561,16 @@ class _EditBookScreenState extends State<EditBookScreen> {
                               flex: 2,
                               child: TextFormField(
                                 controller: _pagesController,
+                                readOnly: true,
                                 keyboardType: TextInputType.number,
                                 decoration: const InputDecoration(
-                                  labelText: 'ຈຳນວນໜ້າ (Pages)',
+                                  labelText: 'ຈຳນວນໜ້າ (Auto PDF Pages)',
                                   prefixIcon: Icon(Icons.auto_stories_rounded,
                                       color: AppColors.primary),
+                                  filled: true,
+                                  fillColor: Color(0xFFF8FAFC),
+                                  helperText: 'ອ່ານຈຳນວນໜ້າຈາກ PDF ໂດຍອັດໂນມັດ',
+                                  helperStyle: TextStyle(fontSize: 10, color: AppColors.textSecondary),
                                 ),
                               ),
                             ),

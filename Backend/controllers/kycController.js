@@ -22,7 +22,11 @@ exports.getAllKyc = async (req, res) => {
 // POST /api/kyc
 exports.submitKyc = async (req, res) => {
   try {
-    const { user_id, document_type, document_number, document_image_url, selfie_image_url, is_student, school_name } = req.body;
+    const {
+      user_id, full_name, gender, date_of_birth,
+      document_type, document_number, document_image_url,
+      selfie_image_url, is_student, school_name
+    } = req.body;
 
     if (!user_id || !document_type || !document_number || !document_image_url) {
       return res.status(400).json({ success: false, message: 'Please provide required KYC document details' });
@@ -41,13 +45,23 @@ exports.submitKyc = async (req, res) => {
       }
     }
 
-    const [result] = await pool.query(
-      `INSERT INTO kyc_verifications (user_id, document_type, document_number, document_image_url, selfie_image_url, is_student, school_name, status)
-       VALUES (?, ?, ?, ?, ?, ?, ?, 'pending')`,
-      [user_id, document_type, document_number, document_image_url, selfie_image_url || '', is_student ? 1 : 0, school_name || null]
-    );
+    let insertQuery = `INSERT INTO kyc_verifications (user_id, document_type, document_number, document_image_url, selfie_image_url, is_student, school_name, status)
+       VALUES (?, ?, ?, ?, ?, ?, ?, 'pending')`;
+    let insertParams = [user_id, document_type, document_number, document_image_url, selfie_image_url || '', is_student ? 1 : 0, school_name || null];
 
-    res.status(201).json({ success: true, message: 'KYC submitted successfully', kyc_id: result.insertId });
+    try {
+      // Try extended insert with full_name, gender, date_of_birth
+      const [result] = await pool.query(
+        `INSERT INTO kyc_verifications (user_id, full_name, gender, date_of_birth, document_type, document_number, document_image_url, selfie_image_url, is_student, school_name, status)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')`,
+        [user_id, full_name || null, gender || 'male', date_of_birth || null, document_type, document_number, document_image_url, selfie_image_url || '', is_student ? 1 : 0, school_name || null]
+      );
+      return res.status(201).json({ success: true, message: 'KYC submitted successfully', kyc_id: result.insertId });
+    } catch (colErr) {
+      // Fallback if full_name / gender / date_of_birth columns do not exist in table schema yet
+      const [result] = await pool.query(insertQuery, insertParams);
+      return res.status(201).json({ success: true, message: 'KYC submitted successfully', kyc_id: result.insertId });
+    }
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

@@ -168,7 +168,7 @@ exports.updateBook = async (req, res) => {
   try {
     const { id } = req.params;
     const {
-      title, author_id, language, page_count, description,
+      title, author_id, language, page_count, file_size_bytes, description,
       cover_image_url, file_pdf_url, is_free, is_free_download, is_hidden, category_ids,
       category_id, readers_count, likes_count, status, approved_by, rejection_reason
     } = req.body;
@@ -180,53 +180,52 @@ exports.updateBook = async (req, res) => {
     }
     const currentBook = existingRows[0];
 
-    // 2. Delete old files if cover or PDF changed
-    if (cover_image_url && !isSameFilePath(cover_image_url, currentBook.cover_image_url)) {
-      deleteOldFile(currentBook.cover_image_url);
-    }
-    if (file_pdf_url && !isSameFilePath(file_pdf_url, currentBook.file_pdf_url)) {
-      deleteOldFile(currentBook.file_pdf_url);
+    // 2. Delete old files safely if cover or PDF changed
+    try {
+      if (cover_image_url && !isSameFilePath(cover_image_url, currentBook.cover_image_url)) {
+        deleteOldFile(currentBook.cover_image_url);
+      }
+      if (file_pdf_url && !isSameFilePath(file_pdf_url, currentBook.file_pdf_url)) {
+        deleteOldFile(currentBook.file_pdf_url);
+      }
+    } catch (fileErr) {
+      console.warn('Old file deletion warning:', fileErr.message);
     }
 
-    // 3. Perform database update
-    await pool.query(
-      `UPDATE books 
-       SET title = COALESCE(?, title),
-           author_id = COALESCE(?, author_id),
-           language = COALESCE(?, language),
-           page_count = COALESCE(?, page_count),
-           description = COALESCE(?, description),
-           cover_image_url = COALESCE(?, cover_image_url),
-           file_pdf_url = COALESCE(?, file_pdf_url),
-           is_free = COALESCE(?, is_free),
-           is_free_download = COALESCE(?, is_free_download),
-           is_hidden = COALESCE(?, is_hidden),
-           readers_count = COALESCE(?, readers_count),
-           likes_count = COALESCE(?, likes_count),
-           status = COALESCE(?, status),
-           approved_by = COALESCE(?, approved_by),
-           rejection_reason = COALESCE(?, rejection_reason)
-       WHERE book_id = ?`,
-      [
-        title || null, author_id || null, language || null, page_count || null,
-        description || null, cover_image_url || null, file_pdf_url || null,
-        is_free !== undefined ? (is_free ? 1 : 0) : null,
-        is_free_download !== undefined ? (is_free_download ? 1 : 0) : null,
-        is_hidden !== undefined ? (is_hidden ? 1 : 0) : null,
-        readers_count !== undefined ? readers_count : null,
-        likes_count !== undefined ? likes_count : null,
-        status || null, approved_by || null, rejection_reason || null,
-        id
-      ]
-    );
+    // 3. Build dynamic SQL update fields
+    const updateFields = [];
+    const updateParams = [];
+
+    if (title !== undefined && title !== null) { updateFields.push('title = ?'); updateParams.push(title); }
+    if (author_id !== undefined && author_id !== null) { updateFields.push('author_id = ?'); updateParams.push(parseInt(author_id, 10)); }
+    if (language !== undefined && language !== null) { updateFields.push('language = ?'); updateParams.push(language); }
+    if (page_count !== undefined && page_count !== null) { updateFields.push('page_count = ?'); updateParams.push(parseInt(page_count, 10)); }
+    if (file_size_bytes !== undefined && file_size_bytes !== null) { updateFields.push('file_size_bytes = ?'); updateParams.push(parseInt(file_size_bytes, 10)); }
+    if (description !== undefined) { updateFields.push('description = ?'); updateParams.push(description); }
+    if (cover_image_url !== undefined) { updateFields.push('cover_image_url = ?'); updateParams.push(cover_image_url); }
+    if (file_pdf_url !== undefined) { updateFields.push('file_pdf_url = ?'); updateParams.push(file_pdf_url); }
+    if (is_free !== undefined) { updateFields.push('is_free = ?'); updateParams.push(is_free ? 1 : 0); }
+    if (is_free_download !== undefined) { updateFields.push('is_free_download = ?'); updateParams.push(is_free_download ? 1 : 0); }
+    if (is_hidden !== undefined) { updateFields.push('is_hidden = ?'); updateParams.push(is_hidden ? 1 : 0); }
+    if (readers_count !== undefined && readers_count !== null) { updateFields.push('readers_count = ?'); updateParams.push(parseInt(readers_count, 10)); }
+    if (likes_count !== undefined && likes_count !== null) { updateFields.push('likes_count = ?'); updateParams.push(parseInt(likes_count, 10)); }
+    if (status !== undefined && status !== null) { updateFields.push('status = ?'); updateParams.push(status); }
+    if (approved_by !== undefined && approved_by !== null) { updateFields.push('approved_by = ?'); updateParams.push(parseInt(approved_by, 10)); }
+    if (rejection_reason !== undefined) { updateFields.push('rejection_reason = ?'); updateParams.push(rejection_reason); }
+
+    if (updateFields.length > 0) {
+      updateParams.push(id);
+      await pool.query(`UPDATE books SET ${updateFields.join(', ')} WHERE book_id = ?`, updateParams);
+    }
 
     // 4. Update book_categories mapping if provided
     const targetCategories = category_ids || (category_id ? [category_id] : null);
     if (targetCategories && Array.isArray(targetCategories) && targetCategories.length > 0) {
       await pool.query('DELETE FROM book_categories WHERE book_id = ?', [id]);
       for (const cId of targetCategories) {
-        if (cId) {
-          await pool.query('INSERT INTO book_categories (book_id, category_id) VALUES (?, ?)', [id, cId]);
+        const parsedCId = parseInt(cId, 10);
+        if (!isNaN(parsedCId) && parsedCId > 0) {
+          await pool.query('INSERT IGNORE INTO book_categories (book_id, category_id) VALUES (?, ?)', [id, parsedCId]);
         }
       }
     }

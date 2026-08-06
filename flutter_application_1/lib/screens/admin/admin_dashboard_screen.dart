@@ -1129,14 +1129,13 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                   child: ListTile(
                     contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     onTap: () => _showUserDetailModal(user),
-                    leading: CircleAvatar(
+                    leading: ImageHelper.buildAvatar(
+                      (user['profile_image_url'] ?? user['profile_image'] ?? user['avatar_url'] ?? user['avatar'])?.toString(),
+                      firstName: (user['first_name'] ?? 'U').toString(),
+                      size: 44,
                       backgroundColor: role.toLowerCase() == 'admin'
                           ? Colors.purple
                           : (role.toLowerCase() == 'employee' ? Colors.orange.shade800 : AppColors.primary),
-                      child: Text(
-                        (user['first_name'] ?? 'U')[0].toUpperCase(),
-                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                      ),
                     ),
                     title: Row(
                       children: [
@@ -1265,12 +1264,14 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                             backgroundColor: Color(0xFFEFF6FF),
                             child: Icon(Icons.badge_rounded, color: AppColors.primary, size: 24),
                           ),
-                          title: Text(item.userName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                          title: Text(item.fullName.isNotEmpty ? item.fullName : item.userName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
                           subtitle: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text('ອີເມວ: ${item.userEmail}', style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
-                              Text('ເລກບັດ: ${item.idCardNumber}', style: const TextStyle(fontSize: 11, color: Colors.blueGrey)),
+                              Text('👤 ຊື່-ນາມສະກຸນ: ${item.fullName.isNotEmpty ? item.fullName : item.userName}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+                              Text('⚧ ເພດ: ${item.genderText} | 🎂 ວັນເກີດ: ${item.dateOfBirth.isNotEmpty ? item.dateOfBirth : "ບໍ່ລະບຸ"}', style: const TextStyle(fontSize: 11, color: AppColors.primary, fontWeight: FontWeight.bold)),
+                              Text('🆔 ເລກບັດ: ${item.idCardNumber} (${item.documentType})', style: const TextStyle(fontSize: 11, color: Colors.blueGrey)),
+                              Text('📧 ອີເມວ: ${item.userEmail}', style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
                             ],
                           ),
                           trailing: item.status == KycStatus.pending
@@ -1756,10 +1757,11 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           children: [
             Row(
               children: [
-                CircleAvatar(
-                  radius: 24,
+                ImageHelper.buildAvatar(
+                  (user['profile_image_url'] ?? user['profile_image'] ?? user['avatar_url'] ?? user['avatar'])?.toString(),
+                  firstName: (user['first_name'] ?? 'U').toString(),
+                  size: 48,
                   backgroundColor: AppColors.primary,
-                  child: Text((user['first_name'] ?? 'U')[0].toUpperCase(), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 20)),
                 ),
                 const SizedBox(width: 14),
                 Column(
@@ -1828,10 +1830,31 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                   IconButton(icon: const Icon(Icons.close_rounded), onPressed: () => Navigator.pop(ctx)),
                 ],
               ),
-              const SizedBox(height: 4),
-              Text('ອີເມວ: ${item.userEmail}', style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
-              Text('ເລກປະຈຳຕົວ: ${item.idCardNumber}', style: const TextStyle(color: Colors.blueGrey, fontSize: 12, fontWeight: FontWeight.bold)),
-              Text('ສະຖານະ: ${item.statusText}', style: TextStyle(color: item.status == KycStatus.approved ? Colors.green : (item.status == KycStatus.rejected ? Colors.red : Colors.orange), fontWeight: FontWeight.bold, fontSize: 12)),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(14),
+                margin: const EdgeInsets.symmetric(vertical: 8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEFF6FF),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFBFDBFE)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('👤 ຂໍ້ມູນສ່ວນບຸກຄົນ (Personal Details):', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.primary)),
+                    const SizedBox(height: 6),
+                    Text('• ຊື່ ແລະ ນາມສະກຸນ: ${item.fullName.isNotEmpty ? item.fullName : item.userName}', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                    Text('• ເພດ: ${item.genderText}', style: const TextStyle(fontSize: 12, color: AppColors.textPrimary, fontWeight: FontWeight.w500)),
+                    Text('• ວັນເດືອນປີເກີດ: ${item.dateOfBirth.isNotEmpty ? item.dateOfBirth : "ບໍ່ລະບຸ"}', style: const TextStyle(fontSize: 12, color: AppColors.textPrimary, fontWeight: FontWeight.w500)),
+                    Text('• ເລກເອກະສານ (${item.documentType}): ${item.idCardNumber}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.blueGrey)),
+                    Text('• ອີເມວ: ${item.userEmail}', style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                    if (item.isStudent && item.schoolName != null && item.schoolName!.isNotEmpty)
+                      Text('• ໂຮງຮຽນ/ມະຫາວິທະຍາໄລ: ${item.schoolName}', style: const TextStyle(fontSize: 12, color: Colors.purple, fontWeight: FontWeight.bold)),
+                    Text('• ສະຖານະ: ${item.statusText}', style: TextStyle(color: item.status == KycStatus.approved ? Colors.green : (item.status == KycStatus.rejected ? Colors.red : Colors.orange), fontWeight: FontWeight.bold, fontSize: 12)),
+                  ],
+                ),
+              ),
               const Divider(height: 20),
               
               const Text('1. ຮູບຖ່າຍບັດປະຈຳຕົວ / Passport (ແຕະເພື່ອຂະຫຍາຍເບິ່ງຮູບໃຫຍ່):', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
@@ -2228,7 +2251,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         ],
       ),
     );
-  }
   }
 }
 

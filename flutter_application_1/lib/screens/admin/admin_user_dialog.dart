@@ -90,15 +90,22 @@ class _AdminUserFormScreenState extends State<AdminUserFormScreen> {
     setState(() => _isUploadingImage = true);
     try {
       final fileInfo = await FilePickerHelper.pickFile(accept: 'image/*');
-      if (fileInfo != null) {
-        final mockUrl = 'assets/profile_${DateTime.now().millisecondsSinceEpoch}.jpg';
-        setState(() {
-          _profileImageUrl = mockUrl;
-          _profileImageController.text = mockUrl;
-        });
+      if (fileInfo != null && fileInfo.bytes.isNotEmpty) {
+        final res = await ApiService.uploadFile(
+          bytes: fileInfo.bytes,
+          filename: fileInfo.name,
+          fieldName: 'profile',
+        );
+        final uploadedUrl = res['url'] ?? res['path'] ?? '';
+        if (uploadedUrl.toString().isNotEmpty) {
+          setState(() {
+            _profileImageUrl = uploadedUrl.toString();
+            _profileImageController.text = uploadedUrl.toString();
+          });
+        }
       }
     } catch (e) {
-      debugPrint('Error picking image: $e');
+      debugPrint('Error picking profile image: $e');
     } finally {
       if (mounted) setState(() => _isUploadingImage = false);
     }
@@ -205,24 +212,11 @@ class _AdminUserFormScreenState extends State<AdminUserFormScreen> {
                                 ),
                               ],
                             ),
-                            child: ClipOval(
-                              child: _profileImageUrl.isNotEmpty
-                                  ? ImageHelper.buildImage(
-                                      _profileImageUrl,
-                                      width: 90,
-                                      height: 90,
-                                      fit: BoxFit.cover,
-                                    )
-                                  : Center(
-                                      child: Text(
-                                        firstChar,
-                                        style: TextStyle(
-                                          color: _getRoleColor(_selectedRole),
-                                          fontSize: 32,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ),
+                            child: ImageHelper.buildAvatar(
+                              _profileImageUrl,
+                              firstName: firstChar,
+                              size: 90,
+                              backgroundColor: _getRoleColor(_selectedRole).withOpacity(0.15),
                             ),
                           ),
                           InkWell(

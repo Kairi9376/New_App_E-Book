@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import '../theme/app_theme.dart';
 import '../services/api_config.dart';
 
 class ImageHelper {
@@ -24,6 +25,49 @@ class ImageHelper {
       return '${ApiConfig.uploadsBaseUrl}/$trimmed';
     }
     return trimmed;
+  }
+
+  /// Builds a profile avatar widget that falls back to a clean initial text avatar if no image or error occurs
+  static Widget buildAvatar(
+    String? path, {
+    required String firstName,
+    double size = 40,
+    Color? backgroundColor,
+    Uint8List? bytes,
+  }) {
+    final url = normalizeUrl(path);
+    final initial = firstName.trim().isNotEmpty ? firstName.trim()[0].toUpperCase() : 'U';
+
+    final defaultAvatar = Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: backgroundColor ?? AppColors.primary,
+        shape: BoxShape.circle,
+      ),
+      alignment: Alignment.center,
+      child: Text(
+        initial,
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: size * 0.42,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
+
+    if (url.isEmpty && (bytes == null || bytes.isEmpty)) return defaultAvatar;
+
+    return ClipOval(
+      child: buildImage(
+        url,
+        bytes: bytes,
+        width: size,
+        height: size,
+        fit: BoxFit.cover,
+        placeholder: defaultAvatar,
+      ),
+    );
   }
 
   /// Builds a robust image widget supporting Network, Asset, Memory (Uint8List), and File

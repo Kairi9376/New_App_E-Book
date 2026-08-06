@@ -29,6 +29,10 @@ class _KycSubmissionScreenState extends State<KycSubmissionScreen> {
   late TextEditingController _fullNameController;
   late TextEditingController _idCardController;
   late TextEditingController _schoolNameController;
+  late TextEditingController _dobController;
+
+  String _selectedGender = 'male';
+  DateTime? _selectedDob;
 
   late KycStatus _currentStatus;
   String _selectedDocumentType = 'national_id'; // national_id, passport, student_card
@@ -55,6 +59,11 @@ class _KycSubmissionScreenState extends State<KycSubmissionScreen> {
     _idCardController = TextEditingController(text: widget.currentKyc.idCardNumber);
     _schoolNameController = TextEditingController(text: widget.currentKyc.schoolName ?? '');
 
+    _selectedGender = widget.currentKyc.gender.isNotEmpty ? widget.currentKyc.gender : 'male';
+    final initialDobStr = widget.currentKyc.dateOfBirth.isNotEmpty ? widget.currentKyc.dateOfBirth : '2000-01-01';
+    _dobController = TextEditingController(text: initialDobStr);
+    _selectedDob = DateTime.tryParse(initialDobStr) ?? DateTime(2000, 1, 1);
+
     _selectedDocumentType = widget.currentKyc.documentType.isNotEmpty ? widget.currentKyc.documentType : 'national_id';
     _isStudent = widget.currentKyc.isStudent || _selectedDocumentType == 'student_card';
 
@@ -75,6 +84,11 @@ class _KycSubmissionScreenState extends State<KycSubmissionScreen> {
       setState(() {
         _currentStatus = liveKyc.status;
         if (liveKyc.fullName.isNotEmpty) _fullNameController.text = liveKyc.fullName;
+        if (liveKyc.gender.isNotEmpty) _selectedGender = liveKyc.gender;
+        if (liveKyc.dateOfBirth.isNotEmpty) {
+          _dobController.text = liveKyc.dateOfBirth;
+          _selectedDob = DateTime.tryParse(liveKyc.dateOfBirth);
+        }
         if (liveKyc.idCardNumber.isNotEmpty) _idCardController.text = liveKyc.idCardNumber;
         if (liveKyc.schoolName != null && liveKyc.schoolName!.isNotEmpty) _schoolNameController.text = liveKyc.schoolName!;
         if (liveKyc.documentType.isNotEmpty) _selectedDocumentType = liveKyc.documentType;
@@ -93,11 +107,29 @@ class _KycSubmissionScreenState extends State<KycSubmissionScreen> {
     }
   }
 
+  Future<void> _selectDateOfBirth() async {
+    final now = DateTime.now();
+    final initialDate = _selectedDob ?? DateTime(2000, 1, 1);
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initialDate,
+      firstDate: DateTime(1940),
+      lastDate: now,
+    );
+    if (picked != null) {
+      setState(() {
+        _selectedDob = picked;
+        _dobController.text = "${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}";
+      });
+    }
+  }
+
   @override
   void dispose() {
     _fullNameController.dispose();
     _idCardController.dispose();
     _schoolNameController.dispose();
+    _dobController.dispose();
     super.dispose();
   }
 
@@ -234,6 +266,9 @@ class _KycSubmissionScreenState extends State<KycSubmissionScreen> {
 
     final success = await ApiService.submitKyc({
       'user_id': userId,
+      'full_name': _fullNameController.text.trim(),
+      'gender': _selectedGender,
+      'date_of_birth': _dobController.text.trim(),
       'document_type': _selectedDocumentType,
       'document_number': _idCardController.text.trim(),
       'document_image_url': _idCardImagePath ?? '',
@@ -244,6 +279,8 @@ class _KycSubmissionScreenState extends State<KycSubmissionScreen> {
 
     final updatedKyc = widget.currentKyc.copyWith(
       fullName: _fullNameController.text.trim(),
+      gender: _selectedGender,
+      dateOfBirth: _dobController.text.trim(),
       idCardNumber: _idCardController.text.trim(),
       documentType: _selectedDocumentType,
       idCardImagePath: _idCardImagePath ?? '',
@@ -827,6 +864,14 @@ class _KycSubmissionScreenState extends State<KycSubmissionScreen> {
         const SizedBox(height: 10),
         _buildInfoRow(Icons.badge_outlined, 'ຊື່ ແລະ ນາມສະກຸນ', _fullNameController.text.isNotEmpty ? _fullNameController.text : 'ບໍ່ລະບຸ'),
         const SizedBox(height: 10),
+        Row(
+          children: [
+            Expanded(child: _buildInfoRow(Icons.wc_rounded, 'ເພດ', _selectedGender == 'female' ? 'ຍິງ (Female)' : (_selectedGender == 'other' ? 'ອື່ນໆ (Other)' : 'ຊາຍ (Male)'))),
+            const SizedBox(width: 10),
+            Expanded(child: _buildInfoRow(Icons.cake_rounded, 'ວັນເດືອນປີເກີດ', _dobController.text.isNotEmpty ? _dobController.text : 'ບໍ່ລະບຸ')),
+          ],
+        ),
+        const SizedBox(height: 10),
         _buildInfoRow(Icons.credit_card_rounded, 'ເລກເອກະສານ', _idCardController.text.isNotEmpty ? _idCardController.text : 'ບໍ່ລະບຸ'),
         if (_isStudent) ...[
           const SizedBox(height: 10),
@@ -1056,7 +1101,59 @@ class _KycSubmissionScreenState extends State<KycSubmissionScreen> {
                 return null;
               },
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 14),
+
+            // Gender & Date of Birth Row
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: DropdownButtonFormField<String>(
+                    value: ['male', 'female', 'other'].contains(_selectedGender.toLowerCase())
+                        ? _selectedGender.toLowerCase()
+                        : 'male',
+                    decoration: InputDecoration(
+                      labelText: 'ເພດ (Gender)',
+                      prefixIcon: const Icon(Icons.wc_rounded, color: AppColors.primary),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      filled: true,
+                      fillColor: const Color(0xFFF8FAFC),
+                    ),
+                    items: const [
+                      DropdownMenuItem(value: 'male', child: Text('👨 ຊາຍ (Male)')),
+                      DropdownMenuItem(value: 'female', child: Text('👩 ຍິງ (Female)')),
+                      DropdownMenuItem(value: 'other', child: Text('⚧ ອື່ນໆ (Other)')),
+                    ],
+                    onChanged: (val) {
+                      if (val != null) setState(() => _selectedGender = val);
+                    },
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: TextFormField(
+                    controller: _dobController,
+                    readOnly: true,
+                    onTap: _selectDateOfBirth,
+                    decoration: InputDecoration(
+                      labelText: 'ວັນເກີດ (DOB)',
+                      prefixIcon: const Icon(Icons.cake_rounded, color: AppColors.primary),
+                      suffixIcon: const Icon(Icons.calendar_today_rounded, size: 18),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      filled: true,
+                      fillColor: const Color(0xFFF8FAFC),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'ກະລຸນາເລືອກວັນເກີດ';
+                      }
+                      return null;
+                    },
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
 
             TextFormField(
               controller: _idCardController,

@@ -28,6 +28,9 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE TABLE IF NOT EXISTS kyc_verifications (
     kyc_id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
+    full_name VARCHAR(255),
+    gender VARCHAR(20) DEFAULT 'male',
+    date_of_birth DATE,
     document_type ENUM('national_id', 'passport', 'student_card') NOT NULL,
     document_number VARCHAR(100) NOT NULL,
     document_image_url VARCHAR(500) NOT NULL,

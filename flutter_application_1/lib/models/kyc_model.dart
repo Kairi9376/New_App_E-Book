@@ -13,6 +13,8 @@ class KycModel {
   final String documentType; // national_id, passport, student_card
   final String idCardNumber;
   final String fullName;
+  final String gender; // male, female, other
+  final String dateOfBirth; // YYYY-MM-DD
   final String idCardImagePath;
   final String selfieImagePath;
   final bool isStudent;
@@ -30,6 +32,8 @@ class KycModel {
     this.documentType = 'national_id',
     required this.idCardNumber,
     required this.fullName,
+    this.gender = 'male',
+    this.dateOfBirth = '',
     required this.idCardImagePath,
     required this.selfieImagePath,
     this.isStudent = false,
@@ -39,6 +43,25 @@ class KycModel {
     required this.submittedAt,
     this.reviewedAt,
   });
+
+  String get genderText {
+    switch (gender.toLowerCase()) {
+      case 'male':
+      case 'ชาย':
+      case 'ຊາຍ':
+        return 'ຊາຍ (Male)';
+      case 'female':
+      case 'หญิง':
+      case 'ຍິງ':
+        return 'ຍິງ (Female)';
+      case 'other':
+      case 'อื่นๆ':
+      case 'ອື່ນໆ':
+        return 'ອື່ນໆ (Other)';
+      default:
+        return gender.isNotEmpty ? gender : 'ບໍ່ລະບຸ (Unspecified)';
+    }
+  }
 
   String get statusText {
     switch (status) {
@@ -61,6 +84,8 @@ class KycModel {
       userEmail: '',
       idCardNumber: '',
       fullName: '',
+      gender: 'male',
+      dateOfBirth: '',
       idCardImagePath: '',
       selfieImagePath: '',
       status: KycStatus.notSubmitted,
@@ -102,7 +127,7 @@ class KycModel {
     }
 
     String fn = '${map['first_name'] ?? ''} ${map['last_name'] ?? ''}'.trim();
-    if (fn.isEmpty) fn = map['fullName'] ?? map['user_name'] ?? map['userName'] ?? 'ບໍ່ລະບຸຊື່';
+    if (fn.isEmpty) fn = map['full_name'] ?? map['fullName'] ?? map['user_name'] ?? map['userName'] ?? 'ບໍ່ລະບຸຊື່';
 
     return KycModel(
       id: (map['kyc_id'] ?? map['id'] ?? '').toString(),
@@ -111,7 +136,9 @@ class KycModel {
       userEmail: map['email'] ?? map['userEmail'] ?? '',
       documentType: map['document_type'] ?? map['documentType'] ?? 'national_id',
       idCardNumber: map['document_number'] ?? map['idCardNumber'] ?? '',
-      fullName: fn,
+      fullName: map['full_name'] ?? map['fullName'] ?? fn,
+      gender: (map['gender'] ?? map['sex'] ?? 'male').toString(),
+      dateOfBirth: (map['date_of_birth'] ?? map['dob'] ?? map['birth_date'] ?? '').toString(),
       idCardImagePath: docImg.isNotEmpty ? docImg : 'assets/sample_id_card.png',
       selfieImagePath: selfieImg.isNotEmpty ? selfieImg : 'assets/sample_selfie.png',
       isStudent: map['is_student'] == 1 || map['is_student'] == true || map['isStudent'] == true,
@@ -127,6 +154,9 @@ class KycModel {
     return {
       'kyc_id': id,
       'user_id': userId,
+      'full_name': fullName,
+      'gender': gender,
+      'date_of_birth': dateOfBirth,
       'document_type': documentType,
       'document_number': idCardNumber,
       'document_image_url': idCardImagePath,
@@ -141,6 +171,8 @@ class KycModel {
 
   KycModel copyWith({
     String? fullName,
+    String? gender,
+    String? dateOfBirth,
     String? idCardNumber,
     String? documentType,
     String? idCardImagePath,
@@ -159,6 +191,8 @@ class KycModel {
       documentType: documentType ?? this.documentType,
       idCardNumber: idCardNumber ?? this.idCardNumber,
       fullName: fullName ?? this.fullName,
+      gender: gender ?? this.gender,
+      dateOfBirth: dateOfBirth ?? this.dateOfBirth,
       idCardImagePath: idCardImagePath ?? this.idCardImagePath,
       selfieImagePath: selfieImagePath ?? this.selfieImagePath,
       isStudent: isStudent ?? this.isStudent,
@@ -179,28 +213,33 @@ class MockKycData {
       userName: 'ສົມຊາຍ ໃຈດີ',
       userEmail: 'user1234@gmail.com',
       documentType: 'national_id',
-      idCardNumber: '1-1002-34567-89-0',
-      fullName: 'ທ່ານ ສົມຊາຍ ໃຈດີ',
+      idCardNumber: '1209900123456',
+      fullName: 'ສົມຊາຍ ໃຈດີ',
+      gender: 'male',
+      dateOfBirth: '1998-05-20',
       idCardImagePath: 'assets/sample_id_card.png',
       selfieImagePath: 'assets/sample_selfie.png',
+      isStudent: true,
+      schoolName: 'ມະຫາວິທະຍາໄລแห่งชาติลาว (NUOL)',
       status: KycStatus.pending,
-      submittedAt: DateTime.now().subtract(const Duration(hours: 3)),
+      submittedAt: DateTime.now().subtract(const Duration(hours: 2)),
     ),
     KycModel(
       id: '2',
       userId: '4',
-      userName: 'ພຣີມ່ຽມ ສະມາຊິກ',
-      userEmail: 'member@gmail.com',
-      documentType: 'student_card',
-      idCardNumber: 'STU-99887766',
-      fullName: 'ທ່ານ ພຣີມ່ຽມ ສະມາຊິກ',
+      userName: 'ມະລິ ສີປະເສີດ',
+      userEmail: 'mali@gmail.com',
+      documentType: 'passport',
+      idCardNumber: 'P98765432',
+      fullName: 'ມະລິ ສີປະເສີດ',
+      gender: 'female',
+      dateOfBirth: '2001-11-12',
       idCardImagePath: 'assets/sample_id_card.png',
       selfieImagePath: 'assets/sample_selfie.png',
-      isStudent: true,
-      schoolName: 'ມະຫາວິທະຍາໄລແຫ່ງຊາດ',
+      isStudent: false,
       status: KycStatus.approved,
-      submittedAt: DateTime.now().subtract(const Duration(days: 5)),
-      reviewedAt: DateTime.now().subtract(const Duration(days: 4)),
+      submittedAt: DateTime.now().subtract(const Duration(days: 1)),
+      reviewedAt: DateTime.now().subtract(const Duration(hours: 12)),
     ),
   ];
 }
