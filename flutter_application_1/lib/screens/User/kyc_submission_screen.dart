@@ -247,13 +247,23 @@ class _KycSubmissionScreenState extends State<KycSubmissionScreen> {
   }
 
   void _submitKyc() async {
-    if (!_formKey.currentState!.validate()) return;
-
-    if (_idCardImagePath == null || _selfieImagePath == null) {
+    if (!_formKey.currentState!.validate()) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('ກະລຸນາອັບໂຫຼດຮູບພາບບັດປະຈຳຕົວ/ເອກະສານ ແລະ ຮູບຖ່າຍເຊວຟີໃຫ້ຄົບຖ້ວນ'),
+          content: Text('⚠️ ກະລຸນາປ້ອນຂໍ້ມູນສ່ວນຕົວໃຫ້ຄົບຖ້ວນທຸກຊ່ອງກ່ອນ!'),
+          backgroundColor: Colors.orangeAccent,
+          duration: Duration(seconds: 3),
+        ),
+      );
+      return;
+    }
+
+    if (_idCardImagePath == null || _idCardImagePath!.trim().isEmpty || _selfieImagePath == null || _selfieImagePath!.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('⚠️ ກະລຸນາອັບໂຫຼດຮູບພາບບັດປະຈຳຕົວ/ເອກະສານ ແລະ ຮູບຖ່າຍເຊວຟີໃຫ້ຄົບຖ້ວນ!'),
           backgroundColor: Colors.redAccent,
+          duration: Duration(seconds: 4),
         ),
       );
       return;
