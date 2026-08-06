@@ -21,6 +21,22 @@ class AdminReportsTab extends StatelessWidget {
     required this.isMobile,
   });
 
+  String _formatCurrency(dynamic amount) {
+    if (amount == null) return '0';
+    final cleanStr = amount.toString().replaceAll(',', '').trim();
+    final number = double.tryParse(cleanStr);
+    if (number == null) return cleanStr.isEmpty ? '0' : cleanStr;
+
+    final isInteger = number % 1 == 0;
+    final formattedStr = isInteger ? number.toInt().toString() : number.toStringAsFixed(2);
+    final parts = formattedStr.split('.');
+    
+    final regex = RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))');
+    final withCommas = parts[0].replaceAllMapped(regex, (Match m) => '${m[1]},');
+    
+    return parts.length > 1 ? '$withCommas.${parts[1]}' : withCommas;
+  }
+
   @override
   Widget build(BuildContext context) {
     // 1. Calculate Revenue Metrics
@@ -133,7 +149,7 @@ class AdminReportsTab extends StatelessWidget {
             children: [
               _buildReportKpiCard(
                 title: 'ລາຍຮັບລວມການສະໝັກສະມາຊິກ',
-                value: '${totalRevenue.toStringAsFixed(0)} LAK',
+                value: '${_formatCurrency(totalRevenue)} LAK',
                 subtitle: 'ຈາກ ${approvedSubs.length} ລາຍການທີ່ອະນຸມັດ',
                 icon: Icons.payments_rounded,
                 color: const Color(0xFF10B981),
@@ -141,7 +157,7 @@ class AdminReportsTab extends StatelessWidget {
               ),
               _buildReportKpiCard(
                 title: 'ສະລິບລໍຖ້າກວດສອບມູນຄ່າ',
-                value: '${pendingRevenue.toStringAsFixed(0)} LAK',
+                value: '${_formatCurrency(pendingRevenue)} LAK',
                 subtitle: '${pendingSubs.length} ລາຍການລໍຖ້າດຳເນີນການ',
                 icon: Icons.pending_actions_rounded,
                 color: const Color(0xFFF59E0B),
@@ -480,7 +496,7 @@ class AdminReportsTab extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('• ລາຍຮັບລວມອະນຸມັດ: ${totalRevenue.toStringAsFixed(0)} LAK', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF10B981))),
+                  Text('• ລາຍຮັບລວມອະນຸມັດ: ${_formatCurrency(totalRevenue)} LAK', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF10B981))),
                   const SizedBox(height: 4),
                   Text('• ຈຳນວນຜູ້ໃຊ້ງານທັງໝົດ: $totalUsers ບັນຊີ', style: const TextStyle(fontSize: 12)),
                   const SizedBox(height: 4),

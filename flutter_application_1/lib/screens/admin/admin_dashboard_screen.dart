@@ -43,6 +43,22 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   int get _pendingBooksCount =>
       _adminBooks.where((b) => b.status.toLowerCase() == 'pending').length;
 
+  String _formatCurrency(dynamic amount) {
+    if (amount == null) return '0';
+    final cleanStr = amount.toString().replaceAll(',', '').trim();
+    final number = double.tryParse(cleanStr);
+    if (number == null) return cleanStr.isEmpty ? '0' : cleanStr;
+
+    final isInteger = number % 1 == 0;
+    final formattedStr = isInteger ? number.toInt().toString() : number.toStringAsFixed(2);
+    final parts = formattedStr.split('.');
+    
+    final regex = RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))');
+    final withCommas = parts[0].replaceAllMapped(regex, (Match m) => '${m[1]},');
+    
+    return parts.length > 1 ? '$withCommas.${parts[1]}' : withCommas;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -1392,7 +1408,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text('ແພັກເກັດ: ${sub['package_name'] ?? "VIP"}', style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
-                              Text('ຍອດຊຳລະ: ${sub['amount']} LAK', style: const TextStyle(fontSize: 12, color: AppColors.primary, fontWeight: FontWeight.bold)),
+                              Text('ຍອດຊຳລະ: ${_formatCurrency(sub['amount'])} LAK', style: const TextStyle(fontSize: 12, color: AppColors.primary, fontWeight: FontWeight.bold)),
                             ],
                           ),
                           trailing: status == 'pending'
@@ -1495,7 +1511,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                   ],
                 ),
                 subtitle: Text(
-                  'ລາຄາ: ${pkg['price']} LAK | ໄລຍະເວລາ: ${pkg['duration_days']} ມື້',
+                  'ລາຄາ: ${_formatCurrency(pkg['price'])} LAK | ໄລຍະເວລາ: ${pkg['duration_days']} ມື້',
                   style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
                 ),
                 trailing: Row(
@@ -1996,7 +2012,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               const SizedBox(height: 4),
               Text('ຜູ້ແຈ້ງຊຳລະ: ${userName.isNotEmpty ? userName : "ຜູ້ໃຊ້ງານ"} (${sub['email'] ?? ""})'),
               Text('ແພັກເກັດ: ${sub['package_name'] ?? "VIP Package"}'),
-              Text('ຍອດຊຳລະ: ${sub['amount'] ?? "49000"} LAK', style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary)),
+              Text('ຍອດຊຳລະ: ${_formatCurrency(sub['amount'] ?? 49000)} LAK', style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary)),
               const Divider(height: 20),
               const Text('ຮູບພາບສະລິບໂອນເງິນ (ແຕະເພື່ອຂະຫຍາຍເບິ່ງຮູບໃຫຍ່):', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
               const SizedBox(height: 8),
@@ -2097,7 +2113,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(pkg['name'] ?? '', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                      Text('ລາຄາ: ${pkg['price']} LAK | ໄລຍະເວລາ: ${pkg['duration_days']} ມື້', style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+                      Text('ລາຄາ: ${_formatCurrency(pkg['price'])} LAK | ໄລຍະເວລາ: ${pkg['duration_days']} ມື້', style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
                     ],
                   ),
                 ),
