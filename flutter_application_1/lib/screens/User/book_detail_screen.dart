@@ -92,7 +92,7 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
               ),
               const SizedBox(height: 10),
               const Text(
-                'ການດາວໂຫຼດໜັງສືສະຫງວນໄວ້ສຳລັບສະມາຊິກ Premiere Member ເທົ່ານັ້ນ\n\nກະລຸນາຢືນຢັນຕົວຕົນ (KYC) ແລະ ສະໝັກແພັກເກັດສະມາຊິກເພື່ອເຂົ້າເຖິງການດາວໂຫຼດ',
+                'ໜັງສືເລື່ອງນີ້ສະຫງວນໄວ້ສຳລັບສະມາຊິກ Premiere Member ເທົ່ານັ້ນ\n\nກະລຸນາຢືນຢັນຕົວຕົນ (KYC) ແລະ ສະໝັກແພັກເກັດສະມາຊິກເພື່ອເຂົ້າເຖິງການອ່ານ ແລະ ດາວໂຫຼດ',
                 style: TextStyle(fontSize: 13, color: AppColors.textSecondary, height: 1.5),
                 textAlign: TextAlign.center,
               ),
@@ -182,6 +182,12 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
   }
 
   void _openReader({int initialPage = 1}) {
+    final isFree = widget.book?.isFree ?? true;
+    if (!isFree && !_isMember) {
+      _showMembershipRequiredDialog();
+      return;
+    }
+
     String pdfUrl = widget.book?.pdfUrl ?? '';
     if (pdfUrl.isEmpty) {
       pdfUrl = 'assets/sample_book.pdf';
@@ -343,6 +349,50 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                               fontSize: 14,
                               color: AppColors.textSecondary,
                               fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+
+                          // Access Status Badge (FREE or Premiere Only)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: (widget.book?.isFree ?? true)
+                                  ? Colors.green.shade50
+                                  : const Color(0xFFFFF7ED),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: (widget.book?.isFree ?? true)
+                                    ? Colors.green.shade300
+                                    : const Color(0xFFFDE68A),
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  (widget.book?.isFree ?? true)
+                                      ? Icons.check_circle_outline_rounded
+                                      : Icons.workspace_premium_rounded,
+                                  size: 14,
+                                  color: (widget.book?.isFree ?? true)
+                                      ? Colors.green.shade700
+                                      : const Color(0xFFD97706),
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  (widget.book?.isFree ?? true)
+                                      ? 'ອ່ານຟຣີ (Free Access)'
+                                      : 'ສະເພາະສະມາຊິກ Premiere',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                    color: (widget.book?.isFree ?? true)
+                                        ? Colors.green.shade700
+                                        : const Color(0xFFD97706),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                           const SizedBox(height: 16),

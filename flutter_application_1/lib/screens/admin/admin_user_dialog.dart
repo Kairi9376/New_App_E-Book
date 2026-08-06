@@ -34,7 +34,6 @@ class _AdminUserFormScreenState extends State<AdminUserFormScreen> {
   final List<String> _roles = ['admin', 'employee', 'user'];
   final List<String> _statuses = ['active', 'suspended', 'banned'];
 
-  // Preset avatar recommendations for quick selection
   final List<String> _presetAvatars = [
     'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
     'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150',
@@ -51,7 +50,7 @@ class _AdminUserFormScreenState extends State<AdminUserFormScreen> {
     _emailController = TextEditingController(text: u?['email'] ?? '');
     _phoneController = TextEditingController(text: u?['phone_number'] ?? u?['phone'] ?? '');
     _passwordController = TextEditingController();
-    
+
     _profileImageUrl = (u?['profile_image_url'] ?? u?['profile_image'] ?? u?['avatar_url'] ?? u?['avatar'] ?? '').toString();
     _profileImageController = TextEditingController(text: _profileImageUrl);
 
@@ -92,7 +91,6 @@ class _AdminUserFormScreenState extends State<AdminUserFormScreen> {
     try {
       final fileInfo = await FilePickerHelper.pickFile(accept: 'image/*');
       if (fileInfo != null) {
-        // Mock image upload or data URL string
         final mockUrl = 'assets/profile_${DateTime.now().millisecondsSinceEpoch}.jpg';
         setState(() {
           _profileImageUrl = mockUrl;
@@ -142,7 +140,7 @@ class _AdminUserFormScreenState extends State<AdminUserFormScreen> {
         if (success) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(isEditing ? 'บันทึกข้อมูลผู้ใช้เรียบร้อยแล้ว' : 'สร้างบัญชีผู้ใช้ใหม่เรียบร้อยแล้ว'),
+              content: Text(isEditing ? 'ບັນທຶກຂໍ້ມູນຜູ້ໃຊ້ສຳເລັດແລ້ວ' : 'ສ້າງບັນຊີຜູ້ໃຊ້ໃໝ່ສຳເລັດແລ້ວ'),
               backgroundColor: Colors.green,
             ),
           );
@@ -150,7 +148,7 @@ class _AdminUserFormScreenState extends State<AdminUserFormScreen> {
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('เกิดข้อผิดพลาดในการบันทึกข้อมูล'),
+              content: Text('ເກີດຂໍ້ຜິດພາດໃນການບັນທຶກຂໍ້ມູນ'),
               backgroundColor: Colors.redAccent,
             ),
           );
@@ -168,7 +166,7 @@ class _AdminUserFormScreenState extends State<AdminUserFormScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(isEditing ? 'แก้ไขข้อมูลผู้ใช้ (Edit User)' : 'เพิ่มผู้ใช้ใหม่ (Add User)'),
+        title: Text(isEditing ? 'ແກ້ໄຂຂໍ້ມູນຜູ້ໃຊ້ (Edit User)' : 'ເພີ່ມຜູ້ໃຊ້ໃໝ່ (Add User)'),
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
         elevation: 0,
@@ -186,7 +184,6 @@ class _AdminUserFormScreenState extends State<AdminUserFormScreen> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Profile Picture Upload & Avatar Picker Section
                 Center(
                   child: Column(
                     children: [
@@ -253,10 +250,8 @@ class _AdminUserFormScreenState extends State<AdminUserFormScreen> {
                       TextButton.icon(
                         onPressed: _pickProfileImage,
                         icon: const Icon(Icons.upload_file_rounded, size: 16),
-                        label: const Text('อัปโหลดรูปโปรไฟล์ (Upload Photo)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                        label: const Text('ອັບໂຫຼດຮູບໂປຣໄຟລ໌ (Upload Photo)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                       ),
-
-                      // Quick Preset Avatars
                       const SizedBox(height: 4),
                       SingleChildScrollView(
                         scrollDirection: Axis.horizontal,
@@ -294,29 +289,24 @@ class _AdminUserFormScreenState extends State<AdminUserFormScreen> {
                   ),
                 ),
                 const SizedBox(height: 20),
-
-                // Form Section
                 Form(
                   key: _formKey,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Section Title: Personal Info
-                      const Text('ข้อมูลส่วนตัว (Personal Details)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.primary)),
+                      const Text('ຂໍ້ມູນສ່ວນຕົວ (Personal Details)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.primary)),
                       const SizedBox(height: 10),
-
-                      // First Name & Last Name Row
                       Row(
                         children: [
                           Expanded(
                             child: TextFormField(
                               controller: _firstNameController,
                               decoration: const InputDecoration(
-                                labelText: 'ชื่อ (First Name) *',
+                                labelText: 'ຊື່ (First Name) *',
                                 prefixIcon: Icon(Icons.person_outline_rounded, color: AppColors.primary),
                               ),
                               validator: (val) =>
-                                  val == null || val.trim().isEmpty ? 'กรุณากรอกชื่อ' : null,
+                                  val == null || val.trim().isEmpty ? 'ກະລຸນາປ້ອນຊື່' : null,
                               onChanged: (_) => setState(() {}),
                             ),
                           ),
@@ -325,17 +315,15 @@ class _AdminUserFormScreenState extends State<AdminUserFormScreen> {
                             child: TextFormField(
                               controller: _lastNameController,
                               decoration: const InputDecoration(
-                                labelText: 'นามสกุล (Last Name) *',
+                                labelText: 'ນາມສະກຸນ (Last Name) *',
                               ),
                               validator: (val) =>
-                                  val == null || val.trim().isEmpty ? 'กรุณากรอกนามสกุล' : null,
+                                  val == null || val.trim().isEmpty ? 'ກະລຸນາປ້ອນນາມສະກຸນ' : null,
                             ),
                           ),
                         ],
                       ),
                       const SizedBox(height: 14),
-
-                      // Email & Phone Number Row
                       Row(
                         children: [
                           Expanded(
@@ -343,13 +331,13 @@ class _AdminUserFormScreenState extends State<AdminUserFormScreen> {
                               controller: _emailController,
                               keyboardType: TextInputType.emailAddress,
                               decoration: const InputDecoration(
-                                labelText: 'อีเมล (Email) *',
+                                labelText: 'ອີເມວ (Email) *',
                                 hintText: 'example@gmail.com',
                                 prefixIcon: Icon(Icons.email_outlined, color: AppColors.primary),
                               ),
                               validator: (val) {
-                                if (val == null || val.trim().isEmpty) return 'กรุณากรอกอีเมล';
-                                if (!val.contains('@')) return 'รูปแบบอีเมลไม่ถูกต้อง';
+                                if (val == null || val.trim().isEmpty) return 'ກະລຸນາປ້ອນອີເມວ';
+                                if (!val.contains('@')) return 'ຮູບແບບອີເມວບໍ່ຖືກຕ້ອງ';
                                 return null;
                               },
                             ),
@@ -360,7 +348,7 @@ class _AdminUserFormScreenState extends State<AdminUserFormScreen> {
                               controller: _phoneController,
                               keyboardType: TextInputType.phone,
                               decoration: const InputDecoration(
-                                labelText: 'เบอร์โทรศัพท์ (Phone)',
+                                labelText: 'ເບີໂທລະສັບ (Phone)',
                                 hintText: '020-XXXX-XXXX',
                                 prefixIcon: Icon(Icons.phone_outlined, color: AppColors.primary),
                               ),
@@ -369,27 +357,22 @@ class _AdminUserFormScreenState extends State<AdminUserFormScreen> {
                         ],
                       ),
                       const SizedBox(height: 20),
-
-                      // Section Title: Security & Role
-                      const Text('สิทธิ์และระบบความปลอดภัย (Security & Role)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.primary)),
+                      const Text('ສິດ ແລະ ລະບົບຄວາມປອດໄພ (Security & Role)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.primary)),
                       const SizedBox(height: 10),
-
-                      // Role & Account Status Dropdowns Row
                       Row(
                         children: [
-                          // Role Selection
                           Expanded(
                             child: DropdownButtonFormField<String>(
                               value: _selectedRole,
                               decoration: const InputDecoration(
-                                labelText: 'สิทธิ์การใช้งาน (Role) *',
+                                labelText: 'ສິດການນຳໃຊ້ (Role) *',
                                 prefixIcon: Icon(Icons.security_rounded, color: AppColors.primary),
                                 contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 12),
                               ),
                               items: const [
-                                DropdownMenuItem(value: 'user', child: Text('User (ผู้ใช้ทั่วไป)')),
-                                DropdownMenuItem(value: 'employee', child: Text('Employee (พนักงาน)')),
-                                DropdownMenuItem(value: 'admin', child: Text('Admin (ผู้ดูแลระบบ)')),
+                                DropdownMenuItem(value: 'user', child: Text('User (ຜູ້ໃຊ້ທົ່ວໄປ)')),
+                                DropdownMenuItem(value: 'employee', child: Text('Employee (ພະນັກງານ)')),
+                                DropdownMenuItem(value: 'admin', child: Text('Admin (ຜູ້ດູແລລະບົບ)')),
                               ],
                               onChanged: (val) {
                                 if (val != null) {
@@ -399,27 +382,25 @@ class _AdminUserFormScreenState extends State<AdminUserFormScreen> {
                             ),
                           ),
                           const SizedBox(width: 12),
-
-                          // Account Status Selection
                           Expanded(
                             child: DropdownButtonFormField<String>(
                               value: _selectedStatus,
                               decoration: const InputDecoration(
-                                labelText: 'สถานะบัญชี (Status) *',
+                                labelText: 'ສະຖານະບັນຊີ (Status) *',
                                 contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 12),
                               ),
                               items: const [
                                 DropdownMenuItem(
                                   value: 'active',
-                                  child: Text('Active (ปกติ)', style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
+                                  child: Text('Active (ປົກກະຕິ)', style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
                                 ),
                                 DropdownMenuItem(
                                   value: 'suspended',
-                                  child: Text('Suspended (ระงับ)', style: TextStyle(color: Colors.orange, fontWeight: FontWeight.bold)),
+                                  child: Text('Suspended (ລະງັບ)', style: TextStyle(color: Colors.orange, fontWeight: FontWeight.bold)),
                                 ),
                                 DropdownMenuItem(
                                   value: 'banned',
-                                  child: Text('Banned (บล็อก)', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+                                  child: Text('Banned (ບລັອກ)', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
                                 ),
                               ],
                               onChanged: (val) {
@@ -432,13 +413,11 @@ class _AdminUserFormScreenState extends State<AdminUserFormScreen> {
                         ],
                       ),
                       const SizedBox(height: 14),
-
-                      // Password Input Field with Eye Toggle
                       TextFormField(
                         controller: _passwordController,
                         obscureText: _obscurePassword,
                         decoration: InputDecoration(
-                          labelText: isEditing ? 'รหัสผ่านใหม่ (ว่างไว้หากไม่ต้องการเปลี่ยน)' : 'รหัสผ่าน (Password) *',
+                          labelText: isEditing ? 'ລະຫັດຜ່ານໃໝ່ (ຫວ່າງໄວ້ຫາກບໍ່ຕ້ອງການປ່ຽນ)' : 'ລະຫັດຜ່ານ (Password) *',
                           hintText: '••••••••',
                           prefixIcon: const Icon(Icons.lock_outline_rounded, color: AppColors.primary),
                           suffixIcon: IconButton(
@@ -451,17 +430,15 @@ class _AdminUserFormScreenState extends State<AdminUserFormScreen> {
                         ),
                         validator: (val) {
                           if (!isEditing && (val == null || val.trim().isEmpty)) {
-                            return 'กรุณากรอกรหัสผ่านสำหรับบัญชีใหม่';
+                            return 'ກະລຸນາປ້ອນລະຫັດຜ່ານສຳລັບບັນຊີໃໝ່';
                           }
                           if (val != null && val.isNotEmpty && val.length < 6) {
-                            return 'รหัสผ่านต้องมีความยาวอย่างน้อย 6 ตัวอักษร';
+                            return 'ລະຫັດຜ່ານຕ້ອງມີຄວາມຍາວຢ່າງໜ້ອຍ 6 ຕົວອັກສອນ';
                           }
                           return null;
                         },
                       ),
                       const SizedBox(height: 14),
-
-                      // Student & Premiere Member Status Switch
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                         decoration: BoxDecoration(
@@ -471,11 +448,11 @@ class _AdminUserFormScreenState extends State<AdminUserFormScreen> {
                         ),
                         child: SwitchListTile(
                           title: const Text(
-                            'สถานะนักเรียน / สมาชิกพรีเมี่ยม (Student / Premiere Member)',
+                            'ສະຖານະນັກຮຽນ / ສະມາຊິກພຣີມ່ຽມ (Student / Premiere Member)',
                             style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
                           ),
                           subtitle: const Text(
-                            'เปิดใช้งานสิทธิ์ส่วนลดและสิทธิพิเศษสำหรับนักเรียนนักศึกษา',
+                            'ເປີດນຳໃຊ້ສິດສ່ວນຫຼຸດ ແລະ ສິດທິພິເສດສຳລັບນັກຮຽນນັກສຶກສາ',
                             style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
                           ),
                           value: _isStudent,
@@ -484,8 +461,6 @@ class _AdminUserFormScreenState extends State<AdminUserFormScreen> {
                         ),
                       ),
                       const SizedBox(height: 24),
-
-                      // Action Buttons Row
                       Row(
                         children: [
                           Expanded(
@@ -497,7 +472,7 @@ class _AdminUserFormScreenState extends State<AdminUserFormScreen> {
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                               ),
-                              child: const Text('ยกเลิก (Cancel)'),
+                              child: const Text('ຍົກເລີກ (Cancel)'),
                             ),
                           ),
                           const SizedBox(width: 12),
@@ -517,7 +492,7 @@ class _AdminUserFormScreenState extends State<AdminUserFormScreen> {
                                       height: 20,
                                       child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
                                     )
-                                  : Text(isEditing ? 'บันทึกการแก้ไข' : 'สร้างบัญชีผู้ใช้'),
+                                  : Text(isEditing ? 'ບັນທຶກການແກ້ໄຂ' : 'ສ້າງບັນຊີຜູ້ໃຊ້'),
                             ),
                           ),
                         ],

@@ -45,22 +45,28 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   @override
   void initState() {
     super.initState();
-    _fetchAdminData();
+    // ⚡ ห้ามเรียก _fetchAdminData() ตรงๆ ใน initState เพราะ setState() จะโดนเรียก
+    // ในช่วง Build Scope แรกที่ยังวาดไม่เสร็จ → ทำให้เกิด "Tried to build dirty widget
+    // in the wrong build scope" และ RenderErrorBox บน Flutter Web
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _fetchAdminData();
+    });
   }
 
   Future<void> _fetchAdminData() async {
-    setState(() => _isLoading = true);
+    if (mounted) setState(() => _isLoading = true);
 
     try {
+      // ใช้ eagerError: false เพื่อไม่ให้ API ตัวใดตัวหนึ่งล้มเหลวแล้วพาทั้งหมดพัง
       final results = await Future.wait([
-        ApiService.getBooks(role: 'admin', status: 'all'),
-        ApiService.getUsers(),
-        ApiService.getKycList(),
-        ApiService.getSubscriptions(),
-        ApiService.getPackages(showAll: true),
-        ApiService.getCategories(),
-        ApiService.getAuthors(),
-        ApiService.getAuditLogs(),
+        ApiService.getBooks(role: 'admin', status: 'all').catchError((_) => <BookModel>[]),
+        ApiService.getUsers().catchError((_) => <Map<String, dynamic>>[]),
+        ApiService.getKycList().catchError((_) => <Map<String, dynamic>>[]),
+        ApiService.getSubscriptions().catchError((_) => <Map<String, dynamic>>[]),
+        ApiService.getPackages(showAll: true).catchError((_) => <Map<String, dynamic>>[]),
+        ApiService.getCategories().catchError((_) => <Map<String, dynamic>>[]),
+        ApiService.getAuthors().catchError((_) => <Map<String, dynamic>>[]),
+        ApiService.getAuditLogs().catchError((_) => <Map<String, dynamic>>[]),
       ]);
 
       final books = results[0] as List<BookModel>;
@@ -80,29 +86,34 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           _adminUsers.clear();
           _adminUsers.addAll(rawUsers);
 
+          // ครอบ KYC mapping ด้วย try-catch เพื่อป้องกัน null/format ทำให้เกิด ErrorWidget
           _kycSubmissions.clear();
           if (rawKyc.isNotEmpty) {
-            _kycSubmissions.addAll(rawKyc.map((k) {
-              final statusStr = (k['status'] ?? 'pending').toString();
-              KycStatus st = KycStatus.pending;
-              if (statusStr == 'approved') st = KycStatus.approved;
-              if (statusStr == 'rejected') st = KycStatus.rejected;
+            for (final k in rawKyc) {
+              try {
+                final statusStr = (k['status'] ?? 'pending').toString();
+                KycStatus st = KycStatus.pending;
+                if (statusStr == 'approved') st = KycStatus.approved;
+                if (statusStr == 'rejected') st = KycStatus.rejected;
 
-              final name = '${k['first_name'] ?? ''} ${k['last_name'] ?? ''}'.trim();
-              return KycModel(
-                id: (k['kyc_id'] ?? 1).toString(),
-                userId: (k['user_id'] ?? 1).toString(),
-                userName: name.isNotEmpty ? name : 'ผู้ใช้งาน',
-                userEmail: k['email'] ?? '',
-                fullName: name.isNotEmpty ? name : 'ผู้ใช้งาน',
-                idCardNumber: k['document_number'] ?? 'N/A',
-                idCardImagePath: k['document_image_url'] ?? '',
-                selfieImagePath: k['selfie_image_url'] ?? '',
-                submittedAt: k['created_at'] != null ? DateTime.tryParse(k['created_at']) ?? DateTime.now() : DateTime.now(),
-                status: st,
-                rejectReason: k['rejection_reason'],
-              );
-            }));
+                final name = '${k['first_name'] ?? ''} ${k['last_name'] ?? ''}'.trim();
+                _kycSubmissions.add(KycModel(
+                  id: (k['kyc_id'] ?? 1).toString(),
+                  userId: (k['user_id'] ?? 1).toString(),
+                  userName: name.isNotEmpty ? name : 'ຜູ້ໃຊ້ງານ',
+                  userEmail: (k['email'] ?? '').toString(),
+                  fullName: name.isNotEmpty ? name : 'ຜູ້ໃຊ້ງານ',
+                  idCardNumber: (k['document_number'] ?? 'N/A').toString(),
+                  idCardImagePath: (k['document_image_url'] ?? '').toString(),
+                  selfieImagePath: (k['selfie_image_url'] ?? '').toString(),
+                  submittedAt: k['created_at'] != null ? DateTime.tryParse(k['created_at'].toString()) ?? DateTime.now() : DateTime.now(),
+                  status: st,
+                  rejectReason: k['rejection_reason']?.toString(),
+                ));
+              } catch (e) {
+                debugPrint('⚠️ KYC row parse error: $e');
+              }
+            }
           }
 
           _subscriptions.clear();
@@ -124,6 +135,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         });
       }
     } catch (e) {
+      debugPrint('⚠️ _fetchAdminData error: $e');
       if (mounted) {
         setState(() => _isLoading = false);
       }
@@ -242,26 +254,26 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       builder: (ctx) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: const Text('สร้างแพ็กเกจสมาชิกใหม่'),
+          title: const Text('ສ້າງແພັກເກັດສະມາຊິກໃໝ່'),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'ชื่อแพ็กเกจ (Package Name)')),
+                TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'ຊື່ແພັກເກັດ (Package Name)')),
                 const SizedBox(height: 8),
-                TextField(controller: priceCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'ราคา (LAK)')),
+                TextField(controller: priceCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'ລາຄາ (LAK)')),
                 const SizedBox(height: 8),
-                TextField(controller: daysCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'ระยะเวลา (วัน)')),
+                TextField(controller: daysCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'ໄລຍະເວລາ (ມື້)')),
                 const SizedBox(height: 8),
-                TextField(controller: descCtrl, maxLines: 2, decoration: const InputDecoration(labelText: 'รายละเอียดแพ็กเกจ')),
+                TextField(controller: descCtrl, maxLines: 2, decoration: const InputDecoration(labelText: 'ລາຍລະອຽດແພັກເກັດ')),
                 const SizedBox(height: 8),
                 SwitchListTile(
-                  title: const Text('แพ็กเกจสำหรับนักเรียน/นักศึกษา'),
+                  title: const Text('ແພັກເກັດສຳລັບນັກຮຽນ/ນັກສຶກສາ'),
                   value: isStudent,
                   onChanged: (val) => setDialogState(() => isStudent = val),
                 ),
                 SwitchListTile(
-                  title: Text(isActive ? 'สถานะ: เปิดใช้งาน (Active)' : 'สถานะ: ปิดใช้งาน (Inactive)'),
+                  title: Text(isActive ? 'ສະຖານະ: ເປີດນຳໃຊ້ (Active)' : 'ສະຖານະ: ປິດນຳໃຊ້ (Inactive)'),
                   value: isActive,
                   activeColor: Colors.green,
                   onChanged: (val) => setDialogState(() => isActive = val),
@@ -270,7 +282,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('ยกเลิก')),
+            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('ຍົກເລີກ')),
             ElevatedButton(
               onPressed: () async {
                 final name = nameCtrl.text.trim();
@@ -292,7 +304,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 }
               },
               style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
-              child: const Text('สร้างแพ็กเกจ'),
+              child: const Text('ສ້າງແພັກເກັດ'),
             ),
           ],
         ),
@@ -311,8 +323,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(newActive
-              ? 'เปิดใช้งานแพ็กเกจ "${pkg['name']}" เรียบร้อยแล้ว'
-              : 'ปิดใช้งานแพ็กเกจ (Inactive) "${pkg['name']}" เรียบร้อยแล้ว'),
+              ? 'ເປີດນຳໃຊ້ແພັກເກັດ "${pkg['name']}" ຮຽບຮ້ອຍແລ້ວ'
+              : 'ປິດນຳໃຊ້ແພັກເກັດ (Inactive) "${pkg['name']}" ຮຽບຮ້ອຍແລ້ວ'),
           backgroundColor: newActive ? Colors.green : Colors.orange.shade800,
         ),
       );
@@ -332,27 +344,27 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       builder: (ctx) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: Text('แก้ไขแพ็กเกจ: ${pkg['name']}'),
+          title: Text('ແກ້ໄຂແພັກເກັດ: ${pkg['name']}'),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'ชื่อแพ็กเกจ (Package Name)')),
+                TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'ຊື່ແພັກເກັດ (Package Name)')),
                 const SizedBox(height: 8),
-                TextField(controller: priceCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'ราคา (LAK)')),
+                TextField(controller: priceCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'ລາຄາ (LAK)')),
                 const SizedBox(height: 8),
-                TextField(controller: daysCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'ระยะเวลา (วัน)')),
+                TextField(controller: daysCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'ໄລຍະເວລາ (ມື້)')),
                 const SizedBox(height: 8),
-                TextField(controller: descCtrl, maxLines: 2, decoration: const InputDecoration(labelText: 'รายละเอียดแพ็กเกจ')),
+                TextField(controller: descCtrl, maxLines: 2, decoration: const InputDecoration(labelText: 'ລາຍລະອຽດແພັກເກັດ')),
                 const SizedBox(height: 8),
                 SwitchListTile(
-                  title: const Text('แพ็กเกจสำหรับนักเรียน/นักศึกษา'),
+                  title: const Text('ແພັກເກັດສຳລັບນັກຮຽນ/ນັກສຶກສາ'),
                   value: isStudent,
                   onChanged: (val) => setDialogState(() => isStudent = val),
                 ),
                 SwitchListTile(
-                  title: Text(isActive ? 'สถานะ: เปิดใช้งาน (Active)' : 'สถานะ: ปิดใช้งาน (Inactive)'),
-                  subtitle: Text(isActive ? 'ผู้ใช้งานสามารถเลือกซื้อได้' : 'หยุดให้บริการชั่วคราว ไม่แสดงในหน้าซื้อ'),
+                  title: Text(isActive ? 'ສະຖານະ: ເປີດນຳໃຊ້ (Active)' : 'ສະຖານະ: ປິດນຳໃຊ້ (Inactive)'),
+                  subtitle: Text(isActive ? 'ຜູ້ໃຊ້ງານສາມາດເລືອກຊື້ໄດ້' : 'ຢຸດໃຫ້ບໍລິການຊົ່ວຄາວ ບໍ່ສະແດງໃນໜ້າຊື້'),
                   value: isActive,
                   activeColor: Colors.green,
                   onChanged: (val) => setDialogState(() => isActive = val),
@@ -361,7 +373,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('ยกเลิก')),
+            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('ຍົກເລີກ')),
             ElevatedButton(
               onPressed: () async {
                 final name = nameCtrl.text.trim();
@@ -382,13 +394,13 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                   if (mounted && success) {
                     await _fetchAdminData();
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('อัปเดตแพ็กเกจเรียบร้อยแล้ว'), backgroundColor: Colors.green),
+                      const SnackBar(content: Text('ອັບເດດແພັກເກັດຮຽບຮ້ອຍແລ້ວ'), backgroundColor: Colors.green),
                     );
                   }
                 }
               },
               style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
-              child: const Text('บันทึกการแก้ไข'),
+              child: const Text('ບັນທຶກການແກ້ໄຂ'),
             ),
           ],
         ),
@@ -494,7 +506,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     if (mounted && success) {
       await _fetchAdminData();
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('อนุมัติ KYC ของ ${item.userName} เรียบร้อยแล้ว'), backgroundColor: Colors.green),
+        SnackBar(content: Text('ອະນຸມັດ KYC ຂອງ ${item.userName} ຮຽບຮ້ອຍແລ້ວ'), backgroundColor: Colors.green),
       );
     }
   }
@@ -505,7 +517,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     if (mounted && success) {
       await _fetchAdminData();
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('อนุมัติสลิปการชำระเงินเรียบร้อยแล้ว!'), backgroundColor: Colors.green),
+        const SnackBar(content: Text('ອະນຸມັດສະລິບການຊຳລະເງິນຮຽບຮ້ອຍແລ້ວ!'), backgroundColor: Colors.green),
       );
     }
   }
@@ -516,7 +528,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     if (mounted && success) {
       await _fetchAdminData();
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('ปฏิเสธสลิปเรียบร้อยแล้ว'), backgroundColor: Colors.redAccent),
+        const SnackBar(content: Text('ປະຕິເສດສະລິບຮຽບຮ້ອຍແລ້ວ'), backgroundColor: Colors.redAccent),
       );
     }
   }
@@ -684,9 +696,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                         ),
                     ],
                   ),
-                  label: 'สลิป',
+                  label: 'ສະລິບ',
                 ),
-                const BottomNavigationBarItem(icon: Icon(Icons.settings_applications_rounded), label: 'ระบบ'),
+                const BottomNavigationBarItem(icon: Icon(Icons.settings_applications_rounded), label: 'ລະບົບ'),
                 const BottomNavigationBarItem(icon: Icon(Icons.analytics_rounded), label: 'ລາຍງານ'),
               ],
             )
@@ -700,7 +712,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         onPressed: _openAddBookDialog,
         backgroundColor: AppColors.primary,
         icon: const Icon(Icons.add_rounded, color: Colors.white),
-        label: const Text('เพิ่มหนังสือ', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        label: const Text('ເພີ່ມປຶ້ມ', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
       );
     }
     if (_selectedTab == 1) {
@@ -708,7 +720,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         onPressed: _openCreateUserDialog,
         backgroundColor: AppColors.primary,
         icon: const Icon(Icons.person_add_alt_1_rounded, color: Colors.white),
-        label: const Text('เพิ่มผู้ใช้', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        label: const Text('ເພີ່ມຜູ້ໃຊ້', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
       );
     }
     return null;
@@ -745,39 +757,60 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   }
 
   // --- STAT SUMMARY CARD BANNER ---
-  Widget _buildStatSummaryBanner({required String title, required String value, required IconData icon, required Color color}) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: const Color(0xFFE2E8F0)),
-          boxShadow: [
-            BoxShadow(color: color.withOpacity(0.06), blurRadius: 6, offset: const Offset(0, 2)),
-          ],
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(color: color.withOpacity(0.12), borderRadius: BorderRadius.circular(10)),
-              child: Icon(icon, color: color, size: 20),
+  Widget _buildStatSummaryBanner({
+    required String title,
+    required String value,
+    required IconData icon,
+    required Color color,
+    bool wrapExpanded = true,
+  }) {
+    final content = Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: [
+          BoxShadow(color: color.withOpacity(0.06), blurRadius: 6, offset: const Offset(0, 2)),
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(color: color.withOpacity(0.12), borderRadius: BorderRadius.circular(10)),
+            child: Icon(icon, color: color, size: 20),
+          ),
+          const SizedBox(width: 8),
+          Flexible(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(fontSize: 10, color: AppColors.textSecondary, fontWeight: FontWeight.bold),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(
+                  value,
+                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: color),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
             ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title, style: const TextStyle(fontSize: 10, color: AppColors.textSecondary, fontWeight: FontWeight.bold)),
-                  Text(value, style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: color)),
-                ],
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
+
+    if (wrapExpanded) {
+      return Expanded(child: content);
+    }
+    return SizedBox(width: 180, child: content);
   }
 
   // --- TAB 0: BOOKS MANAGEMENT ---
@@ -795,11 +828,11 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           scrollDirection: Axis.horizontal,
           child: Row(
             children: [
-              _buildStatSummaryBanner(title: 'หนังสือทั้งหมด', value: '${_adminBooks.length} เล่ม', icon: Icons.menu_book_rounded, color: AppColors.primary),
+              _buildStatSummaryBanner(title: 'ປຶ້ມທັງໝົດ', value: '${_adminBooks.length} ຫົວ', icon: Icons.menu_book_rounded, color: AppColors.primary, wrapExpanded: false),
               const SizedBox(width: 8),
-              _buildStatSummaryBanner(title: 'รออนุมัติ', value: '$_pendingBooksCount เล่ม', icon: Icons.hourglass_top_rounded, color: Colors.orange.shade800),
+              _buildStatSummaryBanner(title: 'ລໍຖ້າອະນຸມັດ', value: '$_pendingBooksCount ຫົວ', icon: Icons.hourglass_top_rounded, color: Colors.orange.shade800, wrapExpanded: false),
               const SizedBox(width: 8),
-              _buildStatSummaryBanner(title: 'อนุมัติแล้ว', value: '${_adminBooks.where((b) => b.status.toLowerCase() == 'approved').length} เล่ม', icon: Icons.check_circle_rounded, color: Colors.green),
+              _buildStatSummaryBanner(title: 'ອະນຸມັດແລ້ວ', value: '${_adminBooks.where((b) => b.status.toLowerCase() == 'approved').length} ຫົວ', icon: Icons.check_circle_rounded, color: Colors.green, wrapExpanded: false),
             ],
           ),
         ),
@@ -812,7 +845,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               child: TextField(
                 onChanged: (val) => setState(() => _searchQuery = val),
                 decoration: InputDecoration(
-                  hintText: 'ค้นหาชื่อหนังสือ หรือผู้แต่ง...',
+                  hintText: 'ຄົ້ນຫາຊື່ປຶ້ມ ຫຼື ຜູ້ແຕ່ງ...',
                   prefixIcon: const Icon(Icons.search_rounded),
                   contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
                   fillColor: Colors.white,
@@ -829,10 +862,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 value: _bookStatusFilter,
                 underline: const SizedBox(),
                 items: [
-                  const DropdownMenuItem(value: 'ທັງໝົດ', child: Text('ทังหมด', style: TextStyle(fontSize: 12))),
-                  DropdownMenuItem(value: 'pending', child: Text('รออนุมัติ ($_pendingBooksCount)', style: TextStyle(fontSize: 12, color: Colors.orange.shade900, fontWeight: FontWeight.bold))),
-                  const DropdownMenuItem(value: 'approved', child: Text('อนุมัติแล้ว', style: TextStyle(fontSize: 12, color: Colors.green))),
-                  const DropdownMenuItem(value: 'rejected', child: Text('ไม่อนุมัติ', style: TextStyle(fontSize: 12, color: Colors.red))),
+                  const DropdownMenuItem(value: 'ທັງໝົດ', child: Text('ທັງໝົດ', style: TextStyle(fontSize: 12))),
+                  DropdownMenuItem(value: 'pending', child: Text('ລໍຖ້າອະນຸມັດ ($_pendingBooksCount)', style: TextStyle(fontSize: 12, color: Colors.orange.shade900, fontWeight: FontWeight.bold))),
+                  const DropdownMenuItem(value: 'approved', child: Text('ອະນຸມັດແລ້ວ', style: TextStyle(fontSize: 12, color: Colors.green))),
+                  const DropdownMenuItem(value: 'rejected', child: Text('ບໍ່ອະນຸມັດ', style: TextStyle(fontSize: 12, color: Colors.red))),
                 ],
                 onChanged: (val) => setState(() => _bookStatusFilter = val!),
               ),
@@ -874,9 +907,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               const SizedBox(height: 2),
-                              Text('ผู้แต่ง: ${book.author}', style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                              Text('ຜູ້ແຕ່ງ: ${book.author}', style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
                               if (book.uploaderName != null)
-                                Text('ผู้เพิ่ม: ${book.uploaderName}', style: const TextStyle(fontSize: 11, color: AppColors.primary)),
+                                Text('ຜູ້ເພີ່ມ: ${book.uploaderName}', style: const TextStyle(fontSize: 11, color: AppColors.primary)),
                               const SizedBox(height: 4),
                               Wrap(
                                 spacing: 4,
@@ -891,7 +924,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                       borderRadius: BorderRadius.circular(6),
                                     ),
                                     child: Text(
-                                      isApproved ? 'อนุมัติแล้ว' : (isRejected ? 'ไม่อนุมัติ' : 'รออนุมัติ'),
+                                      isApproved ? 'ອະນຸມັດແລ້ວ' : (isRejected ? 'ບໍ່ອະນຸມັດ' : 'ລໍຖ້າອະນຸມັດ'),
                                       style: TextStyle(
                                         fontSize: 10,
                                         fontWeight: FontWeight.bold,
@@ -904,13 +937,13 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                   Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                     decoration: BoxDecoration(color: const Color(0xFFEFF6FF), borderRadius: BorderRadius.circular(6)),
-                                    child: Text(book.tags.isNotEmpty ? book.tags.first : "ทั่วไป", style: const TextStyle(fontSize: 10, color: AppColors.primary, fontWeight: FontWeight.bold)),
+                                    child: Text(book.tags.isNotEmpty ? book.tags.first : "ທົ່ວໄປ", style: const TextStyle(fontSize: 10, color: AppColors.primary, fontWeight: FontWeight.bold)),
                                   ),
                                   if (book.isFree)
                                     Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                       decoration: BoxDecoration(color: Colors.green.shade50, borderRadius: BorderRadius.circular(6)),
-                                      child: const Text('อ่านฟรี', style: TextStyle(fontSize: 10, color: Colors.green, fontWeight: FontWeight.bold)),
+                                      child: const Text('ອ່ານຟຣີ', style: TextStyle(fontSize: 10, color: Colors.green, fontWeight: FontWeight.bold)),
                                     ),
                                 ],
                               ),
@@ -921,12 +954,12 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                             children: [
                               if (isPending) ...[
                                 IconButton(
-                                  tooltip: 'อนุมัติหนังสือ',
+                                  tooltip: 'ອະນຸມັດປຶ້ມ',
                                   icon: const Icon(Icons.check_circle_rounded, color: Colors.green, size: 24),
                                   onPressed: () => _changeBookStatus(book, 'approved'),
                                 ),
                                 IconButton(
-                                  tooltip: 'ปฏิเสธหนังสือ',
+                                  tooltip: 'ປະຕິເສດປຶ້ມ',
                                   icon: const Icon(Icons.cancel_rounded, color: Colors.redAccent, size: 24),
                                   onPressed: () => _changeBookStatus(book, 'rejected'),
                                 ),
@@ -964,20 +997,20 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             children: const [
               Icon(Icons.cancel_rounded, color: Colors.redAccent),
               SizedBox(width: 8),
-              Text('ปฏิเสธการอนุมัติหนังสือ'),
+              Text('ປະຕິເສດການອະນຸມັດປຶ້ມ'),
             ],
           ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('กรุณาระบุเหตุผลที่ไม่ผ่านการอนุมัติสำหรับหนังสือ "${book.title}":'),
+              Text('ກະລຸນາລະບຸເຫດຜົນທີ່ບໍ່ຜ່ານການອະນຸມັດສຳລັບປຶ້ມ "${book.title}":'),
               const SizedBox(height: 10),
               TextField(
                 controller: textController,
                 maxLines: 3,
                 decoration: InputDecoration(
-                  hintText: 'เช่น เอกสาร PDF ไม่ชัดเจน / เนื้อหาไม่ตรงตามเกณฑ์',
+                  hintText: 'ເຊັ່ນ: ເອກະສານ PDF ບໍ່ຊັດເຈນ / ເນື້ອຫາບໍ່ກົງຕາມເກນ',
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                 ),
               ),
@@ -986,12 +1019,12 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('ยกเลิก', style: TextStyle(color: AppColors.textSecondary)),
+              child: const Text('ຍົກເລີກ', style: TextStyle(color: AppColors.textSecondary)),
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
               onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('ยืนยันปฏิเสธ', style: TextStyle(color: Colors.white)),
+              child: const Text('ຢືນຢັນປະຕິເສດ', style: TextStyle(color: Colors.white)),
             ),
           ],
         ),
@@ -1006,8 +1039,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(status == 'approved'
-              ? 'อนุมัติหนังสือ "${book.title}" เรียบร้อยแล้ว'
-              : 'ปฏิเสธหนังสือ "${book.title}" เรียบร้อยแล้ว'),
+              ? 'ອະນຸມັດປຶ້ມ "${book.title}" ຮຽບຮ້ອຍແລ້ວ'
+              : 'ປະຕິເສດປຶ້ມ "${book.title}" ຮຽບຮ້ອຍແລ້ວ'),
           backgroundColor: status == 'approved' ? Colors.green : Colors.redAccent,
         ),
       );
@@ -1029,9 +1062,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         // Quick User Stats Banner
         Row(
           children: [
-            _buildStatSummaryBanner(title: 'ผู้ใช้ทั้งหมด', value: '${_adminUsers.length} คน', icon: Icons.people_alt_rounded, color: Colors.indigo),
+            _buildStatSummaryBanner(title: 'ຜູ້ໃຊ້ທັງໝົດ', value: '${_adminUsers.length} ຄົນ', icon: Icons.people_alt_rounded, color: Colors.indigo),
             const SizedBox(width: 8),
-            _buildStatSummaryBanner(title: 'แอดมิน/พนักงาน', value: '${_adminUsers.where((u) => (u['role'] ?? '').toString().toLowerCase() != 'user').length} คน', icon: Icons.admin_panel_settings_rounded, color: Colors.purple),
+            _buildStatSummaryBanner(title: 'ແອດມິນ/ພະນັກງານ', value: '${_adminUsers.where((u) => (u['role'] ?? '').toString().toLowerCase() != 'user').length} ຄົນ', icon: Icons.admin_panel_settings_rounded, color: Colors.purple),
           ],
         ),
         const SizedBox(height: 12),
@@ -1042,7 +1075,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               child: TextField(
                 onChanged: (val) => setState(() => _searchQuery = val),
                 decoration: InputDecoration(
-                  hintText: 'ค้นหาชื่อ หรือ อีเมล...',
+                  hintText: 'ຄົ້ນຫາຊື່ ຫຼື ອີເມວ...',
                   prefixIcon: const Icon(Icons.search_rounded),
                   contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   fillColor: Colors.white,
@@ -1128,7 +1161,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                         ),
                       ],
                     ),
-                    subtitle: Text('อีเมล: ${user['email']}', style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                    subtitle: Text('ອີເມວ: ${user['email']}', style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -1147,7 +1180,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                             minimumSize: Size.zero,
                           ),
-                          child: Text(isSuspended ? 'ปลดระงับ' : 'ระงับ', style: const TextStyle(color: Colors.white, fontSize: 10)),
+                          child: Text(isSuspended ? 'ປົດລະງັບ' : 'ລະງັບ', style: const TextStyle(color: Colors.white, fontSize: 10)),
                         ),
                       ],
                     ),
@@ -1175,9 +1208,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         // KYC Stats Banner
         Row(
           children: [
-            _buildStatSummaryBanner(title: 'รออนุมัติ KYC', value: '$_pendingKycCount คน', icon: Icons.badge_rounded, color: Colors.orange.shade800),
+            _buildStatSummaryBanner(title: 'ລໍຖ້າອະນຸມັດ KYC', value: '$_pendingKycCount ຄົນ', icon: Icons.badge_rounded, color: Colors.orange.shade800),
             const SizedBox(width: 8),
-            _buildStatSummaryBanner(title: 'อนุมัติแล้ว', value: '${_kycSubmissions.where((k) => k.status == KycStatus.approved).length} คน', icon: Icons.verified_rounded, color: Colors.green),
+            _buildStatSummaryBanner(title: 'ອະນຸມັດແລ້ວ', value: '${_kycSubmissions.where((k) => k.status == KycStatus.approved).length} ຄົນ', icon: Icons.verified_rounded, color: Colors.green),
           ],
         ),
         const SizedBox(height: 12),
@@ -1185,7 +1218,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text('รายการขออนุมัติ KYC', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+            const Text('ລາຍການຂໍອະນຸມັດ KYC', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8),
               decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFFE2E8F0))),
@@ -1205,7 +1238,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             onRefresh: _fetchAdminData,
             color: AppColors.primary,
             child: filtered.isEmpty
-                ? const Center(child: Text('ไม่มีรายการ KYC'))
+                ? const Center(child: Text('ບໍ່ມີລາຍການ KYC'))
                 : ListView.builder(
                     itemCount: filtered.length,
                     itemBuilder: (ctx, idx) {
@@ -1228,8 +1261,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                           subtitle: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text('อีเมล: ${item.userEmail}', style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
-                              Text('เลขบัตร: ${item.idCardNumber}', style: const TextStyle(fontSize: 11, color: Colors.blueGrey)),
+                              Text('ອີເມວ: ${item.userEmail}', style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                              Text('ເລກບັດ: ${item.idCardNumber}', style: const TextStyle(fontSize: 11, color: Colors.blueGrey)),
                             ],
                           ),
                           trailing: item.status == KycStatus.pending
@@ -1259,10 +1292,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('ปฏิเสธ KYC: ${item.userName}'),
-        content: TextField(controller: reasonCtrl, decoration: const InputDecoration(hintText: 'ระบุเหตุผลที่ไม่อนุมัติ...')),
+        title: Text('ປະຕິເສດ KYC: ${item.userName}'),
+        content: TextField(controller: reasonCtrl, decoration: const InputDecoration(hintText: 'ລະບຸເຫດຜົນທີ່ບໍ່ອະນຸມັດ...')),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('ยกเลิก')),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('ຍົກເລີກ')),
           ElevatedButton(
             onPressed: () async {
               Navigator.pop(ctx);
@@ -1271,7 +1304,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               await _fetchAdminData();
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
-            child: const Text('ยืนยันปฏิเสธ'),
+            child: const Text('ຢືນຢັນປະຕິເສດ'),
           ),
         ],
       ),
@@ -1295,9 +1328,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         // Slip Stats Banner
         Row(
           children: [
-            _buildStatSummaryBanner(title: 'สลิปรอตรวจสอบ', value: '$_pendingSlipCount รายการ', icon: Icons.receipt_long_rounded, color: Colors.amber.shade900),
+            _buildStatSummaryBanner(title: 'ສະລິບລໍຖ້າກວດສອບ', value: '$_pendingSlipCount ລາຍການ', icon: Icons.receipt_long_rounded, color: Colors.amber.shade900),
             const SizedBox(width: 8),
-            _buildStatSummaryBanner(title: 'อนุมัติแล้ว', value: '${_subscriptions.where((s) => (s['payment_status'] ?? '').toString().toLowerCase() == 'active').length} รายการ', icon: Icons.verified_user_rounded, color: Colors.green),
+            _buildStatSummaryBanner(title: 'ອະນຸມັດແລ້ວ', value: '${_subscriptions.where((s) => (s['payment_status'] ?? '').toString().toLowerCase() == 'active').length} ລາຍການ', icon: Icons.verified_user_rounded, color: Colors.green),
           ],
         ),
         const SizedBox(height: 12),
@@ -1305,7 +1338,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text('รายการแจ้งชำระเงิน', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+            const Text('ລາຍການແຈ້ງຊຳລະເງິນ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8),
               decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFFE2E8F0))),
@@ -1325,7 +1358,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             onRefresh: _fetchAdminData,
             color: AppColors.primary,
             child: filtered.isEmpty
-                ? const Center(child: Text('ไม่มีรายการสลิปโอนเงิน'))
+                ? const Center(child: Text('ບໍ່ມີລາຍການສະລິບໂອນເງິນ'))
                 : ListView.builder(
                     itemCount: filtered.length,
                     itemBuilder: (ctx, idx) {
@@ -1349,8 +1382,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                           subtitle: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text('แพ็กเกจ: ${sub['package_name'] ?? "VIP"}', style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
-                              Text('ยอดชำระ: ${sub['amount']} LAK', style: const TextStyle(fontSize: 12, color: AppColors.primary, fontWeight: FontWeight.bold)),
+                              Text('ແພັກເກັດ: ${sub['package_name'] ?? "VIP"}', style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                              Text('ຍອດຊຳລະ: ${sub['amount']} LAK', style: const TextStyle(fontSize: 12, color: AppColors.primary, fontWeight: FontWeight.bold)),
                             ],
                           ),
                           trailing: status == 'pending'
@@ -1360,7 +1393,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                     ElevatedButton(
                                       onPressed: () => _approveSubscription(sub),
                                       style: ElevatedButton.styleFrom(backgroundColor: Colors.green, padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4)),
-                                      child: const Text('อนุมัติ', style: TextStyle(color: Colors.white, fontSize: 11)),
+                                      child: const Text('ອະນຸມັດ', style: TextStyle(color: Colors.white, fontSize: 11)),
                                     ),
                                     const SizedBox(width: 4),
                                     IconButton(icon: const Icon(Icons.close_rounded, color: Colors.redAccent), onPressed: () => _rejectSubscription(sub)),
@@ -1387,11 +1420,11 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('จัดการแพ็กเกจสมาชิก', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              const Text('ຈັດການແພັກເກັດສະມາຊິກ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
               ElevatedButton.icon(
                 onPressed: _openCreatePackageDialog,
                 icon: const Icon(Icons.add_rounded, color: Colors.white, size: 18),
-                label: const Text('สร้างแพ็กเกจ', style: TextStyle(color: Colors.white, fontSize: 12)),
+                label: const Text('ສ້າງແພັກເກັດ', style: TextStyle(color: Colors.white, fontSize: 12)),
                 style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
               ),
             ],
@@ -1432,7 +1465,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(color: Colors.orange.shade100, borderRadius: BorderRadius.circular(6)),
-                        child: const Text('นักเรียน/นักศึกษา', style: TextStyle(fontSize: 9, color: Colors.orange, fontWeight: FontWeight.bold)),
+                        child: const Text('ນັກຮຽນ/ນັກສຶກສາ', style: TextStyle(fontSize: 9, color: Colors.orange, fontWeight: FontWeight.bold)),
                       ),
                     const SizedBox(width: 6),
                     Container(
@@ -1442,7 +1475,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
-                        isActive ? 'Active (เปิดใช้งาน)' : 'Inactive (ปิดใช้งาน)',
+                        isActive ? 'Active (ເປີດນຳໃຊ້)' : 'Inactive (ປິດນຳໃຊ້)',
                         style: TextStyle(
                           fontSize: 9,
                           color: isActive ? Colors.green.shade800 : Colors.redAccent,
@@ -1453,7 +1486,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                   ],
                 ),
                 subtitle: Text(
-                  'ราคา: ${pkg['price']} LAK | ระยะเวลา: ${pkg['duration_days']} วัน',
+                  'ລາຄາ: ${pkg['price']} LAK | ໄລຍະເວລາ: ${pkg['duration_days']} ມື້',
                   style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
                 ),
                 trailing: Row(
@@ -1461,7 +1494,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                   children: [
                     IconButton(
                       icon: const Icon(Icons.edit_note_rounded, color: AppColors.primary),
-                      tooltip: 'แก้ไขแพ็กเกจ',
+                      tooltip: 'ແກ້ໄຂແພັກເກັດ',
                       onPressed: () => _openEditPackageDialog(pkg),
                     ),
                     Switch(
@@ -1499,7 +1532,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                               title: const Text('ເພີ່ມໝວດໝູ່ໃໝ່'),
                               content: TextField(controller: catCtrl, decoration: const InputDecoration(hintText: 'ຊື່ໝວດໝູ່...')),
                               actions: [
-                                TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('ยกเลิก')),
+                                TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('ຍົກເລີກ')),
                                 ElevatedButton(
                                   onPressed: () async {
                                     final catName = catCtrl.text.trim();
@@ -1613,12 +1646,12 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                     children: const [
                       Icon(Icons.security_rounded, color: Colors.indigo, size: 20),
                       SizedBox(width: 8),
-                      Text('บันทึกความปลอดภัย (Audit Logs)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                      Text('ບັນທຶກຄວາມປອດໄພ (Audit Logs)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                     ],
                   ),
                   const SizedBox(height: 10),
                   _auditLogs.isEmpty
-                      ? const Padding(padding: EdgeInsets.all(16), child: Text('ไม่มีบันทึก Audit Logs'))
+                      ? const Padding(padding: EdgeInsets.all(16), child: Text('ບໍ່ມີບັນທຶກ Audit Logs'))
                       : ListView.separated(
                           shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
@@ -1674,7 +1707,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               ],
             ),
             const Divider(height: 24),
-            const Text('รายละเอียดหนังสือ:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+            const Text('ລາຍລະອຽດປຶ້ມ:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
             const SizedBox(height: 4),
             Text(book.description ?? 'ບໍ່ມີເນື້ອເລື່ອງ', style: const TextStyle(fontSize: 13, color: Colors.black87)),
             const SizedBox(height: 16),
@@ -1731,9 +1764,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               ],
             ),
             const Divider(height: 24),
-            Text('สิทธิ์การใช้งาน: ${(user['role'] ?? "user").toString().toUpperCase()}'),
+            Text('ສິດການນຳໃຊ້: ${(user['role'] ?? "user").toString().toUpperCase()}'),
             const SizedBox(height: 4),
-            Text('สถานะบัญชี: ${isSuspended ? "ระงับการใช้งาน" : "ปกติ (Active)"}'),
+            Text('ສະຖານະບັນຊີ: ${isSuspended ? "ລະງັບການນຳໃຊ້" : "ປົກກະຕິ (Active)"}'),
             const SizedBox(height: 20),
             Row(
               children: [
@@ -1746,7 +1779,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                       _openEditUserDialog(user, index >= 0 ? index : 0);
                     },
                     icon: const Icon(Icons.edit_note_rounded, size: 20),
-                    label: const Text('แก้ไขข้อมูล'),
+                    label: const Text('ແກ້ໄຂຂໍ້ມູນ'),
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -1757,7 +1790,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                       _toggleUserStatus(user);
                     },
                     style: ElevatedButton.styleFrom(backgroundColor: isSuspended ? Colors.green : Colors.redAccent),
-                    child: Text(isSuspended ? 'ปลดระงับ' : 'ระงับบัญชี'),
+                    child: Text(isSuspended ? 'ປົດລະງັບ' : 'ລະງັບບັນຊີ'),
                   ),
                 ),
               ],
@@ -1783,17 +1816,17 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('รายละเอียดเอกสาร KYC (${item.userName})', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  Text('ລາຍລະອຽດເອກະສານ KYC (${item.userName})', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                   IconButton(icon: const Icon(Icons.close_rounded), onPressed: () => Navigator.pop(ctx)),
                 ],
               ),
               const SizedBox(height: 4),
-              Text('อีเมล: ${item.userEmail}', style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
-              Text('เลขประจำตัว: ${item.idCardNumber}', style: const TextStyle(color: Colors.blueGrey, fontSize: 12, fontWeight: FontWeight.bold)),
-              Text('สถานะ: ${item.statusText}', style: TextStyle(color: item.status == KycStatus.approved ? Colors.green : (item.status == KycStatus.rejected ? Colors.red : Colors.orange), fontWeight: FontWeight.bold, fontSize: 12)),
+              Text('ອີເມວ: ${item.userEmail}', style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+              Text('ເລກປະຈຳຕົວ: ${item.idCardNumber}', style: const TextStyle(color: Colors.blueGrey, fontSize: 12, fontWeight: FontWeight.bold)),
+              Text('ສະຖານະ: ${item.statusText}', style: TextStyle(color: item.status == KycStatus.approved ? Colors.green : (item.status == KycStatus.rejected ? Colors.red : Colors.orange), fontWeight: FontWeight.bold, fontSize: 12)),
               const Divider(height: 20),
               
-              const Text('1. รูปถ่ายบัตรประจำตัว / Passport (แตะเพื่อขยายดูรูปใหญ่):', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+              const Text('1. ຮູບຖ່າຍບັດປະຈຳຕົວ / Passport (ແຕະເພື່ອຂະຫຍາຍເບິ່ງຮູບໃຫຍ່):', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
               const SizedBox(height: 8),
               GestureDetector(
                 onTap: () {
@@ -1801,7 +1834,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                     ImageHelper.showPreviewModal(
                       context,
                       path: item.idCardImagePath,
-                      title: 'รูปบัตรประชาชน - ${item.userName}',
+                      title: 'ຮູບບັດປະຈຳຕົວ - ${item.userName}',
                     );
                   }
                 },
@@ -1833,7 +1866,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-              const Text('2. รูปถ่ายคู่กับเอกสาร (Selfie) (แตะเพื่อขยายดูรูปใหญ่):', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+              const Text('2. ຮູບຖ່າຍຄູ່ກັບເອກະສານ (Selfie) (ແຕະເພື່ອຂະຫຍາຍເບິ່ງຮູບໃຫຍ່):', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
               const SizedBox(height: 8),
               GestureDetector(
                 onTap: () {
@@ -1841,7 +1874,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                     ImageHelper.showPreviewModal(
                       context,
                       path: item.selfieImagePath,
-                      title: 'รูปถ่าย Selfie - ${item.userName}',
+                      title: 'ຮູບຖ່າຍ Selfie - ${item.userName}',
                     );
                   }
                 },
@@ -1883,7 +1916,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                           _approveKyc(item);
                         },
                         style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
-                        child: const Text('อนุมัติ KYC'),
+                        child: const Text('ອະນຸມັດ KYC'),
                       ),
                     ),
                     const SizedBox(width: 10),
@@ -1894,7 +1927,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                           _showRejectKycDialog(item);
                         },
                         style: OutlinedButton.styleFrom(foregroundColor: Colors.red),
-                        child: const Text('ปฏิเสธ'),
+                        child: const Text('ປະຕິເສດ'),
                       ),
                     ),
                   ],
@@ -1925,16 +1958,16 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text('รายละเอียดสลิปการโอนเงิน', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  const Text('ລາຍລະອຽດສະລິບການໂອນເງິນ', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                   IconButton(icon: const Icon(Icons.close_rounded), onPressed: () => Navigator.pop(ctx)),
                 ],
               ),
               const SizedBox(height: 4),
-              Text('ผู้แจ้งชำระ: ${userName.isNotEmpty ? userName : "ผู้ใช้งาน"} (${sub['email'] ?? ""})'),
-              Text('แพ็กเกจ: ${sub['package_name'] ?? "VIP Package"}'),
-              Text('ยอดชำระ: ${sub['amount'] ?? "49000"} LAK', style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary)),
+              Text('ຜູ້ແຈ້ງຊຳລະ: ${userName.isNotEmpty ? userName : "ຜູ້ໃຊ້ງານ"} (${sub['email'] ?? ""})'),
+              Text('ແພັກເກັດ: ${sub['package_name'] ?? "VIP Package"}'),
+              Text('ຍອດຊຳລະ: ${sub['amount'] ?? "49000"} LAK', style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary)),
               const Divider(height: 20),
-              const Text('รูปภาพสลิปโอนเงิน (แตะเพื่อขยายดูรูปใหญ่):', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+              const Text('ຮູບພາບສະລິບໂອນເງິນ (ແຕະເພື່ອຂະຫຍາຍເບິ່ງຮູບໃຫຍ່):', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
               const SizedBox(height: 8),
               GestureDetector(
                 onTap: () {
@@ -1942,7 +1975,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                     ImageHelper.showPreviewModal(
                       context,
                       path: slipUrl,
-                      title: 'สลิปการโอนเงิน - $userName',
+                      title: 'ສະລິບການໂອນເງິນ - $userName',
                     );
                   }
                 },
@@ -1984,7 +2017,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                           _approveSubscription(sub);
                         },
                         style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
-                        child: const Text('อนุมัติการชำระเงิน'),
+                        child: const Text('ອະນຸມັດການຊຳລະເງິນ'),
                       ),
                     ),
                     const SizedBox(width: 10),
@@ -1995,7 +2028,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                           _rejectSubscription(sub);
                         },
                         style: OutlinedButton.styleFrom(foregroundColor: Colors.red),
-                        child: const Text('ปฏิเสธสลิป'),
+                        child: const Text('ປະຕິເສດສະລິບ'),
                       ),
                     ),
                   ],
@@ -2033,7 +2066,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(pkg['name'] ?? '', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                      Text('ราคา: ${pkg['price']} LAK | ระยะเวลา: ${pkg['duration_days']} วัน', style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+                      Text('ລາຄາ: ${pkg['price']} LAK | ໄລຍະເວລາ: ${pkg['duration_days']} ມື້', style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
                     ],
                   ),
                 ),
@@ -2055,7 +2088,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               ],
             ),
             const Divider(height: 20),
-            Text('รายละเอียด: ${pkg['description'] ?? "เข้าถึง e-Book ทั้งหมด"}'),
+            Text('ລາຍລະອຽດ: ${pkg['description'] ?? "ເຂົ້າເຖິງ e-Book ທັງໝົດ"}'),
             const SizedBox(height: 20),
             Row(
               children: [
@@ -2066,7 +2099,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                       _openEditPackageDialog(pkg);
                     },
                     icon: const Icon(Icons.edit_rounded, size: 18),
-                    label: const Text('แก้ไขแพ็กเกจ'),
+                    label: const Text('ແກ້ໄຂແພັກເກັດ'),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -2080,7 +2113,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                       backgroundColor: isActive ? Colors.redAccent : Colors.green,
                     ),
                     icon: Icon(isActive ? Icons.pause_circle_filled_rounded : Icons.play_circle_fill_rounded, size: 18),
-                    label: Text(isActive ? 'ปิดใช้งาน (Inactive)' : 'เปิดใช้งาน (Active)'),
+                    label: Text(isActive ? 'ປິດນຳໃຊ້ (Inactive)' : 'ເປີດນຳໃຊ້ (Active)'),
                   ),
                 ),
               ],
@@ -2101,18 +2134,18 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('รายละเอียดบันทึกความปลอดภัย (Audit Log)', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            const Text('ລາຍລະອຽດບັນທຶກຄວາມປອດໄພ (Audit Log)', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
             const Divider(height: 20),
-            Text('ผู้ทำรายการ: ${log['first_name'] ?? ""} (${log['email'] ?? ""})'),
-            Text('คำสั่ง: ${log['action'] ?? ""}'),
+            Text('ຜູ້ເຮັດລາຍການ: ${log['first_name'] ?? ""} (${log['email'] ?? ""})'),
+            Text('ຄຳສັ່ງ: ${log['action'] ?? ""}'),
             Text('IP Address: ${log['ip_address'] ?? "127.0.0.1"}'),
-            Text('รายละเอียด: ${log['details'] ?? "ไม่มี"}'),
+            Text('ລາຍລະອຽດ: ${log['details'] ?? "ບໍ່ມີ"}'),
             const SizedBox(height: 20),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: () => Navigator.pop(ctx),
-                child: const Text('ปิดหน้าต่าง'),
+                child: const Text('ປິດໜ້າຕ່າງ'),
               ),
             ),
           ],
@@ -2129,17 +2162,17 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text('แก้ไขนักเขียน: $currentName'),
+        title: Text('ແກ້ໄຂນັກຂຽນ: $currentName'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'ชื่อนักเขียน')),
+            TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'ຊື່ນັກຂຽນ')),
             const SizedBox(height: 8),
-            TextField(controller: bioCtrl, maxLines: 3, decoration: const InputDecoration(labelText: 'ประวัติย่อ (Biography)')),
+            TextField(controller: bioCtrl, maxLines: 3, decoration: const InputDecoration(labelText: 'ປະຫວັດຫຍໍ້ (Biography)')),
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('ยกเลิก')),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('ຍົກເລີກ')),
           ElevatedButton(
             onPressed: () async {
               final name = nameCtrl.text.trim();
@@ -2149,12 +2182,12 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 if (mounted && success) {
                   await _fetchAdminData();
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('แก้ไขนักเขียน "$name" เรียบร้อยแล้ว'), backgroundColor: AppColors.primary),
+                    SnackBar(content: Text('ແກ້ໄຂນັກຂຽນ "$name" ຮຽບຮ້ອຍແລ້ວ'), backgroundColor: AppColors.primary),
                   );
                 }
               }
             },
-            child: const Text('บันทึก'),
+            child: const Text('ບັນທຶກ'),
           ),
         ],
       ),
@@ -2166,10 +2199,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('ยืนยันการลบนักเขียน'),
-        content: Text('คุณต้องการลบนักเขียน "$authorName" หรือไม่?'),
+        title: const Text('ຢືນຢັນການລົບບັກຂຽນ'),
+        content: Text('ທ່ານຕ້ອງການລົບບັກຂຽນ "$authorName" ແທ້ບໍ?'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('ยกเลิก')),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('ຍົກເລີກ')),
           ElevatedButton(
             onPressed: () async {
               Navigator.pop(ctx);
@@ -2177,12 +2210,12 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               if (mounted && success) {
                 await _fetchAdminData();
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('ลบนักเขียน "$authorName" เรียบร้อยแล้ว'), backgroundColor: AppColors.primary),
+                  SnackBar(content: Text('ລົບບັກຂຽນ "$authorName" ຮຽບຮ້ອຍແລ້ວ'), backgroundColor: AppColors.primary),
                 );
               }
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
-            child: const Text('ยืนยันลบ'),
+            child: const Text('ຢືນຢັນລົບ'),
           ),
         ],
       ),
@@ -2299,33 +2332,33 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             childAspectRatio: isMobile ? 1.45 : 1.6,
             children: [
               _buildReportKpiCard(
-                title: 'รายรับรวมการสมัครสมาชิก',
+                title: 'ລາຍຮັບລວມການສະໝັກສະມາຊິກ',
                 value: '${totalRevenue.toStringAsFixed(0)} LAK',
-                subtitle: 'จาก ${approvedSubs.length} รายการที่อนุมัติ',
+                subtitle: 'ຈາກ ${approvedSubs.length} ລາຍການທີ່ອະນຸມັດ',
                 icon: Icons.payments_rounded,
                 color: const Color(0xFF10B981),
                 bgColor: const Color(0xFFECFDF5),
               ),
               _buildReportKpiCard(
-                title: 'สลิปรอตรวจสอบมูลค่า',
+                title: 'ສະລິບລໍຖ້າກວດສອບມູນຄ່າ',
                 value: '${pendingRevenue.toStringAsFixed(0)} LAK',
-                subtitle: '${pendingSubs.length} รายการรอดำเนินการ',
+                subtitle: '${pendingSubs.length} ລາຍການລໍຖ້າດຳເນີນການ',
                 icon: Icons.pending_actions_rounded,
                 color: const Color(0xFFF59E0B),
                 bgColor: const Color(0xFFFFFBEB),
               ),
               _buildReportKpiCard(
-                title: 'ยอดอ่านหนังสือสะสมรวม',
-                value: '$totalViews ครั้ง',
-                subtitle: 'จากหนังสือทั้งหมด ${_adminBooks.length} เล่ม',
+                title: 'ຍອດອ່ານປຶ້ມສະສົມລວມ',
+                value: '$totalViews ຄັ້ງ',
+                subtitle: 'ຈາກປຶ້ມທັງໝົດ ${_adminBooks.length} ຫົວ',
                 icon: Icons.auto_stories_rounded,
                 color: const Color(0xFF2563EB),
                 bgColor: const Color(0xFFEFF6FF),
               ),
               _buildReportKpiCard(
-                title: 'ยอดกดหัวใจถูกใจรวม',
+                title: 'ຍອດກົດຫົວໃຈຖືກໃຈລວມ',
                 value: '$totalLikes ❤️',
-                subtitle: 'จากผู้ใช้งานทั้งหมด $totalUsers คน',
+                subtitle: 'ຈາກຜູ້ໃຊ້ງານທັງໝົດ $totalUsers ຄົນ',
                 icon: Icons.favorite_rounded,
                 color: const Color(0xFFEF4444),
                 bgColor: const Color(0xFFFEF2F2),
@@ -2359,7 +2392,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                             children: const [
                               Icon(Icons.emoji_events_rounded, color: Color(0xFFF59E0B), size: 20),
                               SizedBox(width: 8),
-                              Text('อันดับหนังสือยอดนิยมสูงสุด (Top 5 Books)', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                              Text('ອັນດັບປຶ້ມຍອດນິຍົມສູງສຸດ (Top 5 Books)', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
                             ],
                           ),
                           Container(
@@ -2373,7 +2406,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                       if (topBooks.isEmpty)
                         const Padding(
                           padding: EdgeInsets.all(20),
-                          child: Center(child: Text('ไม่มีข้อมูลหนังสือ', style: TextStyle(color: AppColors.textSecondary))),
+                          child: Center(child: Text('ບໍ່ມີຂໍ້ມູນປຶ້ມ', style: TextStyle(color: AppColors.textSecondary))),
                         )
                       else
                         ListView.separated(
@@ -2473,26 +2506,26 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                             children: const [
                               Icon(Icons.receipt_long_rounded, color: AppColors.primary, size: 20),
                               SizedBox(width: 8),
-                              Text('สัดส่วนสถานะสลิปการโอนเงิน', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                              Text('ສັດສ່ວນສະຖານະສະລິບການໂອນເງິນ', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
                             ],
                           ),
                           const SizedBox(height: 14),
                           _buildProgressBarItem(
-                            label: 'อนุมัติสำเร็จ (Approved)',
+                            label: 'ອະນຸມັດສຳເລັດ (Approved)',
                             count: approvedSubs.length,
                             total: _subscriptions.isNotEmpty ? _subscriptions.length : 1,
                             color: const Color(0xFF10B981),
                           ),
                           const SizedBox(height: 8),
                           _buildProgressBarItem(
-                            label: 'รอตรวจสอบ (Pending)',
+                            label: 'ລໍຖ້າກວດສອບ (Pending)',
                             count: pendingSubs.length,
                             total: _subscriptions.isNotEmpty ? _subscriptions.length : 1,
                             color: const Color(0xFFF59E0B),
                           ),
                           const SizedBox(height: 8),
                           _buildProgressBarItem(
-                            label: 'ปฏิเสธ (Rejected)',
+                            label: 'ປະຕິເສດ (Rejected)',
                             count: rejectedSubs.length,
                             total: _subscriptions.isNotEmpty ? _subscriptions.length : 1,
                             color: const Color(0xFFEF4444),
@@ -2517,17 +2550,17 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                             children: const [
                               Icon(Icons.verified_user_rounded, color: Color(0xFF2563EB), size: 20),
                               SizedBox(width: 8),
-                              Text('สถานะการยืนยันตัวตน (KYC Status)', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                              Text('ສະຖານະການຢືນຢັນຕົວຕົນ (KYC Status)', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
                             ],
                           ),
                           const SizedBox(height: 14),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceAround,
                             children: [
-                              _buildMiniStatCircle(title: 'ผ่านอนุมัติ', count: kycApprovedCount, color: const Color(0xFF10B981)),
-                              _buildMiniStatCircle(title: 'รอตรวจ', count: kycPendingCount, color: const Color(0xFFF59E0B)),
-                              _buildMiniStatCircle(title: 'ปฏิเสธ', count: kycRejectedCount, color: const Color(0xFFEF4444)),
-                              _buildMiniStatCircle(title: 'สมาชิก Premiere', count: premiereUsersCount, color: const Color(0xFF7C3AED)),
+                              _buildMiniStatCircle(title: 'ຜ່ານອະນຸມັດ', count: kycApprovedCount, color: const Color(0xFF10B981)),
+                              _buildMiniStatCircle(title: 'ລໍຖ້າກວດ', count: kycPendingCount, color: const Color(0xFFF59E0B)),
+                              _buildMiniStatCircle(title: 'ປະຕິເສດ', count: kycRejectedCount, color: const Color(0xFFEF4444)),
+                              _buildMiniStatCircle(title: 'ສະມາຊິກ Premiere', count: premiereUsersCount, color: const Color(0xFF7C3AED)),
                             ],
                           ),
                         ],
@@ -2558,17 +2591,17 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                       children: const [
                         Icon(Icons.history_rounded, color: AppColors.primary, size: 20),
                         SizedBox(width: 8),
-                        Text('บันทึกกิจกรรมแยกล่าสุดของระบบ (Audit Activity Logs)', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                        Text('ບັນທຶກກິດຈະກຳແຍກລ່າສຸດຂອງລະບົບ (Audit Activity Logs)', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
                       ],
                     ),
-                    Text('${_auditLogs.length} รายการ', style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                    Text('${_auditLogs.length} ລາຍການ', style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
                   ],
                 ),
                 const SizedBox(height: 12),
                 if (_auditLogs.isEmpty)
                   const Padding(
                     padding: EdgeInsets.all(16),
-                    child: Center(child: Text('ไม่มีบันทึกกิจกรรมย้อนหลัง', style: TextStyle(color: AppColors.textSecondary))),
+                    child: Center(child: Text('ບໍ່ມີບັນທຶກກິດຈະກຳຍ້ອນຫຼັງ', style: TextStyle(color: AppColors.textSecondary))),
                   )
                 else
                   ListView.separated(
@@ -2586,9 +2619,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                           decoration: BoxDecoration(color: const Color(0xFFEFF6FF), borderRadius: BorderRadius.circular(8)),
                           child: const Icon(Icons.admin_panel_settings_outlined, size: 16, color: AppColors.primary),
                         ),
-                        title: Text(log['action'] ?? 'กิจกรรมในระบบ', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                        subtitle: Text(log['details'] ?? 'ดำเนินการโดยผู้ดูแลระบบ', style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
-                        trailing: Text(log['created_at'] != null ? log['created_at'].toString().split('T')[0] : 'วันนี้', style: const TextStyle(fontSize: 10, color: AppColors.textSecondary)),
+                        title: Text(log['action'] ?? 'ກິດຈະກຳໃນລະບົບ', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                        subtitle: Text(log['details'] ?? 'ດຳເນີນການໂດຍຜູ້ດູແລລະບົບ', style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+                        trailing: Text(log['created_at'] != null ? log['created_at'].toString().split('T')[0] : 'ມື້ນີ້', style: const TextStyle(fontSize: 10, color: AppColors.textSecondary)),
                       );
                     },
                   ),
@@ -2643,7 +2676,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
-            Text('$count รายการ (${(percent * 100).round()}%)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: color)),
+            Text('$count ລາຍການ (${(percent * 100).round()}%)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: color)),
           ],
         ),
         const SizedBox(height: 4),
@@ -2693,7 +2726,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('สรุปรายงานสถิติการใช้งานและรายรับระบบ e-Book:', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+            const Text('ສະຫຼຸບລາຍງານສະຖິຕິການນຳໃຊ້ ແລະ ລາຍຮັບລະບົບ e-Book:', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
             const SizedBox(height: 12),
             Container(
               padding: const EdgeInsets.all(12),
@@ -2701,20 +2734,20 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('• รายรับรวมอนุมัติ: ${totalRevenue.toStringAsFixed(0)} LAK', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF10B981))),
+                  Text('• ລາຍຮັບລວມອະນຸມັດ: ${totalRevenue.toStringAsFixed(0)} LAK', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF10B981))),
                   const SizedBox(height: 4),
-                  Text('• จำนวนผู้ใช้งานทั้งหมด: $totalUsers บัญชี', style: const TextStyle(fontSize: 12)),
+                  Text('• ຈຳນວນຜູ້ໃຊ້ງານທັງໝົດ: $totalUsers ບັນຊີ', style: const TextStyle(fontSize: 12)),
                   const SizedBox(height: 4),
-                  Text('• จำนวนหนังสือในระบบ: ${_adminBooks.length} เล่ม', style: const TextStyle(fontSize: 12)),
+                  Text('• ຈຳນວນປຶ້ມໃນລະບົບ: ${_adminBooks.length} ຫົວ', style: const TextStyle(fontSize: 12)),
                   const SizedBox(height: 4),
-                  Text('• รายงานออก ณ วันที่: ${DateTime.now().toString().split(' ')[0]}', style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+                  Text('• ລາຍງານອອກ ວັນທີ: ${DateTime.now().toString().split(' ')[0]}', style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
                 ],
               ),
             ),
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('ปิด')),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('ປິດ')),
           ElevatedButton.icon(
             onPressed: () {
               Navigator.pop(ctx);
@@ -2723,7 +2756,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               );
             },
             icon: const Icon(Icons.download_rounded, size: 16),
-            label: const Text('ดาวน์โหลด PDF'),
+            label: const Text('ດາວໂຫຼດ PDF'),
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
           ),
         ],
