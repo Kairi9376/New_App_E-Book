@@ -1246,7 +1246,13 @@ class ApiService {
   // 26. User: Get Full Profile Details
   static Future<Map<String, dynamic>> getUserProfile() async {
     try {
-      final url = Uri.parse('${ApiConfig.baseUrl}/user/profile');
+      // # ເຮັດຫຍັງ: ປ່ຽນ path ຈາก '/user/profile' ເປັນ '/users/profile'
+      // # ຍ້ອນຫຍັງ: backend mount route ໄວ້ທີ່ '/api/users' (ມີ s) ບໍ່ມີ '/api/user'
+      // #          ເລີຍ ຄຳຮ້ອງນີ້ຈຶ່ງໄດ້ 404 ທຸກຄັ້ງ ແລ້ວຕົກໄປໃຊ້ຂໍ້ມູນສຳຮອງ
+      // #          ທີ່ hardcode ໄວ້ດ້ານລຸ່ມ ໂດຍຜູ້ໃຊ້ບໍ່ຮູ້ວ່າບໍ່ແມ່ນຂໍ້ມູນຈິງຂອງຕົນ
+      // # ແກ້ຈາກສ່ວນໃດ: getUserProfile() ທີ່ຂຽນ path ເປັນຄຳນາມເອກະພົດ
+      // # ແກ້ເຮັດຫຍັງ: ຕົງກັບ route ໃໝ່ GET /api/users/profile ທີ່ອ່ານ user ຈາກ JWT
+      final url = Uri.parse('${ApiConfig.baseUrl}/users/profile');
       final response = await http
           .get(url, headers: _headers)
           .timeout(const Duration(seconds: 5));

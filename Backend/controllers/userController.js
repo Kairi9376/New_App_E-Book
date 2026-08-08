@@ -1,6 +1,27 @@
 const { pool } = require('../config/db');
 const { deleteOldFile, isSameFilePath } = require('../utils/fileUtils');
 const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+
+// # ເຮັດຫຍັງ: ເພີ່ມຕົວຊ່ວຍອ່ານ user_id ຈາກ JWT ໃນ header Authorization
+// # ຍ້ອນຫຍັງ: ໂປຣເຈັກນີ້ບໍ່ມີ auth middleware ເລີຍ (Backend/middleware/ ມີແຕ່ upload.js)
+// #          req.user ຈຶ່ງບໍ່ເຄີຍຖືກ set - getMe ໃນ authController ຈຶ່ງຕ້ອງອາໄສ
+// #          ?user_id= ຈາກ query ເຊິ່ງປອມໄດ້ງ່າຍ
+// # ແກ້ຈາກສ່ວນໃດ: client ສົ່ງ 'Authorization: Bearer <token>' ມາທຸກຄຳຮ້ອງຢູ່ແລ້ວ
+// #              ຜ່ານ ApiService._headers ແຕ່ backend ບໍ່ເຄີຍອ່ານມັນ
+// # ແກ້ເຮັດຫຍັງ: ອ່ານ user_id ຈາກ token ທີ່ເຊັນດ້ວຍ JWT_SECRET ຈຶ່ງເຊື່ອຖືໄດ້
+// #             ຄືນ null ຖ້າ token ບໍ່ມີ/ໝົດອາຍຸ/ຖືກແກ້ ໃຫ້ຜູ້ເອີ້ນຕັດສິນໃຈຕໍ່
+function userIdFromToken(req) {
+  const header = req.headers.authorization || '';
+  if (!header.startsWith('Bearer ')) return null;
+
+  try {
+    const payload = jwt.verify(header.slice(7), process.env.JWT_SECRET);
+    return payload.user_id ?? null;
+  } catch (_) {
+    return null;
+  }
+}
 
 // # ເຮັດຫຍັງ: ເພີ່ມ createUser ໃໝ່ທັງໝົດ
 // # ຍ້ອນຫຍັງ: ໜ້າ Admin ມີ dialog ເພີ່ມຜູ້ໃຊ້/ພະນັກງານ ແລະ ຝັ່ງ client ເອີ້ນ
@@ -96,6 +117,46 @@ exports.createUser = async (req, res) => {
     });
   } catch (error) {
     console.error('Create User Error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// # ເຮັດຫຍັງ: ເພີ່ມ getMyProfile - ຄືນຂໍ້ມູນຜູ້ໃຊ້ທີ່ກຳລັງ login ຢູ່
+// # ຍ້ອນຫຍັງ: client ເອີ້ນ GET /api/user/profile (ບໍ່ມີ s) ແຕ່ backend mount ໄວ້
+// #          ເປັນ /api/users ຈຶ່ງໄດ້ 404 ທຸກຄັ້ງ - ໜ້າໂປຣໄຟລ໌ຈຶ່ງຕົກໄປໃຊ້ຂໍ້ມູນ
+// #          ສຳຮອງທີ່ hardcode ໄວ້ (ສົມຊາຍ ໃຈດີ) ໂດຍຜູ້ໃຊ້ບໍ່ຮູ້ວ່າບໍ່ແມ່ນຂໍ້ມູນຈິງ
+// # ແກ້ຈາກສ່ວນໃດ: userController.js ບໍ່ມີ endpoint ສຳລັບ "ຕົວເອງ" ເລີຍ
+// #              ມີແຕ່ getUserById ທີ່ຕ້ອງຮູ້ id ລ່ວງໜ້າ
+// # ແກ້ເຮັດຫຍັງ: ອ່ານ id ຈາກ JWT ກ່ອນ ຖ້າບໍ່ໄດ້ຈຶ່ງຖອຍໄປໃຊ້ ?user_id=
+// #             ເພື່ອບໍ່ໃຫ້ພັງກັບໂຄ້ດເກົ່າ ແລະ ບໍ່ຄືນ password_hash ອອກໄປ
+// GET /api/users/profile
+exports.getMyProfile = async (req, res) => {
+  try {
+    const userId = userIdFromToken(req) ?? req.query.user_id;
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: 'ຕ້ອງເຂົ້າສູ່ລະບົບກ່ອນ (ບໍ່ພົບ token ທີ່ຖືກຕ້ອງ)',
+      });
+    }
+
+    const [rows] = await pool.query(
+      `SELECT user_id, email, first_name, last_name, phone_number, birth_date,
+              gender, profile_image_url, role, status, created_at
+       FROM users WHERE user_id = ?`,
+      [userId]
+    );
+
+    if (rows.length === 0) {
+      return res
+        .status(404)
+        .json({ success: false, message: 'ບໍ່ພົບຜູ້ໃຊ້' });
+    }
+
+    res.json({ success: true, user: rows[0] });
+  } catch (error) {
+    console.error('Get My Profile Error:', error);
     res.status(500).json({ success: false, message: error.message });
   }
 };
