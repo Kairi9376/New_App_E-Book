@@ -1,3 +1,5 @@
+import '../services/api_config.dart';
+
 class HistoryBookItem {
   final String id;
   final int? historyId;
@@ -27,7 +29,8 @@ class HistoryBookItem {
 
   int get progressPercentage => (progress * 100).round();
 
-  factory HistoryBookItem.fromMap(Map<String, dynamic> map, {String uploadsBaseUrl = 'http://localhost:5000/uploads'}) {
+  factory HistoryBookItem.fromMap(Map<String, dynamic> map, {String? uploadsBaseUrl}) {
+    final baseUrl = uploadsBaseUrl ?? ApiConfig.uploadsBaseUrl;
     double parsedProgress = 0.0;
     if (map['progress_percent'] != null) {
       parsedProgress = (double.tryParse(map['progress_percent'].toString()) ?? 0.0) / 100.0;
@@ -37,12 +40,12 @@ class HistoryBookItem {
 
     String cover = map['cover_image_url'] ?? map['imagePath'] ?? '';
     if (cover.startsWith('/uploads/') || cover.startsWith('uploads/')) {
-      cover = '$uploadsBaseUrl/${cover.replaceAll(RegExp(r'^/?uploads/'), '')}';
+      cover = '$baseUrl/${cover.replaceAll(RegExp(r'^/?uploads/'), '')}';
     }
 
     String? pdf = map['file_pdf_url'] ?? map['pdfUrl'];
     if (pdf != null && (pdf.startsWith('/uploads/') || pdf.startsWith('uploads/'))) {
-      pdf = '$uploadsBaseUrl/${pdf.replaceAll(RegExp(r'^/?uploads/'), '')}';
+      pdf = '$baseUrl/${pdf.replaceAll(RegExp(r'^/?uploads/'), '')}';
     }
 
     int? hId = int.tryParse(map['history_id']?.toString() ?? '');

@@ -3,6 +3,12 @@
 -- ຮອງຮັບການນຳເຂົ້າຜ່ານ phpMyAdmin / MySQL / PostgreSQL Server
 -- ============================================================
 
+-- This file is UTF-8 and holds Lao text. Declare the connection charset before
+-- any data flows, otherwise a client that defaults to latin1 (the mysql client
+-- in the Docker image does, because the container has no locale set) makes the
+-- server re-encode every byte and stores mojibake such as "àº§àº´àº—".
+SET NAMES utf8mb4;
+
 CREATE DATABASE IF NOT EXISTS ebook_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE ebook_db;
 

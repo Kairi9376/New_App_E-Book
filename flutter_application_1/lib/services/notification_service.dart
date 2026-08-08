@@ -116,8 +116,13 @@ class NotificationService {
         iconColor = const Color(0xFFEC4899);
         bgColor = const Color(0xFFFCE7F3);
         break;
+      // # ເຮັດຫຍັງ: ຕັດ default ອອກ ເຫຼືອແຕ່ case NotificationType.system
+      // # ຍ້ອນຫຍັງ: switch ນີ້ກວມທຸກຄ່າຂອງ enum ຢູ່ແລ້ວ default ຈຶ່ງເປັນໂຄ້ດຕາຍ
+      // #          ແລະ ຍັງກີດຂວາງ analyzer ບໍ່ໃຫ້ເຕືອນຕອນເພີ່ມ NotificationType ໃໝ່
+      // #          ແລ້ວລືມມາຈັດການທີ່ນີ້ (ຫຼັງຍົກ SDK ເປັນ 3.10 analyzer ຈຶ່ງເລີ່ມເຕືອນ)
+      // # ແກ້ຈາກສ່ວນໃດ: 'case NotificationType.system:' ທີ່ຕິດດ້ວຍ 'default:'
+      // # ແກ້ເຮັດຫຍັງ: ພຶດຕິກຳຄືເກົ່າ ແຕ່ຖ້າເພີ່ມ type ໃໝ່ຈະ compile ເຕືອນທັນທີ
       case NotificationType.system:
-      default:
         iconData = Icons.notifications_active_rounded;
         iconColor = AppColors.primary;
         bgColor = const Color(0xFFEFF6FF);

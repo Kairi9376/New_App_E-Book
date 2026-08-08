@@ -1,3 +1,5 @@
+import '../services/api_config.dart';
+
 enum KycStatus {
   notSubmitted,
   pending,
@@ -93,7 +95,8 @@ class KycModel {
     );
   }
 
-  factory KycModel.fromMap(Map<String, dynamic> map, {String uploadsBaseUrl = 'http://localhost:5000/uploads'}) {
+  factory KycModel.fromMap(Map<String, dynamic> map, {String? uploadsBaseUrl}) {
+    final baseUrl = uploadsBaseUrl ?? ApiConfig.uploadsBaseUrl;
     KycStatus parsedStatus = KycStatus.pending;
     final st = map['status']?.toString().toLowerCase();
     if (st == 'approved') {
@@ -106,12 +109,12 @@ class KycModel {
 
     String docImg = map['document_image_url'] ?? map['idCardImagePath'] ?? '';
     if (docImg.startsWith('/uploads/') || docImg.startsWith('uploads/')) {
-      docImg = '$uploadsBaseUrl/${docImg.replaceAll(RegExp(r'^/?uploads/'), '')}';
+      docImg = '$baseUrl/${docImg.replaceAll(RegExp(r'^/?uploads/'), '')}';
     }
 
     String selfieImg = map['selfie_image_url'] ?? map['selfieImagePath'] ?? '';
     if (selfieImg.startsWith('/uploads/') || selfieImg.startsWith('uploads/')) {
-      selfieImg = '$uploadsBaseUrl/${selfieImg.replaceAll(RegExp(r'^/?uploads/'), '')}';
+      selfieImg = '$baseUrl/${selfieImg.replaceAll(RegExp(r'^/?uploads/'), '')}';
     }
 
     DateTime subAt = DateTime.now();

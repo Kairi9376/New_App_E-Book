@@ -1,7 +1,9 @@
-import 'dart:async';
-import 'package:flutter/foundation.dart' show kIsWeb;
-// Conditional import for web HTML file picker
-import 'dart:html' as html;
+// # ເຮັດຫຍັງ: ປ່ຽນຈາກ import 'dart:html' ໂດຍກົງ ມາໃຊ້ຊັ້ນກາງ web_platform.dart
+// # ຍ້ອນຫຍັງ: comment ເກົ່າຂຽນວ່າ "Conditional import" ແຕ່ຂຽນເປັນ import ທຳມະດາ
+// #          ບໍ່ມີ if (dart.library.html) ຈຶ່ງບໍ່ conditional ຈິງ ແລະ build ລົງມືຖືບໍ່ໄດ້
+// # ແກ້ຈາກສ່ວນໃດ: import 'dart:html' as html; ບັນທັດ 4 ຂອງໄຟລ໌ນີ້
+// # ແກ້ເຮັດຫຍັງ: ຍ້າຍການເອີ້ນ DOM ໄປໄວ້ web_platform_web.dart ສ່ວນນີ້ເຫຼືອແຕ່ logic ບໍລິສຸດ
+import 'platform/web_platform.dart';
 
 class SelectedFileInfo {
   final String name;
@@ -44,39 +46,21 @@ class FilePickerHelper {
     return 1;
   }
 
+  // # ເຮັດຫຍັງ: ມອບໜ້າທີ່ເປີດ File Explorer ໃຫ້ WebPlatform ແລ້ວຫຸ້ມຜົນເປັນ SelectedFileInfo
+  // # ຍ້ອນຫຍັງ: ໂຄ້ດ DOM ຕ້ອງຢູ່ຫຼັງ conditional import ເທົ່ານັ້ນ ຈຶ່ງຈະ build ຂ້າມ platform ໄດ້
+  // #          ແລະ ບໍ່ຕ້ອງກວດ kIsWeb ອີກ ເພາະ stub ຄືນ null ໃຫ້ຢູ່ແລ້ວບົນ platform ອື່ນ
+  // # ແກ້ຈາກສ່ວນໃດ: pickFile() ເດີມທີ່ເອີ້ນ html.FileUploadInputElement/FileReader ໂດຍກົງ
+  // # ແກ້ເຮັດຫຍັງ: ຜົນລັບຄືເກົ່າທຸກປະການ - ບົນ Web ໄດ້ໄຟລ໌, ບົນມືຖື/desktop ໄດ້ null
+  // #             ແລະ ການນັບໜ້າ PDF ຍັງເຮັດຢູ່ຊັ້ນນີ້ຜ່ານ constructor ຂອງ SelectedFileInfo
   /// Opens native OS / Browser File Explorer to select a file from user's local disk
   static Future<SelectedFileInfo?> pickFile({required String accept}) async {
-    if (kIsWeb) {
-      final uploadInput = html.FileUploadInputElement();
-      uploadInput.accept = accept; // e.g. '.pdf' or 'image/*'
-      uploadInput.click();
+    final picked = await WebPlatform.pickFile(accept);
+    if (picked == null) return null;
 
-      final completer = Completer<SelectedFileInfo?>();
-
-      uploadInput.onChange.listen((event) async {
-        final files = uploadInput.files;
-        if (files == null || files.isEmpty) {
-          completer.complete(null);
-          return;
-        }
-
-        final file = files.first;
-        final reader = html.FileReader();
-        reader.readAsArrayBuffer(file);
-
-        await reader.onLoadEnd.first;
-        final bytes = (reader.result as List<int>).toList();
-
-        completer.complete(SelectedFileInfo(
-          name: file.name,
-          bytes: bytes,
-          size: file.size,
-        ));
-      });
-
-      return completer.future;
-    }
-
-    return null;
+    return SelectedFileInfo(
+      name: picked.name,
+      bytes: picked.bytes,
+      size: picked.size,
+    );
   }
 }

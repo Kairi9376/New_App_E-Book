@@ -405,7 +405,14 @@ class ApiService {
       return response.statusCode == 200 && data['success'] == true;
     } catch (e) {
       print('ApiService updateUserStatus error: $e');
-      return true; // Mock success fallback for offline dev mode
+      // # ເຮັດຫຍັງ: ປ່ຽນຈາກ return true ເປັນ return false ຕອນເກີດ exception
+      // # ຍ້ອນຫຍັງ: ຂອງເກົ່າຄືນ true ໃຫ້ "offline dev mode" ເຮັດໃຫ້ UI ຂຶ້ນວ່າສຳເລັດ
+      // #          ທັງທີ່ backend ບໍ່ໄດ້ບັນທຶກຫຍັງເລີຍ - ນີ້ຄືເຫດຜົນທີ່ bug
+      // #          "ເພີ່ມພະນັກງານບໍ່ໄດ້" ຖືກປິດບັງໄວ້ດົນ ເພາະ 404 ຂອງ Express
+      // #          ຄືນ HTML ເຮັດໃຫ້ jsonDecode throw ແລ້ວຕົກມາທາງນີ້ພໍດີ
+      // # ແກ້ຈາກສ່ວນໃດ: catch block ຂອງ createUser, updateUser ແລະ updateUserStatus
+      // # ແກ້ເຮັດຫຍັງ: ລົ້ມເຫຼວແລ້ວບອກວ່າລົ້ມເຫຼວ ຜູ້ໃຊ້ຈຶ່ງເຫັນບັນຫາຈິງ
+      return false;
     }
   }
 
@@ -426,7 +433,14 @@ class ApiService {
       return response.statusCode == 200 && data['success'] == true;
     } catch (e) {
       print('ApiService updateUser error: $e');
-      return true; // Mock success fallback for offline dev mode
+      // # ເຮັດຫຍັງ: ປ່ຽນຈາກ return true ເປັນ return false ຕອນເກີດ exception
+      // # ຍ້ອນຫຍັງ: ຂອງເກົ່າຄືນ true ໃຫ້ "offline dev mode" ເຮັດໃຫ້ UI ຂຶ້ນວ່າສຳເລັດ
+      // #          ທັງທີ່ backend ບໍ່ໄດ້ບັນທຶກຫຍັງເລີຍ - ນີ້ຄືເຫດຜົນທີ່ bug
+      // #          "ເພີ່ມພະນັກງານບໍ່ໄດ້" ຖືກປິດບັງໄວ້ດົນ ເພາະ 404 ຂອງ Express
+      // #          ຄືນ HTML ເຮັດໃຫ້ jsonDecode throw ແລ້ວຕົກມາທາງນີ້ພໍດີ
+      // # ແກ້ຈາກສ່ວນໃດ: catch block ຂອງ createUser, updateUser ແລະ updateUserStatus
+      // # ແກ້ເຮັດຫຍັງ: ລົ້ມເຫຼວແລ້ວບອກວ່າລົ້ມເຫຼວ ຜູ້ໃຊ້ຈຶ່ງເຫັນບັນຫາຈິງ
+      return false;
     }
   }
 
@@ -447,7 +461,14 @@ class ApiService {
           data['success'] == true;
     } catch (e) {
       print('ApiService createUser error: $e');
-      return true; // Mock success fallback for offline dev mode
+      // # ເຮັດຫຍັງ: ປ່ຽນຈາກ return true ເປັນ return false ຕອນເກີດ exception
+      // # ຍ້ອນຫຍັງ: ຂອງເກົ່າຄືນ true ໃຫ້ "offline dev mode" ເຮັດໃຫ້ UI ຂຶ້ນວ່າສຳເລັດ
+      // #          ທັງທີ່ backend ບໍ່ໄດ້ບັນທຶກຫຍັງເລີຍ - ນີ້ຄືເຫດຜົນທີ່ bug
+      // #          "ເພີ່ມພະນັກງານບໍ່ໄດ້" ຖືກປິດບັງໄວ້ດົນ ເພາະ 404 ຂອງ Express
+      // #          ຄືນ HTML ເຮັດໃຫ້ jsonDecode throw ແລ້ວຕົກມາທາງນີ້ພໍດີ
+      // # ແກ້ຈາກສ່ວນໃດ: catch block ຂອງ createUser, updateUser ແລະ updateUserStatus
+      // # ແກ້ເຮັດຫຍັງ: ລົ້ມເຫຼວແລ້ວບອກວ່າລົ້ມເຫຼວ ຜູ້ໃຊ້ຈຶ່ງເຫັນບັນຫາຈິງ
+      return false;
     }
   }
 

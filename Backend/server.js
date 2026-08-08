@@ -17,8 +17,14 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Serve Uploaded Files Static Folder (Access files via http://localhost:5000/uploads/...)
+// Serve Uploaded Files Static Folder (Access files via <origin>/uploads/...)
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// Absolute origin as the CLIENT reached us, taken from the request rather than
+// from PORT. Inside Docker the app listens on 5000 but is published on another
+// host port, and Android emulators dial 10.0.2.2 instead of localhost - so the
+// listen port is never a safe basis for a URL we hand back to a client.
+const clientOrigin = (req) => `${req.protocol}://${req.get('host')}`;
 
 // Test Database Connection
 testConnection();
@@ -29,7 +35,7 @@ app.get('/', (req, res) => {
     message: 'Welcome to E-Book Application RESTful API',
     status: 'Running',
     database: 'MySQL (phpMyAdmin / XAMPP)',
-    static_uploads: 'http://localhost:5000/uploads',
+    static_uploads: `${clientOrigin(req)}/uploads`,
     timestamp: new Date().toISOString()
   });
 });
@@ -58,7 +64,7 @@ app.post('/api/upload', upload.fields([
         const relativePath = path.relative(__dirname, file.path).replace(/\\/g, '/');
         responseData[key] = {
           filename: file.filename,
-          url: `http://localhost:${PORT}/${relativePath}`,
+          url: `${clientOrigin(req)}/${relativePath}`,
           path: relativePath,
           size: file.size
         };

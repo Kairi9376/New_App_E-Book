@@ -1,6 +1,4 @@
-import 'dart:io';
 import 'dart:typed_data';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../theme/app_theme.dart';
@@ -10,7 +8,7 @@ import '../../services/file_picker_helper.dart';
 import '../../services/notification_service.dart';
 import '../../models/notification_model.dart';
 import '../../utils/image_helper.dart';
-import '../login_screen.dart';
+import 'user_login_screen.dart';
 import 'kyc_submission_screen.dart';
 import 'membership_package_screen.dart';
 import 'notifications_screen.dart';
@@ -26,7 +24,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Map<String, dynamic> _userProfile = {};
   KycModel? _userKyc;
   Map<String, dynamic>? _userSubscription;
-  bool _isLoading = true;
   bool _isUploadingAvatar = false;
   Uint8List? _avatarBytes;
   String? _avatarPath;
@@ -55,7 +52,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _fetchProfile() async {
-    setState(() => _isLoading = true);
     final profile = await ApiService.getUserProfile();
     final rawUserId = profile['user_id'] ?? profile['id'];
     final int userId = rawUserId != null ? (int.tryParse(rawUserId.toString()) ?? 3) : 3;
@@ -79,7 +75,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
           status: _parseKycStatus(profile['kyc_status']),
           submittedAt: DateTime.now(),
         );
-        _isLoading = false;
       });
     }
   }
@@ -111,19 +106,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (s == 'pending') return KycStatus.pending;
     if (s == 'rejected') return KycStatus.rejected;
     return KycStatus.notSubmitted;
-  }
-
-  Widget _buildImage(String path, {double? width, double? height}) {
-    return ImageHelper.buildImage(path, width: width, height: height, fit: BoxFit.cover);
-  }
-
-  Widget _buildPlaceholder(double? width, double? height) {
-    return Container(
-      width: width,
-      height: height,
-      color: Colors.blueGrey.shade100,
-      child: const Icon(Icons.person, color: AppColors.primary, size: 50),
-    );
   }
 
   Future<void> _changeAvatarImage() async {
@@ -684,12 +666,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           ElevatedButton(
             onPressed: () async {
+              // # ເຮັດຫຍັງ: ປ່ຽນປາຍທາງຫຼັງອອກຈາກລະບົບເປັນ UserLoginScreen
+              // # ຍ້ອນຫຍັງ: ໜ້າ LoginScreen ເດີມກາຍເປັນ StaffLoginScreen ຂອງ Web ໄປແລ້ວ
+              // #          ຖ້າຍັງຊີ້ໄປບ່ອນເກົ່າ ຜູ້ໃຊ້ໃນແອັບຈະຕົກໄປໜ້າ login ຂອງພະນັກງານ
+              // #          ແລ້ວ login ບັນຊີຕົນເອງກັບຄືນບໍ່ໄດ້
+              // # ແກ້ຈາກສ່ວນໃດ: ປຸ່ມຢືນຢັນອອກຈາກລະບົບໃນ dialog ຂອງໜ້າໂປຣໄຟລ໌
+              // # ແກ້ເຮັດຫຍັງ: ພາກັບໄປໜ້າ login ຝັ່ງແອັບ ໃຫ້ວົນກັບເຂົ້າໃຊ້ໄດ້ຄືເກົ່າ
               await ApiService.clearSession();
               if (context.mounted) {
                 Navigator.pop(context);
                 Navigator.pushReplacement(
                   context,
-                  MaterialPageRoute(builder: (context) => const LoginScreen()),
+                  MaterialPageRoute(builder: (context) => const UserLoginScreen()),
                 );
               }
             },

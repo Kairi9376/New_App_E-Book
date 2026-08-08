@@ -2,6 +2,104 @@ const { pool } = require('../config/db');
 const { deleteOldFile, isSameFilePath } = require('../utils/fileUtils');
 const bcrypt = require('bcryptjs');
 
+// # ເຮັດຫຍັງ: ເພີ່ມ createUser ໃໝ່ທັງໝົດ
+// # ຍ້ອນຫຍັງ: ໜ້າ Admin ມີ dialog ເພີ່ມຜູ້ໃຊ້/ພະນັກງານ ແລະ ຝັ່ງ client ເອີ້ນ
+// #          POST /api/users ຢູ່ແລ້ວ ແຕ່ backend ບໍ່ເຄີຍມີ route ນີ້ເລີຍ
+// #          ຄຳຮ້ອງຈຶ່ງຕົກໄປທີ່ 404 ຂອງ Express ເຮັດໃຫ້ "ເພີ່ມພະນັກງານບໍ່ໄດ້"
+// # ແກ້ຈາກສ່ວນໃດ: userController.js ມີແຕ່ getAllUsers, getUserById,
+// #              updateUserProfile ແລະ updateUserStatus (ບໍ່ມີການສ້າງ)
+// # ແກ້ເຮັດຫຍັງ: ສ້າງບັນຊີໄດ້ຄົບທຸກ role ໂດຍ hash ລະຫັດຜ່ານດ້ວຍ bcrypt
+// #             ແບບດຽວກັນກັບ authController.register ເພື່ອໃຫ້ login ໄດ້ຄືກັນ
+// POST /api/users
+exports.createUser = async (req, res) => {
+  try {
+    const {
+      email,
+      password,
+      first_name,
+      last_name,
+      phone_number,
+      birth_date,
+      gender,
+      profile_image_url,
+      role,
+      status,
+    } = req.body;
+
+    if (!email || !password || !first_name || !last_name) {
+      return res.status(400).json({
+        success: false,
+        message: 'ຕ້ອງປ້ອນ email, password, first_name ແລະ last_name',
+      });
+    }
+
+    // ENUM ໃນ schema ຮັບພຽງ 3 role - ຄ່ານອກນີ້ຈະຖືກ MySQL ປະຕິເສດ
+    // ຈຶ່ງກວດຢູ່ນີ້ກ່ອນເພື່ອຄືນ error ທີ່ອ່ານເຂົ້າໃຈ ແທນ SQL error ດິບ
+    const allowedRoles = ['admin', 'employee', 'user'];
+    const allowedStatus = ['active', 'suspended', 'banned', 'pending'];
+    const safeRole = allowedRoles.includes(role) ? role : 'user';
+    const safeStatus = allowedStatus.includes(status) ? status : 'active';
+
+    const [existing] = await pool.query(
+      'SELECT user_id FROM users WHERE email = ?',
+      [email]
+    );
+    if (existing.length > 0) {
+      return res
+        .status(400)
+        .json({ success: false, message: 'ອີເມວນີ້ຖືກໃຊ້ແລ້ວ' });
+    }
+
+    // phone_number ເປັນ UNIQUE ໃນ schema - ສົ່ງສະຕຣິງຫວ່າງມາຫຼາຍລາຍຈະຊົນກັນ
+    // ຈຶ່ງແປງເປັນ NULL ເພາະ MySQL ຍອມໃຫ້ NULL ຊ້ຳກັນໄດ້ໃນ UNIQUE index
+    const phone = phone_number && phone_number.trim() !== '' ? phone_number.trim() : null;
+    if (phone) {
+      const [dupPhone] = await pool.query(
+        'SELECT user_id FROM users WHERE phone_number = ?',
+        [phone]
+      );
+      if (dupPhone.length > 0) {
+        return res
+          .status(400)
+          .json({ success: false, message: 'ເບີໂທລະສັບນີ້ຖືກໃຊ້ແລ້ວ' });
+      }
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const password_hash = await bcrypt.hash(password, salt);
+
+    const [result] = await pool.query(
+      `INSERT INTO users
+         (email, password_hash, first_name, last_name, phone_number,
+          birth_date, gender, profile_image_url, role, status)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        email,
+        password_hash,
+        first_name,
+        last_name,
+        phone,
+        birth_date || null,
+        gender || 'unspecified',
+        profile_image_url && profile_image_url.trim() !== ''
+          ? profile_image_url.trim()
+          : null,
+        safeRole,
+        safeStatus,
+      ]
+    );
+
+    res.status(201).json({
+      success: true,
+      message: 'ສ້າງບັນຊີຜູ້ໃຊ້ສຳເລັດ',
+      user_id: result.insertId,
+    });
+  } catch (error) {
+    console.error('Create User Error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 // GET /api/users
 exports.getAllUsers = async (req, res) => {
   try {

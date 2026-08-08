@@ -26,7 +26,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   String _userRoleFilter = 'ທັງໝົດ';
   String _kycFilterStatus = 'ທັງໝົດ';
   String _subFilterStatus = 'ທັງໝົດ';
-  String _reportTimeFilter = 'ທັງໝົດ';
 
   final List<BookModel> _adminBooks = [];
   final List<Map<String, dynamic>> _adminUsers = [];
@@ -570,10 +569,18 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     );
   }
 
-  void _logout() {
+  // # ເຮັດຫຍັງ: ເພີ່ມການລ້າງ session ກ່ອນອອກຈາກລະບົບ ແລະ ປ່ຽນປາຍທາງເປັນ StaffLoginScreen
+  // # ຍ້ອນຫຍັງ: ຂອງເກົ່າພຽງແຕ່ navigate ໂດຍບໍ່ລ້າງ session ເຮັດໃຫ້ບັນຊີ Admin ຍັງຄ້າງ
+  // #          ຢູ່ໃນ SharedPreferences ພໍໂຫຼດໜ້າໃໝ່ AppInitializer ຈະກູ້ session ນັ້ນຄືນ
+  // #          ແລ້ວພາເຂົ້າ AdminDashboard ອີກ ທັງທີ່ຜູ້ໃຊ້ກົດອອກຈາກລະບົບໄປແລ້ວ
+  // # ແກ້ຈາກສ່ວນໃດ: _logout() ເດີມທີ່ມີແຕ່ Navigator.pushAndRemoveUntil ໄປ LoginScreen
+  // # ແກ້ເຮັດຫຍັງ: ລ້າງ session ຈິງ ແລ້ວກັບໄປໜ້າ login ຂອງພະນັກງານ (Web)
+  void _logout() async {
+    await ApiService.clearSession();
+    if (!mounted) return;
     Navigator.pushAndRemoveUntil(
       context,
-      MaterialPageRoute(builder: (_) => const LoginScreen()),
+      MaterialPageRoute(builder: (_) => const StaffLoginScreen()),
       (route) => false,
     );
   }
@@ -1604,7 +1611,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                           spacing: 8,
                           runSpacing: 8,
                           children: _masterCategories.map((cat) {
-                            final catId = cat['category_id'];
                             final catName = (cat['name'] ?? '').toString();
                             return Chip(
                               label: Text(catName, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.primary)),

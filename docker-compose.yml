@@ -17,6 +17,11 @@ services:
     command:
       - --character-set-server=utf8mb4
       - --collation-server=utf8mb4_unicode_ci
+      # Ignore whatever charset a client negotiates and use utf8mb4 for every
+      # connection. Without this the image's mysql client falls back to latin1
+      # (no locale in the container) and the Lao text in database.sql is stored
+      # double-encoded during the entrypoint import.
+      - --skip-character-set-client-handshake
     ports:
       - "3307:3306"
     volumes:
@@ -35,6 +40,8 @@ services:
   # Node.js Express Backend (built from ./Backend/Dockerfile)
   # Reaches MySQL via the Docker network as service host "mysql" (not localhost).
   # Persistent uploads stored in the backend-uploads named volume at /app/uploads.
+  # Host port 5001 -> container 5000 (macOS AirPlay Receiver holds 5000).
+  # The Flutter client's ApiConfig.apiPort must match this host port.
   # ------------------------------------------------------------------
   backend:
     build:
@@ -51,7 +58,7 @@ services:
       DB_NAME: ebook_db
       JWT_SECRET: ${JWT_SECRET}
     ports:
-      - "5000:5000"
+      - "5001:5000"
     depends_on:
       mysql:
         condition: service_healthy
@@ -63,7 +70,8 @@ services:
   # ------------------------------------------------------------------
   # phpMyAdmin
   # Web UI for managing MySQL database
-  # Browser: http://localhost:8080
+  # Browser: http://localhost:8090  (host port 8090 -> container 80)
+  # 8080 and 8081 are both taken on this machine by unrelated services.
   # Connects to MySQL through Docker network using service name "mysql"
   # ------------------------------------------------------------------
   phpmyadmin:
@@ -75,7 +83,7 @@ services:
       PMA_PORT: 3306
       PMA_ARBITRARY: 0
     ports:
-      - "8080:80"
+      - "8090:80"
     depends_on:
       mysql:
         condition: service_healthy

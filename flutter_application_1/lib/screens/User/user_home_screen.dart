@@ -1,6 +1,4 @@
-import 'dart:io';
 import 'dart:ui';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import '../../theme/app_theme.dart';
 import '../../models/book_model.dart';
@@ -14,7 +12,6 @@ import 'profile_screen.dart';
 import 'book_detail_screen.dart';
 import 'kyc_submission_screen.dart';
 import 'membership_package_screen.dart';
-import 'pdf_viewer_screen.dart';
 import 'search_screen.dart';
 import 'notifications_screen.dart';
 import '../../services/notification_service.dart';
@@ -116,28 +113,6 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
     return ImageHelper.buildImage(path, width: width, height: height, fit: fit);
   }
 
-  Widget _buildPlaceholder(double? width, double? height) {
-    return SizedBox(
-      width: width,
-      height: height,
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          Image.asset(
-            'assets/BookCover.jpg',
-            fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) => Container(color: Colors.blueGrey.shade200),
-          ),
-          Container(
-            color: Colors.black.withOpacity(0.25),
-          ),
-          const Center(
-            child: Icon(Icons.book_rounded, color: Colors.white, size: 32),
-          ),
-        ],
-      ),
-    );
-  }
 
   bool get _isMember {
     final user = ApiService.currentUser ?? {};

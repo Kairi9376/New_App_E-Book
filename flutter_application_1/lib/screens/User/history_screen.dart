@@ -1,5 +1,3 @@
-import 'dart:io';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import '../../theme/app_theme.dart';
 import '../../models/history_model.dart';
@@ -40,14 +38,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
     return ImageHelper.buildImage(path, width: width, height: height, fit: BoxFit.cover);
   }
 
-  Widget _buildPlaceholder(double? width, double? height) {
-    return Container(
-      width: width,
-      height: height,
-      color: const Color(0xFFF1F5F9),
-      child: const Icon(Icons.book_rounded, color: AppColors.primary, size: 36),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {

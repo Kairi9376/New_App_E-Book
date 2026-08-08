@@ -18,8 +18,16 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # of the product and file versions while build-number is used as the build suffix.
 version: 1.0.0+1
 
+# # ເຮັດຫຍັງ: ຍົກ SDK constraint ຈາກ '>=2.19.4' ຂຶ້ນເປັນ '>=3.10.0' ແລະ ເພີ່ມ flutter constraint
+# # ຍ້ອນຫຍັງ: package ໃໝ່ບັງຄັບຂັ້ນຕໍ່າໄວ້ຢູ່ແລ້ວ (pdfrx ຕ້ອງການ sdk ^3.10.0 ກັບ
+# #          flutter >=3.41.0 ສ່ວນ file_picker ຕ້ອງການ sdk >=3.4.0) ຖ້າປະ constraint ເກົ່າໄວ້
+# #          ຈະເປັນຄຳໝັ້ນສັນຍາທີ່ຜິດ - ຄົນທີ່ໃຊ້ Dart 2.19 ຈະ pub get ຜ່ານແຕ່ build ລົ້ມ
+# # ແກ້ຈາກສ່ວນໃດ: environment ເດີມທີ່ຂຽນ sdk: '>=2.19.4 <4.0.0' ຢ່າງດຽວ
+# # ແກ້ເຮັດຫຍັງ: ບອກຄວາມຈິງວ່າໂປຣເຈັກຕ້ອງການ Flutter 3.41+ ຜູ້ພັດທະນາໃນ Windows
+# #             ຈຶ່ງຮູ້ຕັ້ງແຕ່ຕອນ pub get ບໍ່ແມ່ນໄປພັງຕອນ build
 environment:
-  sdk: '>=2.19.4 <4.0.0'
+  sdk: '>=3.10.0 <4.0.0'
+  flutter: '>=3.41.0'
 
 # Dependencies specify other packages that your package needs in order to work.
 # To automatically upgrade your package dependencies to the latest versions
@@ -38,6 +46,8 @@ dependencies:
   url_launcher: ^6.1.6
   flutter_svg: ^2.0.5
   shared_preferences: ^2.2.0
+  file_picker: ^11.0.3
+  pdfrx: ^2.4.7
 
 dev_dependencies:
   flutter_test:

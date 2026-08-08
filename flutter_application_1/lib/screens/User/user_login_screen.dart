@@ -1,24 +1,24 @@
 import 'package:flutter/material.dart';
-import '../theme/app_theme.dart';
-import '../services/api_service.dart';
-import '../services/auth_gate.dart';
-import 'admin/admin_dashboard_screen.dart';
-import 'employee/employee_dashboard_screen.dart';
+import '../../theme/app_theme.dart';
+import '../../services/api_service.dart';
+import '../../services/auth_gate.dart';
+import 'user_home_screen.dart';
+import 'register_screen.dart';
 
-// # ເຮັດຫຍັງ: ປ່ຽນໜ້ານີ້ຈາກ login ລວມທຸກ role ມາເປັນ login ສະເພາະ Staff (Admin/Employee) ບົນ Web
-// # ຍ້ອນຫຍັງ: ຕາມທີ່ກຳນົດໄວ້ Admin ຕ້ອງເຮັດວຽກຢູ່ Web ເທົ່ານັ້ນ ບໍ່ກ່ຽວຂ້ອງກັບ Flutter App
-// # ແກ້ຈາກສ່ວນໃດ: ຂອງເກົ່າຊື່ LoginScreen ຮັບທຸກ role ແລ້ວແຍກທາງໄປ 3 ໜ້າ
-// #              (Admin / Employee / User) ຈາກໜ້າດຽວກັນ
-// # ແກ້ເຮັດຫຍັງ: ເຫຼືອແຕ່ 2 ທາງ (Admin/Employee) ແລະ ປະຕິເສດບັນຊີຜູ້ໃຊ້ທົ່ວໄປ
-// #             ສ່ວນ User/Member ຍ້າຍໄປ UserLoginScreen ໃນ screens/User/user_login_screen.dart
-class StaffLoginScreen extends StatefulWidget {
-  const StaffLoginScreen({super.key});
+// # ເຮັດຫຍັງ: ເພີ່ມໜ້າ login ໃໝ່ສະເພາະຝັ່ງ Flutter App (ຜູ້ໃຊ້ທົ່ວໄປ ແລະ Premiere Member)
+// # ຍ້ອນຫຍັງ: ຕາມທີ່ກຳນົດໄວ້ ໃຫ້ແຍກໜ້າ login ຕາມ role ໂດຍ User/Member ຢູ່ແອັບ
+// #          ສ່ວນ Admin/Employee ຢູ່ Web ບໍ່ປົນກັນ
+// # ແກ້ຈາກສ່ວນໃດ: ແຍກອອກມາຈາກ screens/login_screen.dart ທີ່ແຕ່ກ່ອນຮັບທຸກ role ໃນໜ້າດຽວ
+// # ແກ້ເຮັດຫຍັງ: ໜ້ານີ້ຮັບແຕ່ບັນຊີຜູ້ໃຊ້ ແລະ ເປັນບ່ອນດຽວທີ່ຍັງມີລິ້ງລົງທະບຽນ
+// #             ເພາະມີແຕ່ບັນຊີຜູ້ໃຊ້ເທົ່ານັ້ນທີ່ສະໝັກເອງໄດ້
+class UserLoginScreen extends StatefulWidget {
+  const UserLoginScreen({super.key});
 
   @override
-  State<StaffLoginScreen> createState() => _StaffLoginScreenState();
+  State<UserLoginScreen> createState() => _UserLoginScreenState();
 }
 
-class _StaffLoginScreenState extends State<StaffLoginScreen> {
+class _UserLoginScreenState extends State<UserLoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -47,7 +47,6 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
       final email = _emailController.text.trim().toLowerCase();
       final password = _passwordController.text.trim();
 
-      // Show loading indicator
       showDialog(
         context: context,
         barrierDismissible: false,
@@ -65,12 +64,12 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
         final user = result['user'] ?? {};
         final role = user['role'] ?? AuthGate.roleUser;
 
-        // # ເຮັດຫຍັງ: ກວດ role ຕໍ່ platform ກ່ອນ ຖ້າບໍ່ແມ່ນ Staff ໃຫ້ລ້າງ session ຖິ້ມ
-        // # ຍ້ອນຫຍັງ: ApiService.login ບັນທຶກ session ໄວ້ແລ້ວຕັ້ງແຕ່ຕອນ request ສຳເລັດ
-        // #          ຖ້າພຽງແຕ່ບໍ່ navigate ຜູ້ໃຊ້ທົ່ວໄປຈະຍັງຄ້າງ login ຢູ່ ແລ້ວໂຫຼດໜ້າໃໝ່
-        // #          ຈະຖືກກູ້ session ເຂົ້າລະບົບໄດ້ ກາຍເປັນຊ່ອງຮົ່ວ
-        // # ແກ້ຈາກສ່ວນໃດ: ຂອງເກົ່າມີ else ສຸດທ້າຍພາ role ອື່ນໄປ UserHomeScreen ໂດຍບໍ່ກວດຫຍັງ
-        // # ແກ້ເຮັດຫຍັງ: ຕັດ session ຖິ້ມ ແລ້ວແຈ້ງເຫດຜົນ ບໍ່ໃຫ້ຄ້າງສະຖານະເຄິ່ງກາງ
+        // # ເຮັດຫຍັງ: ປະຕິເສດບັນຊີ Admin/Employee ພ້ອມລ້າງ session ຖິ້ມ
+        // # ຍ້ອນຫຍັງ: ApiService.login ບັນທຶກ session ໄວ້ແລ້ວກ່ອນທີ່ເຮົາຈະກວດ role
+        // #          ຖ້າພຽງແຕ່ບໍ່ navigate ບັນຊີ Admin ຈະຄ້າງຢູ່ໃນ SharedPreferences
+        // #          ຂອງເຄື່ອງ ແລ້ວຖືກກູ້ຄືນຕອນເປີດແອັບຮອບໜ້າ
+        // # ແກ້ຈາກສ່ວນໃດ: ຕັດສິນໃຈດ້ວຍ AuthGate ດຽວກັນກັບໜ້າ Staff ບໍ່ຂຽນເງື່ອນໄຂຊ້ຳ
+        // # ແກ້ເຮັດຫຍັງ: ຮັບປະກັນວ່າ Admin ບໍ່ມີທາງເຂົ້າເຖິງຜ່ານແອັບໄດ້ເລີຍ
         if (!AuthGate.isAllowedHere(role)) {
           await ApiService.clearSession();
           if (!mounted) return;
@@ -84,27 +83,24 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
           return;
         }
 
-        if (role == AuthGate.roleAdmin) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('ເຂົ້າສູ່ລະບົບສຳເລັດໃນຖານະ: Admin (ຜູ້ດູແລລະບົບ)'),
-              backgroundColor: AppColors.primary,
+        // "Member" ບໍ່ແມ່ນ role ໃນຖານຂໍ້ມູນ ແຕ່ແມ່ນ user ທີ່ມີ subscription ຢູ່
+        final isMember = (user['is_member'] == true) ||
+            (user['subscription_status']?.toString() == 'active');
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'ເຂົ້າສູ່ລະບົບສຳເລັດໃນຖານະ: ${isMember ? 'Premiere Member' : 'ຜູ້ໃຊ້ທົ່ວໄປ'}',
             ),
-          );
-          _navigateTo(const AdminDashboardScreen());
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('ເຂົ້າສູ່ລະບົບສຳເລັດໃນຖານະ: Employee (ພະນັກງານຈັດການ PDF)'),
-              backgroundColor: Color(0xFF10B981),
-            ),
-          );
-          _navigateTo(const EmployeeDashboardScreen());
-        }
+            backgroundColor: AppColors.primary,
+          ),
+        );
+        _navigateTo(const UserHomeScreen());
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(result['message'] ?? 'ອີເມວ ຫຼື ລະຫັດຜ່ານບໍ່ຖືກຕ້ອງ ກະລຸນາລອງໃໝ່ອີກຄັ້ງ'),
+            content: Text(result['message'] ??
+                'ອີເມວ ຫຼື ລະຫັດຜ່ານບໍ່ຖືກຕ້ອງ ກະລຸນາລອງໃໝ່ອີກຄັ້ງ'),
             backgroundColor: Colors.redAccent,
           ),
         );
@@ -118,7 +114,8 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+            padding:
+                const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -139,13 +136,8 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
                 ),
                 const SizedBox(height: 24),
 
-                // # ເຮັດຫຍັງ: ປ່ຽນຫົວຂໍ້ໃຫ້ບອກຊັດວ່າເປັນປະຕູຂອງພະນັກງານ
-                // # ຍ້ອນຫຍັງ: ຫົວຂໍ້ເກົ່າຂຽນວ່າ "ສຳລັບ Admin, ພະນັກງານ ແລະ ຜູ້ໃຊ້ງານ"
-                // #          ເຊິ່ງບໍ່ຈິງອີກຕໍ່ໄປ ຜູ້ໃຊ້ທົ່ວໄປຈະລອງ login ຢູ່ນີ້ແລ້ວຖືກປະຕິເສດ
-                // # ແກ້ຈາກສ່ວນໃດ: ຂໍ້ຄວາມສ່ວນຫົວຂອງໜ້າ login ເດີມ
-                // # ແກ້ເຮັດຫຍັງ: ບອກແຕ່ຕົ້ນວ່າໜ້ານີ້ແມ່ນ Staff Portal ສະເພາະ Web
                 const Text(
-                  'ເຂົ້າສູ່ລະບົບຜູ້ດູແລ',
+                  'ຍິນດີຕ້ອນຮັບ',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 24,
@@ -155,7 +147,7 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
                 ),
                 const SizedBox(height: 8),
                 const Text(
-                  'ລະບົບຈັດການ E-Book ສຳລັບ Admin ແລະ ພະນັກງານ (Web ເທົ່ານັ້ນ)',
+                  'ເຂົ້າສູ່ລະບົບເພື່ອອ່ານ ແລະ ບັນທຶກປຶ້ມທີ່ທ່ານມັກ',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 13,
@@ -164,7 +156,6 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
                 ),
                 const SizedBox(height: 32),
 
-                // Form Fields
                 Form(
                   key: _formKey,
                   child: Column(
@@ -175,7 +166,8 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
                         decoration: const InputDecoration(
                           labelText: 'ອີເມວ ຫຼື ເບີໂທລະສັບ (Email or Phone)',
                           hintText: 'example@gmail.com ຫຼື 020 99887766',
-                          prefixIcon: Icon(Icons.person_outline_rounded, color: AppColors.primary),
+                          prefixIcon: Icon(Icons.person_outline_rounded,
+                              color: AppColors.primary),
                         ),
                         validator: (value) {
                           if (value == null || value.trim().isEmpty) {
@@ -185,14 +177,14 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
                         },
                       ),
                       const SizedBox(height: 16),
-
                       TextFormField(
                         controller: _passwordController,
                         obscureText: _isPasswordObscured,
                         decoration: InputDecoration(
                           labelText: 'ລະຫັດຜ່ານ',
                           hintText: '••••••••',
-                          prefixIcon: const Icon(Icons.lock_outline, color: AppColors.primary),
+                          prefixIcon: const Icon(Icons.lock_outline,
+                              color: AppColors.primary),
                           suffixIcon: IconButton(
                             icon: Icon(
                               _isPasswordObscured
@@ -219,7 +211,6 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
                 ),
                 const SizedBox(height: 12),
 
-                // Remember Me & Forgot Password Row
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -274,15 +265,61 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
                     child: const Text('ເຂົ້າສູ່ລະບົບ'),
                   ),
                 ),
-                // # ເຮັດຫຍັງ: ຕັດແຖວລິ້ງ "ລົງທະບຽນຜູ້ໃຊ້ໃໝ່" ອອກຈາກໜ້າ Staff
-                // # ຍ້ອນຫຍັງ: ບັນຊີ Admin/ພະນັກງານ ຕ້ອງຖືກສ້າງໂດຍຜູ້ດູແລ ບໍ່ແມ່ນສະໝັກເອງ
-                // #          ແລະ ບັນຊີທີ່ສະໝັກຜ່ານໜ້ານີ້ຈະໄດ້ role=user ເຊິ່ງ login ຢູ່ Web ບໍ່ໄດ້
-                // #          ຢູ່ແລ້ວ ກາຍເປັນທາງຕັນໃຫ້ຜູ້ໃຊ້
-                // # ແກ້ຈາກສ່ວນໃດ: Register Link Row ເດີມທີ່ push ໄປ RegisterScreen
-                // # ແກ້ເຮັດຫຍັງ: ຍ້າຍລິ້ງລົງທະບຽນໄປໄວ້ທີ່ UserLoginScreen ຝັ່ງແອັບແທນ
+                const SizedBox(height: 16),
+
+                // # ເຮັດຫຍັງ: ຍ້າຍລິ້ງລົງທະບຽນມາໄວ້ໜ້ານີ້
+                // # ຍ້ອນຫຍັງ: ບັນຊີທີ່ສະໝັກເອງໄດ້ຮັບ role=user ຈຶ່ງເໝາະກັບຝັ່ງແອັບເທົ່ານັ້ນ
+                // # ແກ້ຈາກສ່ວນໃດ: ຍົກມາຈາກ Register Link Row ໃນ screens/login_screen.dart ເດີມ
+                // # ແກ້ເຮັດຫຍັງ: ຜູ້ໃຊ້ໃໝ່ສະໝັກແລ້ວເຂົ້າໃຊ້ໄດ້ທັນທີໃນທາງດຽວກັນ
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text(
+                      'ຍັງບໍ່ມີບັນຊີຜູ້ໃຊ້?',
+                      style: TextStyle(
+                          fontSize: 13, color: AppColors.textSecondary),
+                    ),
+                    TextButton(
+                      onPressed: () async {
+                        final registeredEmail = await Navigator.push<String>(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => const RegisterScreen()),
+                        );
+                        if (registeredEmail != null &&
+                            registeredEmail.isNotEmpty) {
+                          setState(() {
+                            _emailController.text = registeredEmail;
+                            _passwordController.clear();
+                          });
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                    'ກະລຸນາປ້ອນລະຫັດຜ່ານຂອງ "$registeredEmail" ເພື່ອເຂົ້າສູ່ລະບົບ'),
+                                backgroundColor: AppColors.primary,
+                              ),
+                            );
+                          }
+                        }
+                      },
+                      child: const Text(
+                        'ລົງທະບຽນຜູ້ໃຊ້ໃໝ່',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
                 const SizedBox(height: 20),
 
-                // Mock Accounts Reference Helper Box
+                // # ເຮັດຫຍັງ: ກ່ອງບັນຊີທົດລອງເຫຼືອແຕ່ຝັ່ງຜູ້ໃຊ້
+                // # ຍ້ອນຫຍັງ: ບັນຊີ Admin/Employee ເຂົ້າຜ່ານແອັບບໍ່ໄດ້ ຈຶ່ງບໍ່ຄວນສະແດງໄວ້ນີ້
+                // # ແກ້ຈາກສ່ວນໃດ: ຄັດມາຈາກກ່ອງ Mock Data ໃນ login_screen.dart ທີ່ມີຄົບ 4 ບັນຊີ
+                // # ແກ້ເຮັດຫຍັງ: ຜູ້ທົດສອບເຫັນສະເພາະບັນຊີທີ່ໃຊ້ໄດ້ຈິງໃນຊ່ອງທາງນີ້
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
@@ -294,23 +331,24 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
-                        children: [
-                          const Icon(Icons.info_outline_rounded, size: 16, color: AppColors.primary),
-                          const SizedBox(width: 6),
-                          const Text(
+                        children: const [
+                          Icon(Icons.info_outline_rounded,
+                              size: 16, color: AppColors.primary),
+                          SizedBox(width: 6),
+                          Text(
                             'ບັນຊີສຳລັບທົດລອງລະບົບ (Mock Data):',
-                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.primary),
+                            style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.primary),
                           ),
                         ],
                       ),
                       const SizedBox(height: 6),
-                      // # ເຮັດຫຍັງ: ຕັດບັນຊີທົດລອງຂອງ User/Member ອອກຈາກກ່ອງນີ້
-                      // # ຍ້ອນຫຍັງ: ສອງບັນຊີນັ້ນ login ຢູ່ Web ບໍ່ໄດ້ອີກແລ້ວ ຖ້າຍັງສະແດງໄວ້
-                      // #          ຜູ້ທົດສອບຈະກົດແລ້ວເຫັນຂໍ້ຄວາມປະຕິເສດ ໂດຍນຶກວ່າລະບົບພັງ
-                      // # ແກ້ຈາກສ່ວນໃດ: ກ່ອງ Mock Data ເດີມທີ່ລິສ 4 ບັນຊີທຸກ role
-                      // # ແກ້ເຮັດຫຍັງ: ເຫຼືອແຕ່ 2 ບັນຊີ Staff ສ່ວນ User/Member ຍ້າຍໄປໜ້າ login ຂອງແອັບ
-                      _buildCredentialRow('Admin', 'admin@gmail.com', 'admin123456'),
-                      _buildCredentialRow('Employees', 'employee@gmail.com', 'employee123'),
+                      _buildCredentialRow(
+                          'User (General)', 'user1234@gmail.com', 'user1234'),
+                      _buildCredentialRow(
+                          'User (Member)', 'member@gmail.com', 'member1234'),
                     ],
                   ),
                 ),
@@ -330,7 +368,10 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
         children: [
           Text(
             '$role:',
-            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+            style: const TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary),
           ),
           InkWell(
             onTap: () {
@@ -341,7 +382,10 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
             },
             child: Text(
               '$email / $pwd',
-              style: const TextStyle(fontSize: 11, color: AppColors.primary, decoration: TextDecoration.underline),
+              style: const TextStyle(
+                  fontSize: 11,
+                  color: AppColors.primary,
+                  decoration: TextDecoration.underline),
             ),
           ),
         ],

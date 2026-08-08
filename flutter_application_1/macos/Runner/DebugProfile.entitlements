@@ -8,5 +8,20 @@
 	<true/>
 	<key>com.apple.security.network.server</key>
 	<true/>
+	<!-- # ເຮັດຫຍັງ: ເພີ່ມສິດ network.client
+	     # ຍ້ອນຫຍັງ: macOS sandbox ບລັອກ request ຂາອອກທັງໝົດຖ້າບໍ່ມີ key ນີ້
+	     #          ແອັບຈະເປີດຂຶ້ນໄດ້ ແຕ່ຕໍ່ backend ທີ່ localhost:5001 ບໍ່ໄດ້ເລີຍ
+	     #          (network.server ທີ່ມີຢູ່ແລ້ວແມ່ນສິດ "ຮັບ" connection ບໍ່ແມ່ນ "ສົ່ງ")
+	     # ແກ້ຈາກສ່ວນໃດ: ໄຟລ໌ນີ້ມີແຕ່ app-sandbox, allow-jit ແລະ network.server
+	     # ແກ້ເຮັດຫຍັງ: ໃຫ້ ApiService ຍິງ HTTP ອອກໄປຫາ backend ໄດ້ຕອນ run -d macos -->
+	<key>com.apple.security.network.client</key>
+	<true/>
+	<!-- # ເຮັດຫຍັງ: ເພີ່ມສິດອ່ານໄຟລ໌ທີ່ຜູ້ໃຊ້ເລືອກເອງ
+	     # ຍ້ອນຫຍັງ: package file_picker ບັງຄັບສິດນີ້ບົນ macOS ຖ້າບໍ່ມີ ກ່ອງເລືອກໄຟລ໌
+	     #          ຈະເປີດຂຶ້ນ ແຕ່ອ່ານໄຟລ໌ທີ່ເລືອກບໍ່ໄດ້ (bytes ຄືນມາເປົ່າ)
+	     # ແກ້ຈາກສ່ວນໃດ: ໄຟລ໌ນີ້ຍັງບໍ່ມີສິດກ່ຽວກັບໄຟລ໌ເລີຍ
+	     # ແກ້ເຮັດຫຍັງ: ໃຫ້ອັບໂຫຼດ KYC, ສະລິບ, ຮູບໂປຣໄຟລ໌ ແລະ PDF ໃນແອັບ macOS ໄດ້ -->
+	<key>com.apple.security.files.user-selected.read-only</key>
+	<true/>
 </dict>
 </plist>

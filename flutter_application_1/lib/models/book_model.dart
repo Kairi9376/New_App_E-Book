@@ -1,3 +1,5 @@
+import '../services/api_config.dart';
+
 class BookModel {
   final String id;
   final String title;
@@ -77,7 +79,8 @@ class BookModel {
     return viewCount.toString();
   }
 
-  factory BookModel.fromMap(Map<String, dynamic> map, {String uploadsBaseUrl = 'http://localhost:5000/uploads'}) {
+  factory BookModel.fromMap(Map<String, dynamic> map, {String? uploadsBaseUrl}) {
+    final baseUrl = uploadsBaseUrl ?? ApiConfig.uploadsBaseUrl;
     List<String> parsedTags = [];
     if (map['categories'] != null && map['categories'].toString().isNotEmpty) {
       parsedTags = map['categories']
@@ -111,13 +114,13 @@ class BookModel {
 
     String cover = map['cover_image_url'] ?? map['imagePath'] ?? '';
     if (cover.startsWith('/uploads/') || cover.startsWith('uploads/')) {
-      cover = '$uploadsBaseUrl/${cover.replaceAll(RegExp(r'^/?uploads/'), '')}';
+      cover = '$baseUrl/${cover.replaceAll(RegExp(r'^/?uploads/'), '')}';
     }
 
     String? pdf = map['file_pdf_url'] ?? map['pdfUrl'];
     if (pdf != null &&
         (pdf.startsWith('/uploads/') || pdf.startsWith('uploads/'))) {
-      pdf = '$uploadsBaseUrl/${pdf.replaceAll(RegExp(r'^/?uploads/'), '')}';
+      pdf = '$baseUrl/${pdf.replaceAll(RegExp(r'^/?uploads/'), '')}';
     }
 
     double parsedRating = 0.0;

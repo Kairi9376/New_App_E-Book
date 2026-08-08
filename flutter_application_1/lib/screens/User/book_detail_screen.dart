@@ -1,14 +1,10 @@
-import 'dart:io';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import '../../theme/app_theme.dart';
 import '../../models/book_model.dart';
 import '../../models/history_model.dart';
 import '../../services/api_service.dart';
 import '../../utils/image_helper.dart';
-import '../../models/kyc_model.dart';
 import 'pdf_viewer_screen.dart';
-import 'kyc_submission_screen.dart';
 import 'membership_package_screen.dart';
 import '../../services/notification_service.dart';
 import '../../models/notification_model.dart';
@@ -158,28 +154,6 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
     return ImageHelper.buildImage(path, width: width, height: height, fit: BoxFit.cover);
   }
 
-  Widget _buildPlaceholder(double? width, double? height) {
-    return SizedBox(
-      width: width,
-      height: height,
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          Image.asset(
-            'assets/BookCover.jpg',
-            fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) => Container(color: Colors.amber.shade100),
-          ),
-          Container(
-            color: Colors.black.withOpacity(0.25),
-          ),
-          const Center(
-            child: Icon(Icons.book_rounded, color: Colors.white, size: 48),
-          ),
-        ],
-      ),
-    );
-  }
 
   void _openReader({int initialPage = 1}) {
     final isFree = widget.book?.isFree ?? true;

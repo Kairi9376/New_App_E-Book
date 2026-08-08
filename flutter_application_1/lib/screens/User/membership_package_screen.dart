@@ -204,7 +204,6 @@ class _MembershipPackageScreenState extends State<MembershipPackageScreen> {
   // --- Payment Modal Dialog with Real Transfer Slip Upload ---
   void _openPaymentDialog(Map<String, dynamic> pkg) {
     Uint8List? slipBytes;
-    String? slipPath;
     String? slipUrl;
     bool isUploading = false;
     bool isSubmitting = false;
@@ -241,7 +240,6 @@ class _MembershipPackageScreenState extends State<MembershipPackageScreen> {
 
                 // 1. ຕັ້ງຄ່າ local data ກ່ອນ
                 slipBytes = bytes;
-                slipPath = tempName;
                 slipUrl = tempName;
 
                 // 2. ອັບໂຫຼດໄຟລ໌ໄປທີ່ Server
@@ -252,7 +250,6 @@ class _MembershipPackageScreenState extends State<MembershipPackageScreen> {
                 );
 
                 if (result['success'] == true && result['path'] != null) {
-                  slipPath = result['path'];
                   slipUrl = result['url'] ?? result['path'];
                 }
               } catch (e) {

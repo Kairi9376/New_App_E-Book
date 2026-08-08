@@ -26,7 +26,6 @@ class _EmployeeAddBookScreenState extends State<EmployeeAddBookScreen> {
   // File Upload States
   String? _pdfFileName;
   String? _pdfFileUrl;
-  double? _pdfFileSizeMB;
   int _fileSizeBytes = 0;
   bool _isUploadingPdf = false;
   double _pdfUploadProgress = 0.0;
@@ -122,7 +121,6 @@ class _EmployeeAddBookScreenState extends State<EmployeeAddBookScreen> {
           _pdfUploadProgress = 1.0;
           _isUploadingPdf = false;
           _pdfFileUrl = res['url'] ?? res['path'] ?? 'uploads/pdfs/${fileInfo.name}';
-          _pdfFileSizeMB = double.tryParse(sizeMB) ?? 14.8;
         });
 
         ScaffoldMessenger.of(context).showSnackBar(

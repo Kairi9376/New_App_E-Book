@@ -1,3 +1,5 @@
+import '../services/api_config.dart';
+
 class DownloadedBookItem {
   final String id;
   final int? downloadId;
@@ -43,15 +45,16 @@ class DownloadedBookItem {
     return '${mb.toStringAsFixed(1)} MB';
   }
 
-  factory DownloadedBookItem.fromMap(Map<String, dynamic> map, {String uploadsBaseUrl = 'http://localhost:5000/uploads'}) {
+  factory DownloadedBookItem.fromMap(Map<String, dynamic> map, {String? uploadsBaseUrl}) {
+    final baseUrl = uploadsBaseUrl ?? ApiConfig.uploadsBaseUrl;
     String cover = map['cover_image_url'] ?? map['imagePath'] ?? '';
     if (cover.startsWith('/uploads/') || cover.startsWith('uploads/')) {
-      cover = '$uploadsBaseUrl/${cover.replaceAll(RegExp(r'^/?uploads/'), '')}';
+      cover = '$baseUrl/${cover.replaceAll(RegExp(r'^/?uploads/'), '')}';
     }
 
     String? pdf = map['file_pdf_url'] ?? map['pdfUrl'];
     if (pdf != null && (pdf.startsWith('/uploads/') || pdf.startsWith('uploads/'))) {
-      pdf = '$uploadsBaseUrl/${pdf.replaceAll(RegExp(r'^/?uploads/'), '')}';
+      pdf = '$baseUrl/${pdf.replaceAll(RegExp(r'^/?uploads/'), '')}';
     }
 
     int? dId = int.tryParse(map['download_id']?.toString() ?? '');

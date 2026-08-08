@@ -1,5 +1,4 @@
 import 'dart:typed_data';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import '../../theme/app_theme.dart';
 import '../../models/kyc_model.dart';
@@ -287,6 +286,23 @@ class _KycSubmissionScreenState extends State<KycSubmissionScreen> {
       'school_name': _isStudent ? _schoolNameController.text.trim() : null,
     });
 
+    // The server is the source of truth for KYC status - only flip the local
+    // status to pending once it actually accepted the submission, otherwise the
+    // user is told it succeeded while the server holds nothing.
+    if (!success) {
+      if (mounted) {
+        setState(() => _isSubmitting = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('❌ ສົ່ງຂໍ້ມູນຢືນຢັນຕົວຕົນບໍ່ສຳເລັດ ກະລຸນາລອງໃໝ່ອີກຄັ້ງ!'),
+            backgroundColor: Colors.redAccent,
+            duration: Duration(seconds: 4),
+          ),
+        );
+      }
+      return;
+    }
+
     final updatedKyc = widget.currentKyc.copyWith(
       fullName: _fullNameController.text.trim(),
       gender: _selectedGender,
@@ -435,23 +451,6 @@ class _KycSubmissionScreenState extends State<KycSubmissionScreen> {
     );
   }
 
-  Widget _buildUploadedSuccessBadge(String title) {
-    return Container(
-      color: const Color(0xFFECFDF5),
-      child: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.check_circle_rounded, color: Color(0xFF10B981), size: 36),
-            const SizedBox(height: 6),
-            Text('ອັບໂຫຼດໄຟລ໌ສຳເລັດແລ້ວ', style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF065F46), fontSize: 13)),
-            const SizedBox(height: 2),
-            Text(title, style: const TextStyle(color: Color(0xFF047857), fontSize: 11)),
-          ],
-        ),
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {

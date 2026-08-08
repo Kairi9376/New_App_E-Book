@@ -94,12 +94,19 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
             child: const Text('ຍົກເລີກ',
                 style: TextStyle(color: AppColors.textSecondary)),
           ),
+          // # ເຮັດຫຍັງ: ເພີ່ມການລ້າງ session ກ່ອນອອກ ແລະ ປ່ຽນປາຍທາງເປັນ StaffLoginScreen
+          // # ຍ້ອນຫຍັງ: ບັນຫາດຽວກັນກັບ Admin - ຂອງເກົ່າ navigate ຢ່າງດຽວ session ພະນັກງານ
+          // #          ຈຶ່ງຄ້າງຢູ່ໃນເຄື່ອງ ແລ້ວຖືກກູ້ຄືນຕອນເປີດໃໝ່
+          // # ແກ້ຈາກສ່ວນໃດ: ປຸ່ມຢືນຢັນອອກຈາກລະບົບໃນ dialog ທີ່ push ໄປ LoginScreen
+          // # ແກ້ເຮັດຫຍັງ: ລ້າງ session ຈິງ ແລ້ວກັບໄປໜ້າ login ຂອງພະນັກງານ (Web)
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
+              await ApiService.clearSession();
+              if (!context.mounted) return;
               Navigator.pop(ctx);
               Navigator.pushReplacement(
                 context,
-                MaterialPageRoute(builder: (context) => const LoginScreen()),
+                MaterialPageRoute(builder: (context) => const StaffLoginScreen()),
               );
             },
             style: ElevatedButton.styleFrom(
