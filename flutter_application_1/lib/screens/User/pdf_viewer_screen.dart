@@ -8,7 +8,7 @@ import '../../services/api_service.dart';
 
 // Conditional imports for Web platform view registration
 import 'dart:html' as html;
-import 'dart:ui' as ui;
+import 'dart:js' as js;
 
 class PdfViewerScreen extends StatefulWidget {
   final String? bookId;
@@ -262,8 +262,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
     if (kIsWeb) {
       _viewTypeId = 'pdf-view-${DateTime.now().microsecondsSinceEpoch}';
       try {
-        // ignore: undefined_prefixed_name
-        ui.platformViewRegistry.registerViewFactory(
+                (js.context as dynamic).platformViewRegistry?.registerViewFactory(
           _viewTypeId,
           (int id) {
             final iframe = html.IFrameElement()

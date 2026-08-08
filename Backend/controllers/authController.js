@@ -13,6 +13,7 @@ exports.login = async (req, res) => {
     }
 
     const cleanInput = inputVal.toLowerCase();
+    const cleanEmail = cleanInput;
     const rawInput = inputVal;
     const cleanPassword = password.trim();
 
