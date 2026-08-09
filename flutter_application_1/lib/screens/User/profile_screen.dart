@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../theme/app_theme.dart';
 import '../../models/kyc_model.dart';
 import '../../services/api_service.dart';
+import '../../services/membership.dart';
 import '../../services/file_picker_helper.dart';
 import '../../services/notification_service.dart';
 import '../../models/notification_model.dart';
@@ -696,9 +697,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final user = _userProfile.isNotEmpty ? _userProfile : (ApiService.currentUser ?? {});
     final firstName = user['first_name'] ?? 'ສົມຊາຍ';
     final lastName = user['last_name'] ?? 'ໃຈດີ';
-    final role = (user['role'] ?? 'user').toString().toLowerCase();
     final email = user['email'] ?? 'user@gmail.com';
-    final isPremiere = role == 'admin' || role == 'employee' || email == 'member@gmail.com';
+    // # ເຮັດຫຍັງ: ປ່ຽນມາອ່ານ Membership.isPremiere ແທນການຕັດສິນເອງ
+    // # ຍ້ອນຫຍັງ: ເງື່ອນໄຂເກົ່າ role=='admin'||role=='employee'||email=='member@gmail.com'
+    // #          ຕັດສິນດ້ວຍ email ທີ່ hardcode ໄວ້ ຜູ້ໃຊ້ຈິງທີ່ຊື້ແພັກເກັດແລ້ວ
+    // #          ຈຶ່ງບໍ່ເຄີຍຖືກນັບເປັນສະມາຊິກ ແລະ ບໍ່ໄດ້ກວດວັນໝົດອາຍຸນຳ
+    // # ແກ້ຈາກສ່ວນໃດ: ເງື່ອນໄຂທີ່ຂຽນຊ້ຳກັນຢູ່ 4 ໜ້າ
+    // # ແກ້ເຮັດຫຍັງ: ອີງ subscription ຈິງຈາກ backend + ກວດວັນໝົດອາຍຸ ບ່ອນດຽວ
+    final isPremiere = Membership.isPremiere;
 
     return RefreshIndicator(
       onRefresh: _fetchProfile,
