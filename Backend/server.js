@@ -4,10 +4,25 @@ const dotenv = require('dotenv');
 const path = require('path');
 const { testConnection } = require('./config/db');
 const upload = require('./middleware/upload');
+const { requireAuth } = require('./middleware/auth');
 const { deleteOldFile } = require('./utils/fileUtils');
 
 // Load environment variables
 dotenv.config();
+
+// # ເຮັດຫຍັງ: ຢຸດ server ທັນທີຖ້າບໍ່ມີ JWT_SECRET
+// # ຍ້ອນຫຍັງ: authController ເຄີຍຂຽນ process.env.JWT_SECRET || 'secret' ເຊິ່ງແປວ່າ
+// #          ຖ້າ .env ບໍ່ຖືກໂຫຼດ token ຈະຖືກເຊັນດ້ວຍຄຳວ່າ 'secret' ທີ່ໃຜກໍ່ເດົາໄດ້
+// #          ແລ້ວປອມ token ເປັນ admin ໄດ້ທັນທີ - ອັນຕະລາຍກວ່າການທີ່ server ບໍ່ຂຶ້ນ
+// # ແກ້ຈາກສ່ວນໃດ: ບໍ່ເຄີຍມີການກວດ env ຕອນ start ເລີຍ
+// # ແກ້ເຮັດຫຍັງ: ລົ້ມແຕ່ຕົ້ນພ້ອມຂໍ້ຄວາມຊັດເຈນ ດີກວ່າແລ່ນຢູ່ແບບບໍ່ປອດໄພໂດຍບໍ່ຮູ້ຕົວ
+if (!process.env.JWT_SECRET) {
+  console.error(
+    '❌ ບໍ່ພົບ JWT_SECRET - ສ້າງໄຟລ໌ .env ຢູ່ root ຈາກ .env.example ກ່ອນ\n' +
+    '   (ຖ້າແລ່ນຜ່ານ Docker ໃຫ້ກວດວ່າ docker-compose.yml ສົ່ງ JWT_SECRET ເຂົ້າມາ)'
+  );
+  process.exit(1);
+}
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -17,8 +32,14 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Serve Uploaded Files Static Folder (Access files via http://localhost:5000/uploads/...)
+// Serve Uploaded Files Static Folder (Access files via <origin>/uploads/...)
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// Absolute origin as the CLIENT reached us, taken from the request rather than
+// from PORT. Inside Docker the app listens on 5000 but is published on another
+// host port, and Android emulators dial 10.0.2.2 instead of localhost - so the
+// listen port is never a safe basis for a URL we hand back to a client.
+const clientOrigin = (req) => `${req.protocol}://${req.get('host')}`;
 
 // Test Database Connection
 testConnection();
@@ -29,7 +50,7 @@ app.get('/', (req, res) => {
     message: 'Welcome to E-Book Application RESTful API',
     status: 'Running',
     database: 'MySQL (phpMyAdmin / XAMPP)',
-    static_uploads: 'http://localhost:5000/uploads',
+    static_uploads: `${clientOrigin(req)}/uploads`,
     timestamp: new Date().toISOString()
   });
 });
@@ -38,8 +59,14 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', uptime: process.uptime() });
 });
 
+// # ເຮັດຫຍັງ: ຕິດ requireAuth ໃສ່ endpoint ອັບໂຫຼດ
+// # ຍ້ອນຫຍັງ: ແຕ່ກ່ອນໃຜກໍ່ອັບໄຟລ໌ຂຶ້ນ server ໄດ້ໂດຍບໍ່ຕ້ອງ login
+// #          ຮັບໄດ້ເຖິງ 100MB ຕໍ່ໄຟລ໌ ຈຶ່ງເປັນຊ່ອງໃຫ້ຖົມພື້ນທີ່ດິສຈົນເຕັມ
+// # ແກ້ຈາກສ່ວນໃດ: app.post('/api/upload', upload.fields([...]) ໂດຍບໍ່ມີການກວດສິດ
+// # ແກ້ເຮັດຫຍັງ: ວາງ requireAuth ໄວ້ *ກ່ອນ* multer ເພື່ອປະຕິເສດຕັ້ງແຕ່ກ່ອນຮັບ byte
+// #             ບໍ່ແມ່ນຮັບໄຟລ໌ຈົນຄົບແລ້ວຈຶ່ງຄ່ອຍປະຕິເສດ
 // Single & Multiple File Upload Endpoint (with automatic old file cleanup)
-app.post('/api/upload', upload.fields([
+app.post('/api/upload', requireAuth, upload.fields([
   { name: 'cover', maxCount: 1 },
   { name: 'pdf', maxCount: 1 },
   { name: 'slip', maxCount: 1 },
@@ -58,7 +85,7 @@ app.post('/api/upload', upload.fields([
         const relativePath = path.relative(__dirname, file.path).replace(/\\/g, '/');
         responseData[key] = {
           filename: file.filename,
-          url: `http://localhost:${PORT}/${relativePath}`,
+          url: `${clientOrigin(req)}/${relativePath}`,
           path: relativePath,
           size: file.size
         };

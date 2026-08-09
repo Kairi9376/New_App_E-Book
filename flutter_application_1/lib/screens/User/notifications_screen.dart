@@ -96,8 +96,13 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         }
         break;
 
+      // # ເຮັດຫຍັງ: ຕັດ default ອອກ ເຫຼືອແຕ່ case NotificationType.system
+      // # ຍ້ອນຫຍັງ: switch ນີ້ກວມທຸກຄ່າຂອງ enum ຢູ່ແລ້ວ default ຈຶ່ງເປັນໂຄ້ດຕາຍ
+      // #          ແລະ ຍັງກີດຂວາງ analyzer ບໍ່ໃຫ້ເຕືອນຕອນເພີ່ມ NotificationType ໃໝ່
+      // #          ແລ້ວລືມມາຈັດການທີ່ນີ້ (ຫຼັງຍົກ SDK ເປັນ 3.10 analyzer ຈຶ່ງເລີ່ມເຕືອນ)
+      // # ແກ້ຈາກສ່ວນໃດ: 'case NotificationType.system:' ທີ່ຕິດດ້ວຍ 'default:'
+      // # ແກ້ເຮັດຫຍັງ: ພຶດຕິກຳຄືເກົ່າ ແຕ່ຖ້າເພີ່ມ type ໃໝ່ຈະ compile ເຕືອນທັນທີ
       case NotificationType.system:
-      default:
         Navigator.pop(context);
         break;
     }
@@ -236,10 +241,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                         child:
                             CircularProgressIndicator(color: AppColors.primary))
                     : filteredList.isEmpty
-                        ? Center(
+                        ? const Center(
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
-                              children: const [
+                              children: [
                                 Icon(Icons.notifications_off_outlined,
                                     size: 64, color: Color(0xFFCBD5E1)),
                                 SizedBox(height: 12),
@@ -301,8 +306,13 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         iconColor = const Color(0xFFEC4899);
         bgColor = const Color(0xFFFCE7F3);
         break;
+      // # ເຮັດຫຍັງ: ຕັດ default ອອກ ເຫຼືອແຕ່ case NotificationType.system
+      // # ຍ້ອນຫຍັງ: switch ນີ້ກວມທຸກຄ່າຂອງ enum ຢູ່ແລ້ວ default ຈຶ່ງເປັນໂຄ້ດຕາຍ
+      // #          ແລະ ຍັງກີດຂວາງ analyzer ບໍ່ໃຫ້ເຕືອນຕອນເພີ່ມ NotificationType ໃໝ່
+      // #          ແລ້ວລືມມາຈັດການທີ່ນີ້ (ຫຼັງຍົກ SDK ເປັນ 3.10 analyzer ຈຶ່ງເລີ່ມເຕືອນ)
+      // # ແກ້ຈາກສ່ວນໃດ: 'case NotificationType.system:' ທີ່ຕິດດ້ວຍ 'default:'
+      // # ແກ້ເຮັດຫຍັງ: ພຶດຕິກຳຄືເກົ່າ ແຕ່ຖ້າເພີ່ມ type ໃໝ່ຈະ compile ເຕືອນທັນທີ
       case NotificationType.system:
-      default:
         iconData = Icons.notifications_active_rounded;
         iconColor = AppColors.primary;
         bgColor = const Color(0xFFEFF6FF);
@@ -335,12 +345,12 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             border: Border.all(
               color: item.isRead
                   ? const Color(0xFFE2E8F0)
-                  : AppColors.primary.withOpacity(0.3),
+                  : AppColors.primary.withValues(alpha: 0.3),
               width: item.isRead ? 1 : 1.5,
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(item.isRead ? 0.02 : 0.05),
+                color: Colors.black.withValues(alpha: item.isRead ? 0.02 : 0.05),
                 blurRadius: 8,
                 offset: const Offset(0, 2),
               ),

@@ -328,6 +328,71 @@ exports.restoreBook = async (req, res) => {
 };
 
 // DELETE /api/books/:id — Soft Delete (เก็บไฟล์และข้อมูลไว้ กู้คืนได้)
+// # ເຮັດຫຍັງ: ເພີ່ມ getDeletedBooks - ດຶງລາຍການປຶ້ມທີ່ຖືກ soft delete ໄວ້
+// # ຍ້ອນຫຍັງ: client ເອີ້ນ GET /api/books/deleted ມາຢູ່ແລ້ວ ແຕ່ backend ບໍ່ມີ route ນີ້
+// #          ຄຳຮ້ອງຈຶ່ງຖືກ GET /:id ດູດໄປໂດຍ id = "deleted" ແລ້ວຄືນ "Book not found"
+// #          ເປັນ error ທີ່ເບິ່ງຄືວ່າ "ບໍ່ມີປຶ້ມຖືກລຶບ" ທັງທີ່ຄວາມຈິງແມ່ນ route ຂາດ
+// # ແກ້ຈາກສ່ວນໃດ: bookController.js ມີແຕ່ deleteBook ທີ່ຕັ້ງ is_deleted = TRUE
+// #              ແຕ່ບໍ່ມີທາງອ່ານລາຍການທີ່ຖືກລຶບກັບຄືນມາເລີຍ
+// # ແກ້ເຮັດຫຍັງ: ໃຊ້ JOIN ຊຸດດຽວກັນກັບ getAllBooks ເພື່ອໃຫ້ BookModel.fromMap
+// #             ຝັ່ງ Flutter ອ່ານໄດ້ຄືກັນ ຕ່າງກັນແຕ່ເງື່ອນໄຂ is_deleted = TRUE
+// GET /api/books/deleted
+exports.getDeletedBooks = async (req, res) => {
+  try {
+    const [rows] = await pool.query(`
+      SELECT b.*, a.name AS author_name,
+             u.first_name AS uploader_first_name, u.last_name AS uploader_last_name,
+             r.first_name AS approver_first_name, r.last_name AS approver_last_name,
+             GROUP_CONCAT(c.name SEPARATOR ', ') AS categories,
+             GROUP_CONCAT(c.category_id SEPARATOR ', ') AS category_ids
+      FROM books b
+      LEFT JOIN authors a ON b.author_id = a.author_id
+      LEFT JOIN users u ON b.uploaded_by = u.user_id
+      LEFT JOIN users r ON b.approved_by = r.user_id
+      LEFT JOIN book_categories bc ON b.book_id = bc.book_id
+      LEFT JOIN categories c ON bc.category_id = c.category_id
+      WHERE b.is_deleted = TRUE
+      GROUP BY b.book_id
+      ORDER BY b.updated_at DESC
+    `);
+
+    res.json({ success: true, count: rows.length, books: rows });
+  } catch (error) {
+    console.error('Get Deleted Books Error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// # ເຮັດຫຍັງ: ເພີ່ມ restoreBook - ກູ້ປຶ້ມທີ່ຖືກລຶບກັບຄືນ
+// # ຍ້ອນຫຍັງ: client ເອີ້ນ PUT /api/books/:id/restore ແຕ່ backend ບໍ່ມີ route
+// #          ຈຶ່ງໄດ້ 404 "API Route Not Found" ປຸ່ມກູ້ຄືນຈຶ່ງໃຊ້ບໍ່ໄດ້ມາແຕ່ຕົ້ນ
+// # ແກ້ຈາກສ່ວນໃດ: ຄູ່ກັບ deleteBook ທີ່ຕັ້ງ is_deleted = TRUE ຢູ່ດ້ານລຸ່ມ
+// # ແກ້ເຮັດຫຍັງ: ຕັ້ງກັບເປັນ FALSE ພ້ອມກວດ AND is_deleted = TRUE ໃນ WHERE
+// #             ເພື່ອບອກຄວາມຕ່າງລະຫວ່າງ "ບໍ່ມີປຶ້ມນີ້" ກັບ "ປຶ້ມນີ້ບໍ່ໄດ້ຖືກລຶບ"
+// PUT /api/books/:id/restore
+exports.restoreBook = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const [result] = await pool.query(
+      'UPDATE books SET is_deleted = FALSE WHERE book_id = ? AND is_deleted = TRUE',
+      [id]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'ບໍ່ພົບປຶ້ມ ຫຼື ປຶ້ມນີ້ບໍ່ໄດ້ຢູ່ໃນສະຖານະຖືກລຶບ',
+      });
+    }
+
+    res.json({ success: true, message: 'ກູ້ຄືນປຶ້ມສຳເລັດ' });
+  } catch (error) {
+    console.error('Restore Book Error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 exports.deleteBook = async (req, res) => {
   try {
     const { id } = req.params;

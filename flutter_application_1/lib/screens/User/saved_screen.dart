@@ -145,8 +145,8 @@ class _SavedScreenState extends State<SavedScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: const [
+              const Row(
+                children: [
                   Icon(Icons.bookmark_rounded, color: AppColors.primary, size: 26),
                   SizedBox(width: 8),
                   Text(
@@ -177,7 +177,7 @@ class _SavedScreenState extends State<SavedScreen> {
               border: Border.all(color: const Color(0xFFE2E8F0)),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.02),
+                  color: Colors.black.withValues(alpha: 0.02),
                   blurRadius: 6,
                   offset: const Offset(0, 2),
                 ),
@@ -237,18 +237,18 @@ class _SavedScreenState extends State<SavedScreen> {
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
                 : displayList.isEmpty
-                    ? Center(
+                    ? const Center(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const Icon(Icons.bookmark_border_rounded, size: 64, color: Color(0xFFCBD5E1)),
-                            const SizedBox(height: 12),
-                            const Text(
+                            Icon(Icons.bookmark_border_rounded, size: 64, color: Color(0xFFCBD5E1)),
+                            SizedBox(height: 12),
+                            Text(
                               'ບໍ່ມີປຶ້ມທີ່ບັນທຶກໄວ້',
                               style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.textSecondary),
                             ),
-                            const SizedBox(height: 6),
-                            const Text(
+                            SizedBox(height: 6),
+                            Text(
                               'ກົດໄອຄອນຄັ້ນໜ້າ 📌 ໃນໜ້າໜັງສືເພື່ອບັນທຶກໄວ້ອ່ານພາຍຫຼັງ',
                               style: TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
                               textAlign: TextAlign.center,
@@ -295,7 +295,7 @@ class _SavedScreenState extends State<SavedScreen> {
           border: Border.all(color: const Color(0xFFF1F5F9)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.04),
+              color: Colors.black.withValues(alpha: 0.04),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),

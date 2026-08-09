@@ -351,10 +351,10 @@ class _AdminBookFormScreenState extends State<AdminBookFormScreen> {
       body: Stack(
         children: [
           _isLoadingData
-              ? Center(
+              ? const Center(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
-                    children: const [
+                    children: [
                       CircularProgressIndicator(),
                       SizedBox(height: 14),
                       Text('ກຳລັງດຶງຂໍ້ມູນໝວດໝູ່ ແລະ ນັກຂຽນຈາກ MySQL...', style: TextStyle(fontWeight: FontWeight.bold)),
@@ -373,8 +373,8 @@ class _AdminBookFormScreenState extends State<AdminBookFormScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             // SECTION 1: BASIC INFORMATION
-                            Row(
-                              children: const [
+                            const Row(
+                              children: [
                                 Icon(Icons.info_outline_rounded, color: AppColors.primary, size: 18),
                                 SizedBox(width: 6),
                                 Text('1. ຂໍ້ມູນພື້ນຖານຂອງປຶ້ມ (Basic Information)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.primary)),
@@ -398,7 +398,7 @@ class _AdminBookFormScreenState extends State<AdminBookFormScreen> {
                               children: [
                                 Expanded(
                                   child: DropdownButtonFormField<int>(
-                                    value: _dbAuthors.any((a) => a['author_id'] == _selectedAuthorId) ? _selectedAuthorId : (_dbAuthors.isNotEmpty ? _dbAuthors.first['author_id'] : null),
+                                    initialValue: _dbAuthors.any((a) => a['author_id'] == _selectedAuthorId) ? _selectedAuthorId : (_dbAuthors.isNotEmpty ? _dbAuthors.first['author_id'] : null),
                                     decoration: const InputDecoration(
                                       labelText: 'ນັກຂຽນ (Author - MySQL) *',
                                       prefixIcon: Icon(Icons.person_outline_rounded, color: AppColors.primary),
@@ -431,7 +431,7 @@ class _AdminBookFormScreenState extends State<AdminBookFormScreen> {
                                 Expanded(
                                   flex: 3,
                                   child: DropdownButtonFormField<String>(
-                                    value: _languages.any((lang) => lang['code'] == _selectedLanguage) ? _selectedLanguage : null,
+                                    initialValue: _languages.any((lang) => lang['code'] == _selectedLanguage) ? _selectedLanguage : null,
                                     decoration: const InputDecoration(
                                       labelText: 'ພາສາ (Language - ENUM)',
                                       prefixIcon: Icon(Icons.language_rounded, color: AppColors.primary),
@@ -469,8 +469,8 @@ class _AdminBookFormScreenState extends State<AdminBookFormScreen> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Row(
-                                  children: const [
+                                const Row(
+                                  children: [
                                     Icon(Icons.category_rounded, color: AppColors.primary, size: 18),
                                     SizedBox(width: 6),
                                     Text('2. ໝວດໝູ່ປຶ້ມ (Categories)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.primary)),
@@ -530,8 +530,8 @@ class _AdminBookFormScreenState extends State<AdminBookFormScreen> {
                             const SizedBox(height: 16),
 
                             // SECTION 3: FILES & MEDIA
-                            Row(
-                              children: const [
+                            const Row(
+                              children: [
                                 Icon(Icons.folder_zip_rounded, color: AppColors.primary, size: 18),
                                 SizedBox(width: 6),
                                 Text('3. ໄຟລ໌ PDF & ຮູບປົກ (PDF Document & Cover)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.primary)),
@@ -556,7 +556,7 @@ class _AdminBookFormScreenState extends State<AdminBookFormScreen> {
                                         width: 44,
                                         height: 44,
                                         decoration: BoxDecoration(
-                                          color: _pdfUrlController.text.trim().isNotEmpty ? const Color(0xFF10B981).withOpacity(0.15) : AppColors.primary.withOpacity(0.15),
+                                          color: _pdfUrlController.text.trim().isNotEmpty ? const Color(0xFF10B981).withValues(alpha: 0.15) : AppColors.primary.withValues(alpha: 0.15),
                                           borderRadius: BorderRadius.circular(10),
                                         ),
                                         child: Icon(
@@ -612,7 +612,7 @@ class _AdminBookFormScreenState extends State<AdminBookFormScreen> {
                                 borderRadius: BorderRadius.circular(14),
                                 border: Border.all(color: const Color(0xFFE2E8F0)),
                                 boxShadow: [
-                                  BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 2)),
+                                  BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 8, offset: const Offset(0, 2)),
                                 ],
                               ),
                               child: Row(
@@ -647,8 +647,8 @@ class _AdminBookFormScreenState extends State<AdminBookFormScreen> {
                             const SizedBox(height: 16),
 
                             // SECTION 4: PERMISSIONS & VISIBILITY
-                            Row(
-                              children: const [
+                            const Row(
+                              children: [
                                 Icon(Icons.tune_rounded, color: AppColors.primary, size: 18),
                                 SizedBox(width: 6),
                                 Text('4. ຕັ້ງຄ່າສິດ & ການສະແດງຜົນ (Permissions & Visibility)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.primary)),
@@ -670,7 +670,7 @@ class _AdminBookFormScreenState extends State<AdminBookFormScreen> {
                                     title: const Text('ອ່ານຟຣີ (Free Access)', style: TextStyle(fontWeight: FontWeight.bold)),
                                     subtitle: const Text('ເປີດໃຫ້ສະມາຊິກທົ່ວໄປອ່ານໄດ້ໂດຍບໍ່ຕ້ອງສະໝັກສະມາຊິກ'),
                                     value: _isFree,
-                                    activeColor: Colors.green,
+                                    activeThumbColor: Colors.green,
                                     onChanged: (val) => setState(() => _isFree = val),
                                   ),
                                   const Divider(height: 1),
@@ -679,7 +679,7 @@ class _AdminBookFormScreenState extends State<AdminBookFormScreen> {
                                     title: const Text('ດາວໂຫຼດຟຣີ (Free PDF Download)', style: TextStyle(fontWeight: FontWeight.bold)),
                                     subtitle: const Text('ເປີດໃຫ້ດາວໂຫຼດຟຣີທຸກຄົນ'),
                                     value: _isFreeDownload,
-                                    activeColor: const Color(0xFF2563EB),
+                                    activeThumbColor: const Color(0xFF2563EB),
                                     onChanged: (val) => setState(() => _isFreeDownload = val),
                                   ),
                                   const Divider(height: 1),
@@ -688,7 +688,7 @@ class _AdminBookFormScreenState extends State<AdminBookFormScreen> {
                                     title: const Text('ເຊື່ອງປຶ້ມ (Hide Book)', style: TextStyle(fontWeight: FontWeight.bold)),
                                     subtitle: const Text('ເຊື່ອງປຶ້ມບໍ່ໃຫ້ສະແດງໃນໜ້າຫຼັກ (is_hidden = TRUE)'),
                                     value: _isHidden,
-                                    activeColor: Colors.redAccent,
+                                    activeThumbColor: Colors.redAccent,
                                     onChanged: (val) => setState(() => _isHidden = val),
                                   ),
                                 ],
@@ -740,14 +740,14 @@ class _AdminBookFormScreenState extends State<AdminBookFormScreen> {
           // Saving overlay (แทน nested showDialog สำหรับ Loading)
           if (_isSaving)
             Container(
-              color: Colors.black.withOpacity(0.3),
-              child: Center(
+              color: Colors.black.withValues(alpha: 0.3),
+              child: const Center(
                 child: Card(
                   child: Padding(
-                    padding: const EdgeInsets.all(24),
+                    padding: EdgeInsets.all(24),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
-                      children: const [
+                      children: [
                         CircularProgressIndicator(),
                         SizedBox(height: 12),
                         Text('ກຳລັງບັນທຶກ...', style: TextStyle(fontWeight: FontWeight.bold)),

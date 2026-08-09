@@ -1,6 +1,165 @@
 const { pool } = require('../config/db');
 const { deleteOldFile, isSameFilePath } = require('../utils/fileUtils');
 const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+
+// # ເຮັດຫຍັງ: ເພີ່ມຕົວຊ່ວຍອ່ານ user_id ຈາກ JWT ໃນ header Authorization
+// # ຍ້ອນຫຍັງ: ໂປຣເຈັກນີ້ບໍ່ມີ auth middleware ເລີຍ (Backend/middleware/ ມີແຕ່ upload.js)
+// #          req.user ຈຶ່ງບໍ່ເຄີຍຖືກ set - getMe ໃນ authController ຈຶ່ງຕ້ອງອາໄສ
+// #          ?user_id= ຈາກ query ເຊິ່ງປອມໄດ້ງ່າຍ
+// # ແກ້ຈາກສ່ວນໃດ: client ສົ່ງ 'Authorization: Bearer <token>' ມາທຸກຄຳຮ້ອງຢູ່ແລ້ວ
+// #              ຜ່ານ ApiService._headers ແຕ່ backend ບໍ່ເຄີຍອ່ານມັນ
+// # ແກ້ເຮັດຫຍັງ: ອ່ານ user_id ຈາກ token ທີ່ເຊັນດ້ວຍ JWT_SECRET ຈຶ່ງເຊື່ອຖືໄດ້
+// #             ຄືນ null ຖ້າ token ບໍ່ມີ/ໝົດອາຍຸ/ຖືກແກ້ ໃຫ້ຜູ້ເອີ້ນຕັດສິນໃຈຕໍ່
+function userIdFromToken(req) {
+  const header = req.headers.authorization || '';
+  if (!header.startsWith('Bearer ')) return null;
+
+  try {
+    const payload = jwt.verify(header.slice(7), process.env.JWT_SECRET);
+    return payload.user_id ?? null;
+  } catch (_) {
+    return null;
+  }
+}
+
+// # ເຮັດຫຍັງ: ເພີ່ມ createUser ໃໝ່ທັງໝົດ
+// # ຍ້ອນຫຍັງ: ໜ້າ Admin ມີ dialog ເພີ່ມຜູ້ໃຊ້/ພະນັກງານ ແລະ ຝັ່ງ client ເອີ້ນ
+// #          POST /api/users ຢູ່ແລ້ວ ແຕ່ backend ບໍ່ເຄີຍມີ route ນີ້ເລີຍ
+// #          ຄຳຮ້ອງຈຶ່ງຕົກໄປທີ່ 404 ຂອງ Express ເຮັດໃຫ້ "ເພີ່ມພະນັກງານບໍ່ໄດ້"
+// # ແກ້ຈາກສ່ວນໃດ: userController.js ມີແຕ່ getAllUsers, getUserById,
+// #              updateUserProfile ແລະ updateUserStatus (ບໍ່ມີການສ້າງ)
+// # ແກ້ເຮັດຫຍັງ: ສ້າງບັນຊີໄດ້ຄົບທຸກ role ໂດຍ hash ລະຫັດຜ່ານດ້ວຍ bcrypt
+// #             ແບບດຽວກັນກັບ authController.register ເພື່ອໃຫ້ login ໄດ້ຄືກັນ
+// POST /api/users
+exports.createUser = async (req, res) => {
+  try {
+    const {
+      email,
+      password,
+      first_name,
+      last_name,
+      phone_number,
+      birth_date,
+      gender,
+      profile_image_url,
+      role,
+      status,
+    } = req.body;
+
+    if (!email || !password || !first_name || !last_name) {
+      return res.status(400).json({
+        success: false,
+        message: 'ຕ້ອງປ້ອນ email, password, first_name ແລະ last_name',
+      });
+    }
+
+    // ENUM ໃນ schema ຮັບພຽງ 3 role - ຄ່ານອກນີ້ຈະຖືກ MySQL ປະຕິເສດ
+    // ຈຶ່ງກວດຢູ່ນີ້ກ່ອນເພື່ອຄືນ error ທີ່ອ່ານເຂົ້າໃຈ ແທນ SQL error ດິບ
+    const allowedRoles = ['admin', 'employee', 'user'];
+    const allowedStatus = ['active', 'suspended', 'banned', 'pending'];
+    const safeRole = allowedRoles.includes(role) ? role : 'user';
+    const safeStatus = allowedStatus.includes(status) ? status : 'active';
+
+    const [existing] = await pool.query(
+      'SELECT user_id FROM users WHERE email = ?',
+      [email]
+    );
+    if (existing.length > 0) {
+      return res
+        .status(400)
+        .json({ success: false, message: 'ອີເມວນີ້ຖືກໃຊ້ແລ້ວ' });
+    }
+
+    // phone_number ເປັນ UNIQUE ໃນ schema - ສົ່ງສະຕຣິງຫວ່າງມາຫຼາຍລາຍຈະຊົນກັນ
+    // ຈຶ່ງແປງເປັນ NULL ເພາະ MySQL ຍອມໃຫ້ NULL ຊ້ຳກັນໄດ້ໃນ UNIQUE index
+    const phone = phone_number && phone_number.trim() !== '' ? phone_number.trim() : null;
+    if (phone) {
+      const [dupPhone] = await pool.query(
+        'SELECT user_id FROM users WHERE phone_number = ?',
+        [phone]
+      );
+      if (dupPhone.length > 0) {
+        return res
+          .status(400)
+          .json({ success: false, message: 'ເບີໂທລະສັບນີ້ຖືກໃຊ້ແລ້ວ' });
+      }
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const password_hash = await bcrypt.hash(password, salt);
+
+    const [result] = await pool.query(
+      `INSERT INTO users
+         (email, password_hash, first_name, last_name, phone_number,
+          birth_date, gender, profile_image_url, role, status)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        email,
+        password_hash,
+        first_name,
+        last_name,
+        phone,
+        birth_date || null,
+        gender || 'unspecified',
+        profile_image_url && profile_image_url.trim() !== ''
+          ? profile_image_url.trim()
+          : null,
+        safeRole,
+        safeStatus,
+      ]
+    );
+
+    res.status(201).json({
+      success: true,
+      message: 'ສ້າງບັນຊີຜູ້ໃຊ້ສຳເລັດ',
+      user_id: result.insertId,
+    });
+  } catch (error) {
+    console.error('Create User Error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// # ເຮັດຫຍັງ: ເພີ່ມ getMyProfile - ຄືນຂໍ້ມູນຜູ້ໃຊ້ທີ່ກຳລັງ login ຢູ່
+// # ຍ້ອນຫຍັງ: client ເອີ້ນ GET /api/user/profile (ບໍ່ມີ s) ແຕ່ backend mount ໄວ້
+// #          ເປັນ /api/users ຈຶ່ງໄດ້ 404 ທຸກຄັ້ງ - ໜ້າໂປຣໄຟລ໌ຈຶ່ງຕົກໄປໃຊ້ຂໍ້ມູນ
+// #          ສຳຮອງທີ່ hardcode ໄວ້ (ສົມຊາຍ ໃຈດີ) ໂດຍຜູ້ໃຊ້ບໍ່ຮູ້ວ່າບໍ່ແມ່ນຂໍ້ມູນຈິງ
+// # ແກ້ຈາກສ່ວນໃດ: userController.js ບໍ່ມີ endpoint ສຳລັບ "ຕົວເອງ" ເລີຍ
+// #              ມີແຕ່ getUserById ທີ່ຕ້ອງຮູ້ id ລ່ວງໜ້າ
+// # ແກ້ເຮັດຫຍັງ: ອ່ານ id ຈາກ JWT ກ່ອນ ຖ້າບໍ່ໄດ້ຈຶ່ງຖອຍໄປໃຊ້ ?user_id=
+// #             ເພື່ອບໍ່ໃຫ້ພັງກັບໂຄ້ດເກົ່າ ແລະ ບໍ່ຄືນ password_hash ອອກໄປ
+// GET /api/users/profile
+exports.getMyProfile = async (req, res) => {
+  try {
+    const userId = userIdFromToken(req) ?? req.query.user_id;
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: 'ຕ້ອງເຂົ້າສູ່ລະບົບກ່ອນ (ບໍ່ພົບ token ທີ່ຖືກຕ້ອງ)',
+      });
+    }
+
+    const [rows] = await pool.query(
+      `SELECT user_id, email, first_name, last_name, phone_number, birth_date,
+              gender, profile_image_url, role, status, created_at
+       FROM users WHERE user_id = ?`,
+      [userId]
+    );
+
+    if (rows.length === 0) {
+      return res
+        .status(404)
+        .json({ success: false, message: 'ບໍ່ພົບຜູ້ໃຊ້' });
+    }
+
+    res.json({ success: true, user: rows[0] });
+  } catch (error) {
+    console.error('Get My Profile Error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
 
 // GET /api/users
 exports.getAllUsers = async (req, res) => {

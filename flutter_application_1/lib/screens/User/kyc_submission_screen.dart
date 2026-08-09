@@ -1,5 +1,4 @@
 import 'dart:typed_data';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import '../../theme/app_theme.dart';
 import '../../models/kyc_model.dart';
@@ -287,6 +286,23 @@ class _KycSubmissionScreenState extends State<KycSubmissionScreen> {
       'school_name': _isStudent ? _schoolNameController.text.trim() : null,
     });
 
+    // The server is the source of truth for KYC status - only flip the local
+    // status to pending once it actually accepted the submission, otherwise the
+    // user is told it succeeded while the server holds nothing.
+    if (!success) {
+      if (mounted) {
+        setState(() => _isSubmitting = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('❌ ສົ່ງຂໍ້ມູນຢືນຢັນຕົວຕົນບໍ່ສຳເລັດ ກະລຸນາລອງໃໝ່ອີກຄັ້ງ!'),
+            backgroundColor: Colors.redAccent,
+            duration: Duration(seconds: 4),
+          ),
+        );
+      }
+      return;
+    }
+
     final updatedKyc = widget.currentKyc.copyWith(
       fullName: _fullNameController.text.trim(),
       gender: _selectedGender,
@@ -333,9 +349,9 @@ class _KycSubmissionScreenState extends State<KycSubmissionScreen> {
     Widget contentWidget;
 
     if (isUploading) {
-      contentWidget = Column(
+      contentWidget = const Column(
         mainAxisAlignment: MainAxisAlignment.center,
-        children: const [
+        children: [
           CircularProgressIndicator(color: AppColors.primary),
           SizedBox(height: 10),
           Text('ກຳລັງອັບໂຫຼດຮູບພາບ...', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.primary)),
@@ -435,23 +451,6 @@ class _KycSubmissionScreenState extends State<KycSubmissionScreen> {
     );
   }
 
-  Widget _buildUploadedSuccessBadge(String title) {
-    return Container(
-      color: const Color(0xFFECFDF5),
-      child: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.check_circle_rounded, color: Color(0xFF10B981), size: 36),
-            const SizedBox(height: 6),
-            Text('ອັບໂຫຼດໄຟລ໌ສຳເລັດແລ້ວ', style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF065F46), fontSize: 13)),
-            const SizedBox(height: 2),
-            Text(title, style: const TextStyle(color: Color(0xFF047857), fontSize: 11)),
-          ],
-        ),
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -552,7 +551,7 @@ class _KycSubmissionScreenState extends State<KycSubmissionScreen> {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: textColor.withOpacity(0.15),
+              color: textColor.withValues(alpha: 0.15),
               shape: BoxShape.circle,
             ),
             child: Icon(icon, color: textColor, size: 28),
@@ -569,7 +568,7 @@ class _KycSubmissionScreenState extends State<KycSubmissionScreen> {
                 const SizedBox(height: 4),
                 Text(
                   descText,
-                  style: TextStyle(fontSize: 12, color: textColor.withOpacity(0.9)),
+                  style: TextStyle(fontSize: 12, color: textColor.withValues(alpha: 0.9)),
                 ),
               ],
             ),
@@ -588,7 +587,7 @@ class _KycSubmissionScreenState extends State<KycSubmissionScreen> {
         border: Border.all(color: const Color(0xFFE2E8F0)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -641,7 +640,7 @@ class _KycSubmissionScreenState extends State<KycSubmissionScreen> {
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: const Color(0xFFE2E8F0)),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 4)),
+          BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10, offset: const Offset(0, 4)),
         ],
       ),
       child: Column(
@@ -724,7 +723,7 @@ class _KycSubmissionScreenState extends State<KycSubmissionScreen> {
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: const Color(0xFFFCA5A5)),
         boxShadow: [
-          BoxShadow(color: Colors.red.withOpacity(0.06), blurRadius: 12, offset: const Offset(0, 4)),
+          BoxShadow(color: Colors.red.withValues(alpha: 0.06), blurRadius: 12, offset: const Offset(0, 4)),
         ],
       ),
       child: Column(
@@ -768,8 +767,8 @@ class _KycSubmissionScreenState extends State<KycSubmissionScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: const [
+                const Row(
+                  children: [
                     Icon(Icons.info_outline_rounded, color: Color(0xFFDC2626), size: 20),
                     SizedBox(width: 8),
                     Text(
@@ -785,7 +784,7 @@ class _KycSubmissionScreenState extends State<KycSubmissionScreen> {
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: const Color(0xFFFCA5A5).withOpacity(0.5)),
+                    border: Border.all(color: const Color(0xFFFCA5A5).withValues(alpha: 0.5)),
                   ),
                   child: Text(
                     _rejectReason ?? 'ເອກະສານບໍ່ຊັດເຈນ ຫຼື ຂໍ້ມູນບໍ່ກົງກັນ',
@@ -997,7 +996,7 @@ class _KycSubmissionScreenState extends State<KycSubmissionScreen> {
         border: Border.all(color: const Color(0xFFE2E8F0)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -1056,7 +1055,7 @@ class _KycSubmissionScreenState extends State<KycSubmissionScreen> {
 
             // DOCUMENT TYPE SELECTOR (ChoiceChips / Dropdown)
             DropdownButtonFormField<String>(
-              value: _selectedDocumentType,
+              initialValue: _selectedDocumentType,
               decoration: InputDecoration(
                 labelText: 'ປະເພດເອກະສານ (Document Type)',
                 prefixIcon: const Icon(Icons.assignment_ind_outlined, color: AppColors.primary),
@@ -1119,7 +1118,7 @@ class _KycSubmissionScreenState extends State<KycSubmissionScreen> {
               children: [
                 Expanded(
                   child: DropdownButtonFormField<String>(
-                    value: ['male', 'female', 'other'].contains(_selectedGender.toLowerCase())
+                    initialValue: ['male', 'female', 'other'].contains(_selectedGender.toLowerCase())
                         ? _selectedGender.toLowerCase()
                         : 'male',
                     decoration: InputDecoration(
@@ -1201,7 +1200,7 @@ class _KycSubmissionScreenState extends State<KycSubmissionScreen> {
                   ),
                   Switch(
                     value: _isStudent,
-                    activeColor: AppColors.primary,
+                    activeThumbColor: AppColors.primary,
                     onChanged: (val) {
                       setState(() {
                         _isStudent = val;

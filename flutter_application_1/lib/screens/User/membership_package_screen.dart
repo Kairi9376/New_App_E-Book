@@ -204,7 +204,6 @@ class _MembershipPackageScreenState extends State<MembershipPackageScreen> {
   // --- Payment Modal Dialog with Real Transfer Slip Upload ---
   void _openPaymentDialog(Map<String, dynamic> pkg) {
     Uint8List? slipBytes;
-    String? slipPath;
     String? slipUrl;
     bool isUploading = false;
     bool isSubmitting = false;
@@ -241,7 +240,6 @@ class _MembershipPackageScreenState extends State<MembershipPackageScreen> {
 
                 // 1. ຕັ້ງຄ່າ local data ກ່ອນ
                 slipBytes = bytes;
-                slipPath = tempName;
                 slipUrl = tempName;
 
                 // 2. ອັບໂຫຼດໄຟລ໌ໄປທີ່ Server
@@ -252,7 +250,6 @@ class _MembershipPackageScreenState extends State<MembershipPackageScreen> {
                 );
 
                 if (result['success'] == true && result['path'] != null) {
-                  slipPath = result['path'];
                   slipUrl = result['url'] ?? result['path'];
                 }
               } catch (e) {
@@ -302,6 +299,14 @@ class _MembershipPackageScreenState extends State<MembershipPackageScreen> {
                 'payment_method': 'bank_transfer',
               });
 
+              // # ເຮັດຫຍັງ: ເພີ່ມການກວດ context.mounted ຫຼັງ await ກ່ອນໃຊ້ context
+              // # ຍ້ອນຫຍັງ: ລະຫວ່າງລໍຖ້າ createSubscription ຜູ້ໃຊ້ອາດກົດຍ້ອນກັບ
+              // #          ຫຼື ປິດ dialog ໄປແລ້ວ ການເອີ້ນ Navigator/ScaffoldMessenger
+              // #          ດ້ວຍ context ທີ່ຕາຍແລ້ວຈະ throw ແລ້ວແອັບຄ້າງ
+              // # ແກ້ຈາກສ່ວນໃດ: ບລັອກຫຼັງ await ທີ່ໃຊ້ context ໂດຍບໍ່ກວດຫຍັງເລີຍ
+              // # ແກ້ເຮັດຫຍັງ: ອອກຈາກ callback ງຽບໆ ຖ້າໜ້າຖືກປິດໄປແລ້ວ
+              if (!ctx.mounted) return;
+
               setDialogState(() => isSubmitting = false);
 
               if (success) {
@@ -311,7 +316,7 @@ class _MembershipPackageScreenState extends State<MembershipPackageScreen> {
                   context,
                   title: '💳 ແຈ້ງຊຳລະເງິນສະໝັກແພັກເກັດແລ້ວ',
                   message:
-                      'ສົ່ງຫຼັກຖານການໂອນເງິນສະໝັກແພັກເກັດ "${pkgName}" ຮຽບຮ້ອຍແລ້ວ ກະລຸນາລໍຖ້າແອດມິນກວດສອບອະນຸມັດ',
+                      'ສົ່ງຫຼັກຖານການໂອນເງິນສະໝັກແພັກເກັດ "$pkgName" ຮຽບຮ້ອຍແລ້ວ ກະລຸນາລໍຖ້າແອດມິນກວດສອບອະນຸມັດ',
                   type: NotificationType.subscription,
                 );
               } else {
@@ -327,8 +332,8 @@ class _MembershipPackageScreenState extends State<MembershipPackageScreen> {
             return AlertDialog(
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(20)),
-              title: Row(
-                children: const [
+              title: const Row(
+                children: [
                   Icon(Icons.account_balance_wallet_rounded,
                       color: AppColors.primary, size: 28),
                   SizedBox(width: 10),
@@ -393,10 +398,10 @@ class _MembershipPackageScreenState extends State<MembershipPackageScreen> {
                         ),
                         child: Row(
                           children: [
-                            Expanded(
+                            const Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
-                                children: const [
+                                children: [
                                   Text('🏛️ ທະນາຄານການຄ້າຕ່າງປະເທດລາວ (BCEL)',
                                       style: TextStyle(
                                           fontSize: 12,
@@ -433,7 +438,7 @@ class _MembershipPackageScreenState extends State<MembershipPackageScreen> {
                                     Border.all(color: const Color(0xFFCBD5E1)),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.black.withOpacity(0.04),
+                                    color: Colors.black.withValues(alpha: 0.04),
                                     blurRadius: 6,
                                     offset: const Offset(0, 2),
                                   ),
@@ -474,9 +479,9 @@ class _MembershipPackageScreenState extends State<MembershipPackageScreen> {
                                   border: Border.all(
                                       color: const Color(0xFFCBD5E1)),
                                 ),
-                                child: Column(
+                                child: const Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
-                                  children: const [
+                                  children: [
                                     CircularProgressIndicator(
                                         color: AppColors.primary),
                                     SizedBox(height: 8),
@@ -524,7 +529,7 @@ class _MembershipPackageScreenState extends State<MembershipPackageScreen> {
                                                 horizontal: 12, vertical: 6),
                                             decoration: BoxDecoration(
                                               color: Colors.white
-                                                  .withOpacity(0.92),
+                                                  .withValues(alpha: 0.92),
                                               borderRadius:
                                                   const BorderRadius.vertical(
                                                       bottom:
@@ -535,8 +540,8 @@ class _MembershipPackageScreenState extends State<MembershipPackageScreen> {
                                                   MainAxisAlignment
                                                       .spaceBetween,
                                               children: [
-                                                Row(
-                                                  children: const [
+                                                const Row(
+                                                  children: [
                                                     Icon(Icons.check_circle,
                                                         size: 16,
                                                         color:
@@ -629,10 +634,10 @@ class _MembershipPackageScreenState extends State<MembershipPackageScreen> {
                                         border: Border.all(
                                             color: const Color(0xFFCBD5E1)),
                                       ),
-                                      child: Column(
+                                      child: const Column(
                                         mainAxisAlignment:
                                             MainAxisAlignment.center,
-                                        children: const [
+                                        children: [
                                           Icon(
                                               Icons
                                                   .add_photo_alternate_outlined,
@@ -692,8 +697,8 @@ class _MembershipPackageScreenState extends State<MembershipPackageScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-        title: Row(
-          children: const [
+        title: const Row(
+          children: [
             Icon(Icons.gpp_maybe_rounded, color: Color(0xFFEF4444), size: 28),
             SizedBox(width: 8),
             Text('ຕ້ອງຢືນຢັນຕົວຕົນ (KYC) ກ່ອນ'),
@@ -801,10 +806,10 @@ class _MembershipPackageScreenState extends State<MembershipPackageScreen> {
           const Icon(Icons.warning_amber_rounded,
               color: Color(0xFFD97706), size: 28),
           const SizedBox(width: 12),
-          Expanded(
+          const Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
+              children: [
                 Text(
                   'ກະລຸນາຢືນຢັນຕົວຕົນ (KYC) ກ່ອນສະໝັກ',
                   style: TextStyle(
@@ -865,7 +870,7 @@ class _MembershipPackageScreenState extends State<MembershipPackageScreen> {
         border: Border.all(color: const Color(0xFF10B981), width: 2),
         boxShadow: [
           BoxShadow(
-              color: const Color(0xFF10B981).withOpacity(0.12),
+              color: const Color(0xFF10B981).withValues(alpha: 0.12),
               blurRadius: 16,
               offset: const Offset(0, 4)),
         ],
@@ -953,7 +958,7 @@ class _MembershipPackageScreenState extends State<MembershipPackageScreen> {
         border: Border.all(color: const Color(0xFFFDE68A), width: 2),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withOpacity(0.04),
+              color: Colors.black.withValues(alpha: 0.04),
               blurRadius: 10,
               offset: const Offset(0, 4)),
         ],
@@ -1063,7 +1068,7 @@ class _MembershipPackageScreenState extends State<MembershipPackageScreen> {
         border: Border.all(color: const Color(0xFFFCA5A5), width: 2),
         boxShadow: [
           BoxShadow(
-              color: Colors.red.withOpacity(0.06),
+              color: Colors.red.withValues(alpha: 0.06),
               blurRadius: 12,
               offset: const Offset(0, 4)),
         ],
@@ -1108,8 +1113,8 @@ class _MembershipPackageScreenState extends State<MembershipPackageScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: const [
+                const Row(
+                  children: [
                     Icon(Icons.info_outline_rounded,
                         color: Color(0xFFDC2626), size: 20),
                     SizedBox(width: 8),
@@ -1220,7 +1225,7 @@ class _MembershipPackageScreenState extends State<MembershipPackageScreen> {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.15),
+            color: Colors.black.withValues(alpha: 0.15),
             blurRadius: 15,
             offset: const Offset(0, 5),
           ),
@@ -1231,17 +1236,17 @@ class _MembershipPackageScreenState extends State<MembershipPackageScreen> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.amber.withOpacity(0.2),
+              color: Colors.amber.withValues(alpha: 0.2),
               shape: BoxShape.circle,
             ),
             child: const Icon(Icons.workspace_premium_rounded,
                 color: Colors.amber, size: 36),
           ),
           const SizedBox(width: 16),
-          Expanded(
+          const Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
+              children: [
                 Text(
                   'ຍົກລະດັບເປັນສະມາຊິກ Premiere Member',
                   style: TextStyle(
@@ -1317,8 +1322,8 @@ class _MembershipPackageScreenState extends State<MembershipPackageScreen> {
         boxShadow: [
           BoxShadow(
             color: isSelected
-                ? primaryColor.withOpacity(0.15)
-                : Colors.black.withOpacity(0.04),
+                ? primaryColor.withValues(alpha: 0.15)
+                : Colors.black.withValues(alpha: 0.04),
             blurRadius: isSelected ? 16 : 8,
             offset: const Offset(0, 4),
           ),
@@ -1469,9 +1474,9 @@ class _MembershipPackageScreenState extends State<MembershipPackageScreen> {
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: const Color(0xFFE2E8F0)),
       ),
-      child: Column(
+      child: const Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: const [
+        children: [
           Text('ຄຳຖາມທີ່ພົບເລື້ອຍ (FAQ)',
               style: TextStyle(
                   fontSize: 15,

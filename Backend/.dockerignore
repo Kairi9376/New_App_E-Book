@@ -1,0 +1,30 @@
+# Version control / IDE
+.git
+.gitignore
+.gitattributes
+
+# Secrets - never copied into the image
+.env
+.env.example
+
+# Dependencies - installed fresh inside the image
+node_modules
+
+# Logs
+*.log
+npm-debug.log*
+yarn-error.log*
+
+# Documentation / build helpers
+README.md
+Dockerfile
+.dockerignore
+
+# Runtime upload files - kept in the persistent `backend-uploads` volume,
+# NOT baked into the image (seeded separately). Adding `uploads` here keeps
+# the build context lean and avoids shipping user data inside the image.
+uploads
+
+# Tests / misc
+test
+coverage

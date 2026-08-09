@@ -1,14 +1,10 @@
-import 'dart:io';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import '../../theme/app_theme.dart';
 import '../../models/book_model.dart';
 import '../../models/history_model.dart';
 import '../../services/api_service.dart';
 import '../../utils/image_helper.dart';
-import '../../models/kyc_model.dart';
 import 'pdf_viewer_screen.dart';
-import 'kyc_submission_screen.dart';
 import 'membership_package_screen.dart';
 import '../../services/notification_service.dart';
 import '../../models/notification_model.dart';
@@ -158,28 +154,6 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
     return ImageHelper.buildImage(path, width: width, height: height, fit: BoxFit.cover);
   }
 
-  Widget _buildPlaceholder(double? width, double? height) {
-    return SizedBox(
-      width: width,
-      height: height,
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          Image.asset(
-            'assets/BookCover.jpg',
-            fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) => Container(color: Colors.amber.shade100),
-          ),
-          Container(
-            color: Colors.black.withOpacity(0.25),
-          ),
-          const Center(
-            child: Icon(Icons.book_rounded, color: Colors.white, size: 48),
-          ),
-        ],
-      ),
-    );
-  }
 
   void _openReader({int initialPage = 1}) {
     final isFree = widget.book?.isFree ?? true;
@@ -301,7 +275,7 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                                   borderRadius: BorderRadius.circular(16),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Colors.blue.withOpacity(0.2),
+                                      color: Colors.blue.withValues(alpha: 0.2),
                                       blurRadius: 20,
                                       offset: const Offset(0, 10),
                                     ),
@@ -481,7 +455,7 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                                         NotificationService.addNotification(
                                           context,
                                           title: '📥 ດາວໂຫຼດໜັງສືສຳເລັດແລ້ວ',
-                                          message: 'ບັນທຶກ "${_title}" ເຂົ້າຄັງອອບໄລນ໌ຮຽບຮ້ອຍແລ້ວ',
+                                          message: 'ບັນທຶກ "$_title" ເຂົ້າຄັງອອບໄລນ໌ຮຽບຮ້ອຍແລ້ວ',
                                           type: NotificationType.book,
                                           targetId: bookId,
                                         );
@@ -586,8 +560,8 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: const [
+              const Row(
+                children: [
                   Icon(Icons.format_list_bulleted_rounded, color: AppColors.primary, size: 22),
                   SizedBox(width: 8),
                   Text(
@@ -608,8 +582,8 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(color: const Color(0xFFBFDBFE)),
                       ),
-                      child: Row(
-                        children: const [
+                      child: const Row(
+                        children: [
                           Icon(Icons.near_me_rounded, size: 14, color: AppColors.primary),
                           SizedBox(width: 4),
                           Text('ຂ້າມໄປໜ້າ...', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.primary)),
@@ -621,7 +595,7 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.1),
+                      color: AppColors.primary.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
@@ -771,9 +745,9 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                             color: const Color(0xFFF59E0B),
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: Row(
+                          child: const Row(
                             mainAxisSize: MainAxisSize.min,
-                            children: const [
+                            children: [
                               Icon(Icons.push_pin_rounded, size: 12, color: Colors.white),
                               SizedBox(width: 4),
                               Text(
@@ -864,7 +838,7 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
           shape: BoxShape.circle,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.06),
+              color: Colors.black.withValues(alpha: 0.06),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),

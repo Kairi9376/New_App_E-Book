@@ -1,6 +1,4 @@
-import 'dart:io';
 import 'dart:typed_data';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../theme/app_theme.dart';
@@ -10,7 +8,7 @@ import '../../services/file_picker_helper.dart';
 import '../../services/notification_service.dart';
 import '../../models/notification_model.dart';
 import '../../utils/image_helper.dart';
-import '../login_screen.dart';
+import 'user_login_screen.dart';
 import 'kyc_submission_screen.dart';
 import 'membership_package_screen.dart';
 import 'notifications_screen.dart';
@@ -26,7 +24,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Map<String, dynamic> _userProfile = {};
   KycModel? _userKyc;
   Map<String, dynamic>? _userSubscription;
-  bool _isLoading = true;
   bool _isUploadingAvatar = false;
   Uint8List? _avatarBytes;
   String? _avatarPath;
@@ -55,7 +52,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _fetchProfile() async {
-    setState(() => _isLoading = true);
     final profile = await ApiService.getUserProfile();
     final rawUserId = profile['user_id'] ?? profile['id'];
     final int userId = rawUserId != null ? (int.tryParse(rawUserId.toString()) ?? 3) : 3;
@@ -79,7 +75,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
           status: _parseKycStatus(profile['kyc_status']),
           submittedAt: DateTime.now(),
         );
-        _isLoading = false;
       });
     }
   }
@@ -111,19 +106,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (s == 'pending') return KycStatus.pending;
     if (s == 'rejected') return KycStatus.rejected;
     return KycStatus.notSubmitted;
-  }
-
-  Widget _buildImage(String path, {double? width, double? height}) {
-    return ImageHelper.buildImage(path, width: width, height: height, fit: BoxFit.cover);
-  }
-
-  Widget _buildPlaceholder(double? width, double? height) {
-    return Container(
-      width: width,
-      height: height,
-      color: Colors.blueGrey.shade100,
-      child: const Icon(Icons.person, color: AppColors.primary, size: 50),
-    );
   }
 
   Future<void> _changeAvatarImage() async {
@@ -210,8 +192,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         builder: (dialogContext, setDialogState) {
           return AlertDialog(
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-            title: Row(
-              children: const [
+            title: const Row(
+              children: [
                 Icon(Icons.settings_rounded, color: AppColors.primary, size: 24),
                 SizedBox(width: 10),
                 Text('ການຕັ້ງຄ່າ (Settings)', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
@@ -225,7 +207,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     title: const Text('ແຈ້ງເຕືອນ (Push Notifications)', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
                     subtitle: const Text('ຮັບການແຈ້ງເຕືອນປຶ້ມໃໝ່ ແລະ ສະຖານະແພັກເກັດ', style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
                     value: _pushNotificationsEnabled,
-                    activeColor: AppColors.primary,
+                    activeThumbColor: AppColors.primary,
                     onChanged: (val) async {
                       setDialogState(() => _pushNotificationsEnabled = val);
                       setState(() => _pushNotificationsEnabled = val);
@@ -237,7 +219,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   SwitchListTile(
                     title: const Text('ສຽງແຈ້ງເຕືອນ (Notification Sound)', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
                     value: _soundEnabled,
-                    activeColor: AppColors.primary,
+                    activeThumbColor: AppColors.primary,
                     onChanged: (val) async {
                       setDialogState(() => _soundEnabled = val);
                       setState(() => _soundEnabled = val);
@@ -250,7 +232,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     title: const Text('ໂໝດກາງຄືນ (Dark Mode)', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
                     subtitle: const Text('ປ່ຽນທີມແອັບເປັນໂໝດກາງຄືນ', style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
                     value: _darkModeEnabled,
-                    activeColor: AppColors.primary,
+                    activeThumbColor: AppColors.primary,
                     onChanged: (val) async {
                       setDialogState(() => _darkModeEnabled = val);
                       setState(() => _darkModeEnabled = val);
@@ -304,8 +286,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         builder: (dialogContext, setDialogState) {
           return AlertDialog(
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-            title: Row(
-              children: const [
+            title: const Row(
+              children: [
                 Icon(Icons.shield_rounded, color: Color(0xFF059669), size: 24),
                 SizedBox(width: 10),
                 Text('ຄວາມປອດໄພ (Security)', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
@@ -463,8 +445,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         builder: (dialogContext, setDialogState) {
           return AlertDialog(
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-            title: Row(
-              children: const [
+            title: const Row(
+              children: [
                 Icon(Icons.manage_accounts_rounded, color: AppColors.primary, size: 24),
                 SizedBox(width: 10),
                 Text('ແກ້ໄຂຂໍ້ມູນສ່ວນຕົວ (Edit Profile)', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
@@ -528,7 +510,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             onSelected: (sel) {
                               if (sel) setDialogState(() => selectedGender = 'male');
                             },
-                            selectedColor: AppColors.primary.withOpacity(0.2),
+                            selectedColor: AppColors.primary.withValues(alpha: 0.2),
                             side: BorderSide(color: selectedGender == 'male' ? AppColors.primary : Colors.grey.shade300),
                           ),
                         ),
@@ -540,7 +522,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             onSelected: (sel) {
                               if (sel) setDialogState(() => selectedGender = 'female');
                             },
-                            selectedColor: AppColors.primary.withOpacity(0.2),
+                            selectedColor: AppColors.primary.withValues(alpha: 0.2),
                             side: BorderSide(color: selectedGender == 'female' ? AppColors.primary : Colors.grey.shade300),
                           ),
                         ),
@@ -684,12 +666,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           ElevatedButton(
             onPressed: () async {
+              // # ເຮັດຫຍັງ: ປ່ຽນປາຍທາງຫຼັງອອກຈາກລະບົບເປັນ UserLoginScreen
+              // # ຍ້ອນຫຍັງ: ໜ້າ LoginScreen ເດີມກາຍເປັນ StaffLoginScreen ຂອງ Web ໄປແລ້ວ
+              // #          ຖ້າຍັງຊີ້ໄປບ່ອນເກົ່າ ຜູ້ໃຊ້ໃນແອັບຈະຕົກໄປໜ້າ login ຂອງພະນັກງານ
+              // #          ແລ້ວ login ບັນຊີຕົນເອງກັບຄືນບໍ່ໄດ້
+              // # ແກ້ຈາກສ່ວນໃດ: ປຸ່ມຢືນຢັນອອກຈາກລະບົບໃນ dialog ຂອງໜ້າໂປຣໄຟລ໌
+              // # ແກ້ເຮັດຫຍັງ: ພາກັບໄປໜ້າ login ຝັ່ງແອັບ ໃຫ້ວົນກັບເຂົ້າໃຊ້ໄດ້ຄືເກົ່າ
               await ApiService.clearSession();
               if (context.mounted) {
                 Navigator.pop(context);
                 Navigator.pushReplacement(
                   context,
-                  MaterialPageRoute(builder: (context) => const LoginScreen()),
+                  MaterialPageRoute(builder: (context) => const UserLoginScreen()),
                 );
               }
             },
@@ -743,7 +731,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           height: 100,
                           fit: BoxFit.cover,
                           placeholder: Container(
-                            color: AppColors.primary.withOpacity(0.12),
+                            color: AppColors.primary.withValues(alpha: 0.12),
                             child: Center(
                               child: Text(
                                 firstName.isNotEmpty ? firstName[0].toUpperCase() : 'U',
@@ -839,7 +827,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               icon: const Icon(Icons.edit_note_rounded, size: 18),
               label: const Text('ແກ້ໄຂຂໍ້ມູນສ່ວນຕົວ (Edit Profile)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary.withOpacity(0.1),
+                backgroundColor: AppColors.primary.withValues(alpha: 0.1),
                 foregroundColor: AppColors.primary,
                 elevation: 0,
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -920,7 +908,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF4338CA).withOpacity(0.3),
+                      color: const Color(0xFF4338CA).withValues(alpha: 0.3),
                       blurRadius: 12,
                       offset: const Offset(0, 6),
                     ),
@@ -934,16 +922,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         Container(
                           padding: const EdgeInsets.all(10),
                           decoration: BoxDecoration(
-                            color: Colors.amber.shade400.withOpacity(0.2),
+                            color: Colors.amber.shade400.withValues(alpha: 0.2),
                             shape: BoxShape.circle,
                           ),
                           child: const Icon(Icons.workspace_premium_rounded, color: Colors.amber, size: 28),
                         ),
                         const SizedBox(width: 12),
-                        Expanded(
+                        const Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
-                            children: const [
+                            children: [
                               Text(
                                 'ອັບເກຣດເປັນ Premiere Member 👑',
                                 style: TextStyle(
@@ -968,16 +956,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     const SizedBox(height: 14),
                     const Divider(color: Color(0xFF4C51BF), height: 1),
                     const SizedBox(height: 14),
-                    Row(
-                      children: const [
+                    const Row(
+                      children: [
                         Icon(Icons.check_circle_outline_rounded, color: Colors.amber, size: 16),
                         SizedBox(width: 6),
                         Text('ເຂົ້າເຖິງຄັງປຶ້ມ VIP ຫຼາຍກວ່າ 1,000+ ເຫຼັ້ມ', style: TextStyle(fontSize: 12, color: Colors.white)),
                       ],
                     ),
                     const SizedBox(height: 6),
-                    Row(
-                      children: const [
+                    const Row(
+                      children: [
                         Icon(Icons.check_circle_outline_rounded, color: Colors.amber, size: 16),
                         SizedBox(width: 6),
                         Text('ດາວໂຫຼດອ່ານອອບໄລນ໌ ໂດຍບໍ່ມີໂຄສະນາ', style: TextStyle(fontSize: 12, color: Colors.white)),
@@ -1039,7 +1027,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 border: Border.all(color: const Color(0xFFE2E8F0)),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.02),
+                    color: Colors.black.withValues(alpha: 0.02),
                     blurRadius: 8,
                     offset: const Offset(0, 3),
                   ),
@@ -1153,16 +1141,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   borderRadius: BorderRadius.circular(14),
                 ),
               ),
-              child: Row(
+              child: const Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.logout_rounded,
                     color: Color(0xFFDC2626),
                     size: 20,
                   ),
-                  const SizedBox(width: 8),
-                  const Text(
+                  SizedBox(width: 8),
+                  Text(
                     'ອອກຈາກລະບົບ',
                     style: TextStyle(
                       fontSize: 15,
@@ -1191,7 +1179,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       leading: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: AppColors.primary.withOpacity(0.08),
+          color: AppColors.primary.withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(10),
         ),
         child: Icon(icon, color: AppColors.primary, size: 20),

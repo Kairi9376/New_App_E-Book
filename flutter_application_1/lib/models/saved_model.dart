@@ -1,3 +1,5 @@
+import '../services/api_config.dart';
+
 class SavedBookItem {
   final String id;
   final int? bookmarkId;
@@ -43,7 +45,8 @@ class SavedBookItem {
     return viewCount.toString();
   }
 
-  factory SavedBookItem.fromMap(Map<String, dynamic> map, {String uploadsBaseUrl = 'http://localhost:5000/uploads'}) {
+  factory SavedBookItem.fromMap(Map<String, dynamic> map, {String? uploadsBaseUrl}) {
+    final baseUrl = uploadsBaseUrl ?? ApiConfig.uploadsBaseUrl;
     double parsedRating = 0.0;
     if (map['rating'] != null) {
       parsedRating = double.tryParse(map['rating'].toString()) ?? 0.0;
@@ -54,12 +57,12 @@ class SavedBookItem {
 
     String cover = map['cover_image_url'] ?? map['imagePath'] ?? '';
     if (cover.startsWith('/uploads/') || cover.startsWith('uploads/')) {
-      cover = '$uploadsBaseUrl/${cover.replaceAll(RegExp(r'^/?uploads/'), '')}';
+      cover = '$baseUrl/${cover.replaceAll(RegExp(r'^/?uploads/'), '')}';
     }
 
     String? pdf = map['file_pdf_url'] ?? map['pdfUrl'];
     if (pdf != null && (pdf.startsWith('/uploads/') || pdf.startsWith('uploads/'))) {
-      pdf = '$uploadsBaseUrl/${pdf.replaceAll(RegExp(r'^/?uploads/'), '')}';
+      pdf = '$baseUrl/${pdf.replaceAll(RegExp(r'^/?uploads/'), '')}';
     }
 
     int? bmId = int.tryParse(map['bookmark_id']?.toString() ?? '');

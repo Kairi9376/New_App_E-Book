@@ -2,13 +2,24 @@ import 'dart:async';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+// # ເຮັດຫຍັງ: ເພີ່ມ package pdfrx ເປັນຕົວອ່ານ PDF ຝັ່ງ native
+// # ຍ້ອນຫຍັງ: ຕົວອ່ານເດີມໃຊ້ PDF.js ໃນ iframe ເຊິ່ງເປັນ web ລ້ວນ ນອກ Web ຈຶ່ງເຫັນແຕ່
+// #          ໜ້າວ່າງພ້ອມປຸ່ມ "ເປີດ PDF ໃນ Browser" ອ່ານໃນແອັບບໍ່ໄດ້ເລີຍ
+// # ແກ້ຈາກສ່ວນໃດ: ສາຂາ else ຂອງ kIsWeb ໃນ build ທີ່ເປັນພຽງ Icon + ປຸ່ມເປີດ browser
+// # ແກ້ເຮັດຫຍັງ: pdfrx ຮອງຮັບ Windows, macOS, Linux, Android ແລະ iOS ຜ່ານ PDFium
+// #             ຈຶ່ງອ່ານ PDF ໄດ້ໃນແອັບຈິງ ໂດຍຝັ່ງ Web ຍັງໃຊ້ PDF.js ຄືເກົ່າ
+import 'package:pdfrx/pdfrx.dart';
 import '../../theme/app_theme.dart';
 import '../../services/api_config.dart';
 import '../../services/api_service.dart';
 
-// Conditional imports for Web platform view registration
-import 'dart:html' as html;
-import 'dart:ui' as ui;
+// # ເຮັດຫຍັງ: ປ່ຽນຈາກ import 'dart:html'/'dart:js' ໂດຍກົງ ມາໃຊ້ຊັ້ນກາງ web_platform.dart
+// # ຍ້ອນຫຍັງ: comment ເກົ່າຂຽນວ່າ "Conditional imports" ແຕ່ຄວາມຈິງເປັນ import ທຳມະດາ
+// #          ບໍ່ມີ if (dart.library.html) ຈຶ່ງເຮັດໃຫ້ flutter run -d macos/ios/android
+// #          ລົ້ມຕັ້ງແຕ່ຂັ້ນ compile ດ້ວຍ "Dart library 'dart:html' is not available"
+// # ແກ້ຈາກສ່ວນໃດ: import 'dart:html' as html; ແລະ import 'dart:js' as js; ບັນທັດ 10-11
+// # ແກ້ເຮັດຫຍັງ: ໜ້ານີ້ບໍ່ແຕະ DOM ໂດຍກົງອີກ ໄປຜ່ານ WebPlatform ໝົດ ຈຶ່ງ build ໄດ້ທຸກ platform
+import '../../services/platform/web_platform.dart';
 
 class PdfViewerScreen extends StatefulWidget {
   final String? bookId;
@@ -43,8 +54,20 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
   bool _isDarkMode = true;
   bool _isLoading = true;
 
-  StreamSubscription<html.MessageEvent>? _messageSubscription;
+  // # ເຮັດຫຍັງ: ປ່ຽນ type ຈາກ html.MessageEvent ເປັນ Map
+  // # ຍ້ອນຫຍັງ: html.MessageEvent ມີແຕ່ບົນ Web ຈຶ່ງອ້າງອີງໃນໄຟລ໌ຮ່ວມບໍ່ໄດ້
+  // # ແກ້ຈາກສ່ວນໃດ: StreamSubscription<html.MessageEvent>? ບັນທັດ 46 ເດີມ
+  // # ແກ້ເຮັດຫຍັງ: WebPlatform ແປງ MessageEvent ເປັນ Map ໃຫ້ແລ້ວ ຊັ້ນນີ້ຈຶ່ງໃຊ້ type ກາງໄດ້
+  StreamSubscription<Map>? _messageSubscription;
   final TextEditingController _jumpPageController = TextEditingController();
+
+  // # ເຮັດຫຍັງ: ເພີ່ມ controller ຂອງ pdfrx ສຳລັບຝັ່ງ native
+  // # ຍ້ອນຫຍັງ: ແຖບເຄື່ອງມືເດີມ (ປ່ຽນໜ້າ, ຊູມ, ເລືອກໜ້າ) ສັ່ງງານ iframe ຜ່ານ
+  // #          _registerWebIframe ເຊິ່ງນອກ Web ບໍ່ເຮັດຫຍັງເລີຍ ຈຶ່ງຕ້ອງມີທາງສັ່ງງານ
+  // #          ຕົວອ່ານ native ໃຫ້ປຸ່ມຊຸດເກົ່າໃຊ້ໄດ້ຄືກັນ
+  // # ແກ້ຈາກສ່ວນໃດ: ໜ້ານີ້ບໍ່ເຄີຍມີ controller ຝັ່ງ native ມາກ່ອນ
+  // # ແກ້ເຮັດຫຍັງ: ໃຫ້ _changePage/_setZoom ສັ່ງ pdfrx ໄດ້ ໂດຍ UI ຊຸດເກົ່າບໍ່ຕ້ອງປ່ຽນ
+  final PdfViewerController _nativeController = PdfViewerController();
 
   @override
   void initState() {
@@ -55,30 +78,42 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
     _listenToWebMessages();
     _registerWebIframe();
 
+    // # ເຮັດຫຍັງ: ນັບຜູ້ອ່ານເພີ່ມ 1 ຕອນເປີດໜ້າອ່ານ
+    // # ຍ້ອນຫຍັງ: backend ມີ POST /books/:id/increment-readers ແລະ DB ມີຖັນ
+    // #          readers_count ມາແຕ່ຕົ້ນ ແຕ່ບໍ່ມີໃຜເອີ້ນເລີຍ ຕົວເລກຜູ້ອ່ານທີ່ສະແດງ
+    // #          ໃນແອັບຈຶ່ງເປັນຄ່າ seed ທີ່ບໍ່ເຄີຍປ່ຽນ ບໍ່ສະທ້ອນການໃຊ້ງານຈິງ
+    // # ແກ້ຈາກສ່ວນໃດ: initState() ເອີ້ນແຕ່ _normalizePdfUrl/_listenToWebMessages/
+    // #              _registerWebIframe ໂດຍບໍ່ໄດ້ບອກ backend ວ່າມີຄົນເປີດອ່ານ
+    // # ແກ້ເຮັດຫຍັງ: ບໍ່ລໍຜົນ (fire-and-forget) ເພາະການນັບລົ້ມເຫຼວບໍ່ຄວນກັນຜູ້ໃຊ້ອ່ານປຶ້ມ
+    final targetBookId = widget.bookId;
+    if (targetBookId != null && targetBookId.isNotEmpty) {
+      ApiService.incrementReadersCount(targetBookId);
+    }
+
     Future.delayed(const Duration(milliseconds: 500), () {
       if (mounted) setState(() => _isLoading = false);
     });
   }
 
+  // # ເຮັດຫຍັງ: ຍ້າຍການເອີ້ນ html.window.onMessage ໄປ WebPlatform ແລະ ຕັດ if (kIsWeb) ອອກ
+  // # ຍ້ອນຫຍັງ: ການກອງ event.data is Map ຖືກຍ້າຍໄປຢູ່ຊັ້ນ platform ແລ້ວ
+  // #          ແລະ ບົນ platform ອື່ນ stub ຄືນ null ຈຶ່ງບໍ່ຕ້ອງກວດ kIsWeb ຊ້ຳ
+  // # ແກ້ຈາກສ່ວນໃດ: _listenToWebMessages() ເດີມທີ່ subscribe html.window.onMessage ໂດຍກົງ
+  // # ແກ້ເຮັດຫຍັງ: logic ການອ່ານຈຳນວນໜ້າຈິງຈາກ PDF.js ຄືເກົ່າ ແຕ່ບໍ່ຜູກກັບ dart:html ອີກ
   void _listenToWebMessages() {
-    if (kIsWeb) {
-      _messageSubscription = html.window.onMessage.listen((event) {
-        if (event.data is Map) {
-          final data = event.data as Map;
-          if (data['type'] == 'pdf_page_count' && data['totalPages'] != null) {
-            final realTotal = int.tryParse(data['totalPages'].toString());
-            if (realTotal != null && realTotal > 0 && mounted) {
-              setState(() {
-                _totalPages = realTotal;
-                if (_currentPage > _totalPages) {
-                  _currentPage = _totalPages;
-                }
-              });
+    _messageSubscription = WebPlatform.listenToWindowMessages((data) {
+      if (data['type'] == 'pdf_page_count' && data['totalPages'] != null) {
+        final realTotal = int.tryParse(data['totalPages'].toString());
+        if (realTotal != null && realTotal > 0 && mounted) {
+          setState(() {
+            _totalPages = realTotal;
+            if (_currentPage > _totalPages) {
+              _currentPage = _totalPages;
             }
-          }
+          });
         }
-      });
-    }
+      }
+    });
   }
 
   @override
@@ -258,28 +293,17 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
 ''';
   }
 
+  // # ເຮັດຫຍັງ: ຍ້າຍການສ້າງ iframe ແລະ registerViewFactory ໄປ WebPlatform
+  // # ຍ້ອນຫຍັງ: ສອງອັນນີ້ຕ້ອງໃຊ້ dart:js ກັບ dart:html ເຊິ່ງມີແຕ່ບົນ Web
+  // # ແກ້ຈາກສ່ວນໃດ: _registerWebIframe() ເດີມ (ບັນທັດ 261-282) ທີ່ເອີ້ນ js.context ໂດຍກົງ
+  // # ແກ້ເຮັດຫຍັງ: ຍັງສ້າງ _viewTypeId ໃໝ່ທຸກຄັ້ງຄືເກົ່າ ເພື່ອບັງຄັບໃຫ້ HtmlElementView
+  // #             ສ້າງ iframe ໃໝ່ຕອນປ່ຽນໜ້າ/ຊູມ ສ່ວນການສ້າງ HTML ສົ່ງເປັນ callback ເຂົ້າໄປ
   void _registerWebIframe() {
-    if (kIsWeb) {
-      _viewTypeId = 'pdf-view-${DateTime.now().microsecondsSinceEpoch}';
-      try {
-        // ignore: undefined_prefixed_name
-        ui.platformViewRegistry.registerViewFactory(
-          _viewTypeId,
-          (int id) {
-            final iframe = html.IFrameElement()
-              ..style.border = 'none'
-              ..style.width = '100%'
-              ..style.height = '100%'
-              ..style.pointerEvents = 'auto';
-
-            iframe.srcdoc = _buildSinglePageHtml(_fullPdfUrl, _currentPage, _zoomScale);
-            return iframe;
-          },
-        );
-      } catch (e) {
-        debugPrint('Platform view registration info: $e');
-      }
-    }
+    _viewTypeId = 'pdf-view-${DateTime.now().microsecondsSinceEpoch}';
+    WebPlatform.registerIframeFactory(
+      _viewTypeId,
+      () => _buildSinglePageHtml(_fullPdfUrl, _currentPage, _zoomScale),
+    );
   }
 
   Future<void> _openExternalPdf() async {
@@ -303,6 +327,15 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
         _registerWebIframe();
       });
 
+      // # ເຮັດຫຍັງ: ສັ່ງ pdfrx ໃຫ້ເລື່ອນໄປໜ້າທີ່ເລືອກ ເມື່ອບໍ່ແມ່ນ Web
+      // # ຍ້ອນຫຍັງ: _registerWebIframe ຂ້າງເທິງເປັນ no-op ນອກ Web ຖ້າບໍ່ເພີ່ມສ່ວນນີ້
+      // #          ປຸ່ມປ່ຽນໜ້າຈະກົດໄດ້ແຕ່ໜ້າບໍ່ຂະຫຍັບ
+      // # ແກ້ຈາກສ່ວນໃດ: _changePage() ເດີມທີ່ສັ່ງງານແຕ່ iframe ຂອງ Web
+      // # ແກ້ເຮັດຫຍັງ: ປຸ່ມຊຸດເກົ່າໃຊ້ໄດ້ທັງສອງຝັ່ງ ໂດຍບໍ່ຕ້ອງແຍກ UI
+      if (!kIsWeb && _nativeController.isReady) {
+        _nativeController.goToPage(pageNumber: newPage);
+      }
+
       // Record reading history in MySQL backend
       final targetBookId = widget.bookId ?? '1';
       ApiService.recordReadingHistory(
@@ -323,20 +356,25 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
       _isLoading = true;
       _registerWebIframe();
     });
+
+    // # ເຮັດຫຍັງ: ສັ່ງຊູມໃສ່ pdfrx ໂດຍອີງຈຸດກາງຂອງໜ້າຈໍປັດຈຸບັນ
+    // # ຍ້ອນຫຍັງ: ດຽວກັນກັບ _changePage - ນອກ Web ປຸ່ມຊູມຈະບໍ່ມີຜົນຫຍັງເລີຍ
+    // # ແກ້ຈາກສ່ວນໃດ: _setZoom() ເດີມທີ່ສ້າງ iframe ໃໝ່ດ້ວຍຄ່າຊູມ
+    // # ແກ້ເຮັດຫຍັງ: ໃຊ້ centerPosition ເປັນຈຸດອ້າງອີງ ຜູ້ໃຊ້ຈຶ່ງບໍ່ເສຍຕຳແໜ່ງທີ່ອ່ານຢູ່
+    if (!kIsWeb && _nativeController.isReady) {
+      _nativeController.setZoom(_nativeController.centerPosition, _zoomScale);
+    }
     Future.delayed(const Duration(milliseconds: 400), () {
       if (mounted) setState(() => _isLoading = false);
     });
   }
 
+  // # ເຮັດຫຍັງ: ຍ້າຍການປັບ pointerEvents ຂອງ iframe ໄປ WebPlatform
+  // # ຍ້ອນຫຍັງ: ໃຊ້ html.document ເຊິ່ງມີແຕ່ບົນ Web
+  // # ແກ້ຈາກສ່ວນໃດ: _setIframePointerEvents() ເດີມ (ບັນທັດ 330-339)
+  // # ແກ້ເຮັດຫຍັງ: ຍັງກັນ iframe ແຍ່ງຈັບ mouse ຕອນເປີດ Modal ຄືເກົ່າ (GEMINI.md ຂໍ້ 4.D)
   void _setIframePointerEvents(bool enabled) {
-    if (kIsWeb) {
-      try {
-        final iframes = html.document.querySelectorAll('iframe');
-        for (var el in iframes) {
-          (el as html.IFrameElement).style.pointerEvents = enabled ? 'auto' : 'none';
-        }
-      } catch (_) {}
-    }
+    WebPlatform.setIframePointerEvents(enabled);
   }
 
   /// Opens Interactive Page Selector Dialog (ເລືອກໜ້າ Page 1, Page 2, Page 3 ... Page N ...)
@@ -367,8 +405,8 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Row(
-                          children: const [
+                        const Row(
+                          children: [
                             Icon(Icons.menu_book_rounded, color: AppColors.primary, size: 24),
                             SizedBox(width: 8),
                             Text(
@@ -483,7 +521,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
                                 return ListTile(
                                   dense: true,
                                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                                  tileColor: isCurrent ? AppColors.primary.withOpacity(0.25) : Colors.transparent,
+                                  tileColor: isCurrent ? AppColors.primary.withValues(alpha: 0.25) : Colors.transparent,
                                   leading: CircleAvatar(
                                     radius: 14,
                                     backgroundColor: isCurrent ? AppColors.primary : const Color(0xFF334155),
@@ -541,7 +579,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
                                       borderRadius: BorderRadius.circular(10),
                                       border: Border.all(color: isCurrent ? Colors.white : Colors.transparent, width: 1.5),
                                       boxShadow: isCurrent
-                                          ? [BoxShadow(color: AppColors.primary.withOpacity(0.5), blurRadius: 8, spreadRadius: 1)]
+                                          ? [BoxShadow(color: AppColors.primary.withValues(alpha: 0.5), blurRadius: 8, spreadRadius: 1)]
                                           : null,
                                     ),
                                     child: Center(
@@ -605,8 +643,8 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Row(
-                      children: const [
+                    const Row(
+                      children: [
                         Icon(Icons.info_outline_rounded, color: AppColors.primary, size: 24),
                         SizedBox(width: 8),
                         Text('ຂໍ້ມູນພື້ນຖານຂອງປຶ້ມ (Book Info)', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
@@ -699,7 +737,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.3),
+              color: AppColors.primary.withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Text('$zoomPercent%', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
@@ -717,7 +755,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 10),
             margin: const EdgeInsets.symmetric(vertical: 8),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.15),
+              color: Colors.white.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(10),
               border: Border.all(color: Colors.amber, width: 1),
             ),
@@ -798,7 +836,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.2),
+                      color: AppColors.primary.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(color: AppColors.primary, width: 0.8),
                     ),
@@ -855,24 +893,85 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
                         ),
                     ],
                   )
-                : Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.picture_as_pdf_rounded, size: 80, color: Colors.redAccent),
-                        const SizedBox(height: 16),
-                        Text(widget.bookTitle, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: _isDarkMode ? Colors.white : Colors.black87)),
-                        const SizedBox(height: 8),
-                        Text('ໜ້າທີ $_currentPage ຈາກທັງໝົດ $_totalPages ໜ້າ (PDF File)', style: const TextStyle(fontSize: 14, color: AppColors.primary, fontWeight: FontWeight.bold)),
-                        const SizedBox(height: 24),
-                        ElevatedButton.icon(
-                          onPressed: _openExternalPdf,
-                          icon: const Icon(Icons.open_in_new_rounded),
-                          label: const Text('ເປີດ PDF ໃນ Browser'),
-                          style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
+                // # ເຮັດຫຍັງ: ປ່ຽນສາຂາ non-web ຈາກໜ້າແຈ້ງເຕືອນ ມາເປັນຕົວອ່ານ PDF ຈິງ
+                // # ຍ້ອນຫຍັງ: ຂອງເກົ່າສະແດງແຕ່ icon, ຊື່ປຶ້ມ ແລະ ປຸ່ມເປີດ browser
+                // #          ຜູ້ໃຊ້ໃນ Windows/macOS/ມືຖື ຈຶ່ງອ່ານປຶ້ມໃນແອັບບໍ່ໄດ້ເລີຍ
+                // # ແກ້ຈາກສ່ວນໃດ: Center + Column ທີ່ມີ Icon.picture_as_pdf ແລະ
+                // #              ປຸ່ມ "ເປີດ PDF ໃນ Browser"
+                // # ແກ້ເຮັດຫຍັງ: ໃຊ້ PdfViewer.uri ໂຫຼດຈາກ URL ດຽວກັນກັບຝັ່ງ Web
+                // #             ແລະ ຍັງເກັບປຸ່ມເປີດ browser ໄວ້ເປັນທາງສຳຮອງຕອນໂຫຼດລົ້ມເຫຼວ
+                : Stack(
+                    children: [
+                      PdfViewer.uri(
+                        Uri.parse(_fullPdfUrl),
+                        controller: _nativeController,
+                        params: PdfViewerParams(
+                          backgroundColor: _isDarkMode
+                              ? const Color(0xFF0F172A)
+                              : const Color(0xFFF8FAFC),
+                          // ອ່ານຈຳນວນໜ້າຈິງຈາກເອກະສານ ແທນທີ່ຈະເຊື່ອຄ່າທີ່ສົ່ງເຂົ້າມາ
+                          // (ຝັ່ງ Web ໄດ້ຄ່ານີ້ຜ່ານ postMessage ຈາກ PDF.js ແທນ)
+                          onViewerReady: (document, controller) {
+                            if (!mounted) return;
+                            setState(() {
+                              _totalPages = document.pages.length;
+                              if (_currentPage > _totalPages) {
+                                _currentPage = _totalPages;
+                              }
+                              _isLoading = false;
+                            });
+                            controller.goToPage(pageNumber: _currentPage);
+                          },
+                          // ໂຫຼດບໍ່ໄດ້ (ເນັດຂາດ, backend ລົ້ມ, ໄຟລ໌ຫາຍ) ໃຫ້ທາງອອກຜູ້ໃຊ້
+                          // ແທນທີ່ຈະປະໜ້າຈໍວ່າງໆ ໂດຍບໍ່ບອກຫຍັງ
+                          errorBannerBuilder:
+                              (context, error, stackTrace, documentRef) => Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(Icons.picture_as_pdf_rounded,
+                                    size: 72, color: Colors.redAccent),
+                                const SizedBox(height: 16),
+                                Text(
+                                  widget.bookTitle,
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: _isDarkMode
+                                        ? Colors.white
+                                        : Colors.black87,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                const Text(
+                                  'ໂຫຼດໄຟລ໌ PDF ບໍ່ສຳເລັດ',
+                                  style: TextStyle(
+                                      fontSize: 14, color: Colors.redAccent),
+                                ),
+                                const SizedBox(height: 20),
+                                ElevatedButton.icon(
+                                  onPressed: _openExternalPdf,
+                                  icon: const Icon(Icons.open_in_new_rounded),
+                                  label: const Text('ເປີດ PDF ໃນ Browser'),
+                                  style: ElevatedButton.styleFrom(
+                                      backgroundColor: AppColors.primary),
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
-                      ],
-                    ),
+                      ),
+                      if (_isLoading)
+                        Container(
+                          color: _isDarkMode
+                              ? const Color(0xFF0F172A)
+                              : const Color(0xFFF8FAFC),
+                          child: const Center(
+                            child: CircularProgressIndicator(
+                                color: AppColors.primary),
+                          ),
+                        ),
+                    ],
                   ),
           ),
 
@@ -884,7 +983,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
               border: Border(top: BorderSide(color: _isDarkMode ? const Color(0xFF334155) : const Color(0xFFE2E8F0))),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
+                  color: Colors.black.withValues(alpha: 0.1),
                   blurRadius: 10,
                   offset: const Offset(0, -2),
                 ),

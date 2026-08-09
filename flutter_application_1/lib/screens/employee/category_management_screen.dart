@@ -121,7 +121,7 @@ class _CategoryManagementScreenState extends State<CategoryManagementScreen> {
             Container(
               padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
-                color: const Color(0xFF10B981).withOpacity(0.2),
+                color: const Color(0xFF10B981).withValues(alpha: 0.2),
                 shape: BoxShape.circle,
               ),
               child: const Icon(Icons.category_rounded,
@@ -178,12 +178,12 @@ class _CategoryManagementScreenState extends State<CategoryManagementScreen> {
                     color: AppColors.primary,
                     child: filteredCategories.isEmpty
                         ? ListView(
-                            children: [
-                              const SizedBox(height: 80),
-                              const Icon(Icons.category_outlined,
+                            children: const [
+                              SizedBox(height: 80),
+                              Icon(Icons.category_outlined,
                                   size: 48, color: AppColors.textSecondary),
-                              const SizedBox(height: 8),
-                              const Center(
+                              SizedBox(height: 8),
+                              Center(
                                 child: Text('ບໍ່ພົບໝວດໝູ່',
                                     style: TextStyle(
                                         color: AppColors.textSecondary)),
@@ -227,7 +227,7 @@ class _CategoryManagementScreenState extends State<CategoryManagementScreen> {
         children: [
           CircleAvatar(
             radius: 24,
-            backgroundColor: AppColors.primary.withOpacity(0.15),
+            backgroundColor: AppColors.primary.withValues(alpha: 0.15),
             child: const Icon(Icons.category_rounded,
                 color: AppColors.primary, size: 24),
           ),

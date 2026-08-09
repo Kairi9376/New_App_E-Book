@@ -7,9 +7,12 @@ import '../../services/api_service.dart';
 import 'add_book_screen.dart';
 import 'edit_book_screen.dart';
 import 'employee_book_detail_screen.dart';
-import 'deleted_books_screen.dart';
-import 'author_management_screen.dart';
-import 'category_management_screen.dart';
+// # ເຮັດຫຍັງ: ລຶບ import ຂອງ 3 ໜ້າທີ່ບໍ່ໄດ້ອ້າງອີງແລ້ວ
+// # ຍ້ອນຫຍັງ: ຫຼັງຕັດປຸ່ມ Author/Category/Deleted Books ອອກ ບໍ່ມີບ່ອນໃດໃນໄຟລ໌ນີ້
+// #          ເອີ້ນເຖິງ 3 ໜ້ານັ້ນອີກ import ຈຶ່ງກາຍເປັນ unused_import
+// # ແກ້ຈາກສ່ວນໃດ: import ຂອງ deleted_books_screen, author_management_screen
+// #              ແລະ category_management_screen
+// # ແກ້ເຮັດຫຍັງ: ຮັກສາ analyze ໃຫ້ 0 warning ແລະ ບອກຂອບເຂດຂອງໄຟລ໌ນີ້ໃຫ້ຊັດ
 
 class BookManagementScreen extends StatefulWidget {
   const BookManagementScreen({super.key});
@@ -102,17 +105,12 @@ class _BookManagementScreenState extends State<BookManagementScreen> {
     }
   }
 
-  void _openDeletedBooks() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => const DeletedBooksScreen()),
-    ).then((_) {
-      if (mounted) {
-        _fetchBooks();
-        _fetchCategories();
-      }
-    });
-  }
+  // # ເຮັດຫຍັງ: ລຶບ _openDeletedBooks() ອອກ
+  // # ຍ້ອນຫຍັງ: ປຸ່ມດຽວທີ່ເອີ້ນ method ນີ້ຖືກຕັດອອກໄປແລ້ວ ຖ້າປະໄວ້ຈະເປັນໂຄ້ດຕາຍ
+  // #          ແລະ analyzer ຈະເຕືອນ unused_element
+  // # ແກ້ຈາກສ່ວນໃດ: method ທີ່ push ໄປ DeletedBooksScreen ແລ້ວ refresh ຕອນກັບມາ
+  // # ແກ້ເຮັດຫຍັງ: ໄຟລ໌ deleted_books_screen.dart ຍັງຢູ່ໃນໂປຣເຈັກ ບໍ່ໄດ້ລຶບ
+  // #             ແຕ່ຕອນນີ້ບໍ່ມີທາງເຂົ້າເຖິງແລ້ວ - ຖ້າຢາກໃຊ້ຄືນ ໃຫ້ຕໍ່ປຸ່ມຈາກໜ້າອື່ນ
 
   // Quick Toggle Hidden / Visible (ใช้ ApiService.updateBook เดิม)
   Future<void> _toggleHidden(BookModel book, bool value) async {
@@ -232,7 +230,7 @@ class _BookManagementScreenState extends State<BookManagementScreen> {
             errorBuilder: (_, __, ___) => Container(color: const Color(0xFFE2E8F0)),
           ),
           Container(
-            color: Colors.black.withOpacity(0.25),
+            color: Colors.black.withValues(alpha: 0.25),
           ),
           const Center(
             child: Icon(Icons.picture_as_pdf_rounded, color: Colors.white, size: 28),
@@ -264,7 +262,7 @@ class _BookManagementScreenState extends State<BookManagementScreen> {
             Container(
               padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
-                color: const Color(0xFF10B981).withOpacity(0.2),
+                color: const Color(0xFF10B981).withValues(alpha: 0.2),
                 shape: BoxShape.circle,
               ),
               child: const Icon(Icons.menu_book_rounded,
@@ -295,34 +293,14 @@ class _BookManagementScreenState extends State<BookManagementScreen> {
             ),
           ],
         ),
+        // # ເຮັດຫຍັງ: ຕັດປຸ່ມ Author Management, Category Management ແລະ Deleted Books
+        // #          ອອກຈາກແຖບເທິງ ເຫຼືອໄວ້ແຕ່ປຸ່ມຣີເຟຣຊ
+        // # ຍ້ອນຫຍັງ: ຕາມທີ່ກຳນົດໄວ້ໃຫ້ໜ້າ Book Management ເຮັດໜ້າທີ່ຈັດການປຶ້ມຢ່າງດຽວ
+        // #          ສ່ວນ Author ກັບ Category ຍັງເຂົ້າໄດ້ຈາກ EmployeeDashboardScreen ຢູ່ແລ້ວ
+        // #          ຈຶ່ງບໍ່ເສຍທາງເຂົ້າເຖິງ
+        // # ແກ້ຈາກສ່ວນໃດ: actions ຂອງ AppBar ທີ່ເດີມມີ 4 ປຸ່ມ
+        // # ແກ້ເຮັດຫຍັງ: ແຖບເທິງສະອາດຂຶ້ນ ແລະ ໜ້າທີ່ຂອງແຕ່ລະໜ້າຈໍບໍ່ຊ້ຳກັນ
         actions: [
-          IconButton(
-            tooltip: 'Author Management',
-            icon: const Icon(Icons.person_rounded, color: Colors.blueAccent),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (_) => const AuthorManagementScreen()),
-              );
-            },
-          ),
-          IconButton(
-            tooltip: 'Category Management',
-            icon: const Icon(Icons.category_rounded, color: Colors.amber),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (_) => const CategoryManagementScreen()),
-              );
-            },
-          ),
-          IconButton(
-            tooltip: 'Deleted Books',
-            icon: const Icon(Icons.restore_from_trash, color: Colors.redAccent),
-            onPressed: _openDeletedBooks,
-          ),
           IconButton(
             tooltip: 'ຣີເຟຣຊ',
             icon: const Icon(Icons.refresh_rounded, color: Colors.white),
@@ -439,12 +417,12 @@ class _BookManagementScreenState extends State<BookManagementScreen> {
                     color: AppColors.primary,
                     child: filteredBooks.isEmpty
                         ? ListView(
-                            children: [
-                              const SizedBox(height: 80),
-                              const Icon(Icons.search_off_rounded,
+                            children: const [
+                              SizedBox(height: 80),
+                              Icon(Icons.search_off_rounded,
                                   size: 48, color: AppColors.textSecondary),
-                              const SizedBox(height: 8),
-                              const Center(
+                              SizedBox(height: 8),
+                              Center(
                                 child: Text('ບໍ່ພົບຂໍ້ມູນປຶ້ມທີ່ຄົ້ນຫາ',
                                     style: TextStyle(
                                         color: AppColors.textSecondary)),
@@ -560,7 +538,7 @@ class _BookManagementScreenState extends State<BookManagementScreen> {
                           color: const Color(0xFFECFDF5),
                           borderRadius: BorderRadius.circular(6),
                         ),
-                        child: Row(
+                        child: const Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(Icons.picture_as_pdf_rounded,
@@ -675,7 +653,7 @@ class _BookManagementScreenState extends State<BookManagementScreen> {
                 ),
                 Switch(
                   value: !book.isHidden, // ON = Visible, OFF = Hidden
-                  activeColor: Colors.green,
+                  activeThumbColor: Colors.green,
                   onChanged: _togglingBookIds.contains(book.id)
                       ? null // ปิดการกดระหว่าง loading
                       : (val) => _toggleHidden(book, val),

@@ -116,7 +116,7 @@ class _DeletedBooksScreenState extends State<DeletedBooksScreen> {
             errorBuilder: (_, __, ___) => Container(color: const Color(0xFFE2E8F0)),
           ),
           Container(
-            color: Colors.black.withOpacity(0.25),
+            color: Colors.black.withValues(alpha: 0.25),
           ),
           const Center(
             child: Icon(Icons.restore_from_trash_rounded, color: Colors.white, size: 28),
@@ -138,7 +138,7 @@ class _DeletedBooksScreenState extends State<DeletedBooksScreen> {
             Container(
               padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
-                color: Colors.redAccent.withOpacity(0.2),
+                color: Colors.redAccent.withValues(alpha: 0.2),
                 shape: BoxShape.circle,
               ),
               child: const Icon(Icons.restore_from_trash_rounded,
@@ -166,14 +166,14 @@ class _DeletedBooksScreenState extends State<DeletedBooksScreen> {
           ? const Center(
               child: CircularProgressIndicator(color: AppColors.primary))
           : _deletedBooks.isEmpty
-              ? Center(
+              ? const Center(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.restore_from_trash_rounded,
+                      Icon(Icons.restore_from_trash_rounded,
                           size: 48, color: AppColors.textSecondary),
-                      const SizedBox(height: 8),
-                      const Text('ບໍ່ມີປຶ້ມທີ່ຖືກລົບ (Deleted Books is empty)',
+                      SizedBox(height: 8),
+                      Text('ບໍ່ມີປຶ້ມທີ່ຖືກລົບ (Deleted Books is empty)',
                           style: TextStyle(color: AppColors.textSecondary)),
                     ],
                   ),
