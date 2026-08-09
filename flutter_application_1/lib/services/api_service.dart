@@ -832,16 +832,26 @@ class ApiService {
           .get(url, headers: _headers)
           .timeout(const Duration(seconds: 5));
 
+      // # ເຮັດຫຍັງ: ແຍກ "ບໍ່ມີແພັກເກັດ" ອອກຈາກ "ຄຳຮ້ອງລົ້ມເຫຼວ"
+      // # ຍ້ອນຫຍັງ: ຂອງເກົ່າຄືນ null ທັງສອງກໍລະນີ ຜູ້ເອີ້ນຈຶ່ງແຍກບໍ່ອອກ
+      // #          Membership.refresh ຈຶ່ງລ້າງສິດຖິ້ມທຸກຄັ້ງທີ່ເນັດສະດຸດ ຫຼື 401
+      // #          ສະມາຊິກຈິງທີ່ຈ່າຍເງິນແລ້ວຈຶ່ງກາຍເປັນຜູ້ໃຊ້ທຳມະດາຊົ່ວຄາວ
+      // #          ໂດຍບໍ່ຮູ້ສາເຫດ - ເປັນບັນຫາຄອບຄົວດຽວກັບ mock fallback ທີ່ຫາກໍ່ຕັດອອກ
+      // # ແກ້ຈາກສ່ວນໃດ: return null; ຢູ່ທັງ 2 ບ່ອນ (ນອກ if ແລະ ໃນ catch)
+      // # ແກ້ເຮັດຫຍັງ: throw ຕອນຕິດຕໍ່ບໍ່ໄດ້ ໃຫ້ Membership ຮັກສາຄ່າເກົ່າໄວ້
+      // #             ສ່ວນ null ໝາຍເຖິງ "server ຕອບແລ້ວວ່າບໍ່ມີແພັກເກັດ" ຢ່າງດຽວ
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['success'] == true && data['subscription'] != null) {
           return Map<String, dynamic>.from(data['subscription']);
         }
+        return null; // server ຕອບແລ້ວ - ຜູ້ໃຊ້ນີ້ບໍ່ມີແພັກເກັດຈິງໆ
       }
-      return null;
+      throw Exception(
+          'getUserSubscriptionStatus HTTP ${response.statusCode}');
     } catch (e) {
       debugPrint('ApiService getUserSubscriptionStatus error: $e');
-      return null;
+      rethrow;
     }
   }
 

@@ -65,7 +65,20 @@ class Membership {
       return;
     }
 
-    final sub = await ApiService.getUserSubscriptionStatus(userId);
+    // # ເຮັດຫຍັງ: ຮັກສາຄ່າເກົ່າໄວ້ຖ້າຄຳຮ້ອງລົ້ມເຫຼວ ລ້າງສະເພາະຕອນ server ຢືນຢັນວ່າບໍ່ມີ
+    // # ຍ້ອນຫຍັງ: refresh() ຖືກເອີ້ນທຸກຄັ້ງທີ່ເປີດໜ້າປຶ້ມ ຖ້າເນັດສະດຸດຄັ້ງດຽວ
+    // #          ແລ້ວລ້າງສິດຖິ້ມ ສະມາຊິກຈະຖືກກັ້ນທັນທີໂດຍບໍ່ມີສາເຫດທີ່ອະທິບາຍໄດ້
+    // # ແກ້ຈາກສ່ວນໃດ: ບລັອກທີ່ຮັບ null ຈາກ getUserSubscriptionStatus ແລ້ວ clear() ເລີຍ
+    // # ແກ້ເຮັດຫຍັງ: null = server ບອກວ່າບໍ່ມີແພັກເກັດ (ລ້າງຖືກຕ້ອງ)
+    // #             exception = ຕິດຕໍ່ບໍ່ໄດ້ (ຮັກສາຄ່າເກົ່າ ແລ້ວລອງໃໝ່ຮອບໜ້າ)
+    final Map<String, dynamic>? sub;
+    try {
+      sub = await ApiService.getUserSubscriptionStatus(userId);
+    } catch (e) {
+      debugPrint('Membership: ດຶງສະຖານະບໍ່ໄດ້ ($e) - ຮັກສາຄ່າເກົ່າໄວ້');
+      return;
+    }
+
     if (sub == null) {
       clear();
       return;

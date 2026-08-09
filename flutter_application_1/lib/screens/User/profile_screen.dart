@@ -57,7 +57,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final rawUserId = profile['user_id'] ?? profile['id'];
     final int userId = rawUserId != null ? (int.tryParse(rawUserId.toString()) ?? 3) : 3;
     final liveKyc = await ApiService.getUserKycStatus(userId);
-    final liveSub = await ApiService.getUserSubscriptionStatus(userId);
+    // # ເຮັດຫຍັງ: ຫຸ້ມ getUserSubscriptionStatus ດ້ວຍ try/catch
+    // # ຍ້ອນຫຍັງ: method ນີ້ຖືກແກ້ໃຫ້ throw ຕອນຄຳຮ້ອງລົ້ມເຫຼວ (ແທນທີ່ຈະຄືນ null
+    // #          ທັງກໍລະນີ 'ບໍ່ມີແພັກເກັດ' ແລະ 'ຕິດຕໍ່ບໍ່ໄດ້') ຖ້າບໍ່ຫຸ້ມໄວ້
+    // #          exception ຈະຕັດ method ກາງຄັນ ແລ້ວ setState ດ້ານລຸ່ມບໍ່ຖືກເອີ້ນ
+    // #          ໜ້າຈະຄ້າງຢູ່ສະຖານະກຳລັງໂຫຼດຕະຫຼອດ
+    // # ແກ້ຈາກສ່ວນໃດ: ການເອີ້ນແບບບໍ່ມີ try/catch
+    // # ແກ້ເຮັດຫຍັງ: ຖ້າດຶງບໍ່ໄດ້ໃຫ້ເປັນ null ແລ້ວໜ້າຈໍໂຫຼດສ່ວນທີ່ເຫຼືອຕໍ່ໄດ້
+    Map<String, dynamic>? liveSub;
+    try {
+      liveSub = await ApiService.getUserSubscriptionStatus(userId);
+    } catch (_) {
+      liveSub = null;
+    }
 
     if (mounted) {
       setState(() {
