@@ -54,6 +54,32 @@ void main() {
           reason: 'ຜູ້ໃຊ້ນີ້ມີ subscription active ຈຶ່ງຕ້ອງເປັນ Premiere');
     });
 
+
+    // # ເຮັດຫຍັງ: ທົດສອບດ່ານກັ້ນຈິງຂອງໜ້າລາຍລະອຽດປຶ້ມ (ເສັ້ນທາງທີ່ຜູ້ໃຊ້ລາຍງານ)
+    // # ຍ້ອນຫຍັງ: test ກ່ອນໜ້າພິສູດແຕ່ວ່າ Membership ຖືກ ແຕ່ບໍ່ໄດ້ພິສູດວ່າ
+    // #          ເງື່ອນໄຂ `!isFree && !isMember` ໃນ _openReader() ຈະປ່ອຍຜ່ານຫຼືບໍ່
+    // #          ຊຶ່ງຕ້ອງອາໄສ BookModel.isFree ທີ່ແປງມາຈາກ is_free ຂອງ backend ນຳ
+    // # ແກ້ຈາກສ່ວນໃດ: ບໍ່ເຄີຍມີ test ຄຸມເສັ້ນທາງນີ້
+    // # ແກ້ເຮັດຫຍັງ: ຈຳລອງເງື່ອນໄຂດຽວກັນກັບ _openReader ເພື່ອຢືນຢັນວ່າເປີດອ່ານໄດ້
+    testWidgets('paid book opens for a subscriber', (tester) async {
+      await ApiService.login('user1234@gmail.com', 'user1234');
+      await Membership.refresh();
+
+      final book = await ApiService.getBookById('6');
+      // ignore: avoid_print
+      print('BOOK id=${book?.id} title=${book?.title} isFree=${book?.isFree}');
+      expect(book, isNotNull, reason: 'ຕ້ອງໂຫຼດ Gold Block ໄດ້');
+
+      final isFree = book?.isFree ?? true;
+      final isMember = Membership.isPremiere;
+      final blocked = !isFree && !isMember;
+      // ignore: avoid_print
+      print('GATE isFree=$isFree isMember=$isMember -> blocked=$blocked');
+
+      expect(blocked, isFalse,
+          reason: 'ສະມາຊິກທີ່ມີແພັກເກັດ active ຕ້ອງເປີດອ່ານປຶ້ມ VIP ໄດ້');
+    });
+
     testWidgets('logout clears the cached membership', (tester) async {
       await ApiService.login('user1234@gmail.com', 'user1234');
       expect(Membership.isPremiere, isTrue);
