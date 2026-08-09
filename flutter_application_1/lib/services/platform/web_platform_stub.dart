@@ -44,7 +44,7 @@ class WebPlatform {
     final isPdfOnly = normalized.contains('pdf') && !normalized.contains('image');
 
     // file_picker 11 ໃຫ້ pickFiles ເປັນ static ແລ້ວ (ຮຸ່ນເກົ່າໃຊ້ FilePicker.platform)
-    final result = await FilePicker.pickFiles(
+    final result = await FilePicker.platform.pickFiles(
       type: isPdfOnly ? FileType.custom : FileType.image,
       allowedExtensions: isPdfOnly ? const ['pdf'] : null,
       // ຕ້ອງເປັນ true ເພື່ອໃຫ້ໄດ້ bytes ມາເລີຍ ຊັ້ນເທິງສົ່ງ bytes ໄປ backend
