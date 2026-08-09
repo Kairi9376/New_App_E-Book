@@ -3,6 +3,7 @@ import '../../theme/app_theme.dart';
 import '../../models/book_model.dart';
 import '../../models/history_model.dart';
 import '../../services/api_service.dart';
+import '../../services/membership.dart';
 import '../../utils/image_helper.dart';
 import 'pdf_viewer_screen.dart';
 import 'membership_package_screen.dart';
@@ -36,11 +37,13 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
   @override
   void initState() {
     super.initState();
-    final user = ApiService.currentUser ?? {};
-    final role = (user['role'] ?? 'user').toString().toLowerCase();
-    final email = (user['email'] ?? '').toString().toLowerCase();
-    final isPremiereFlag = user['is_premiere'] == true || user['is_member'] == true || user['subscription_status'] == 'approved';
-    _isMemberState = role == 'admin' || role == 'employee' || email == 'member@gmail.com' || isPremiereFlag;
+    // # ເຮັດຫຍັງ: ອ່ານຄ່າເລີ່ມຕົ້ນຈາກ Membership ແທນການຕີຄວາມ map ຂອງ user ເອງ
+    // # ຍ້ອນຫຍັງ: ເງື່ອນໄຂເກົ່າອີງ email hardcode ບວກກັບ flag (is_premiere/is_member/
+    // #          subscription_status) ທີ່ backend ບໍ່ເຄີຍສົ່ງມາໃນ object user ເລີຍ
+    // #          ຈຶ່ງເປັນ false ສະເໝີສຳລັບຜູ້ໃຊ້ຈິງທີ່ຊື້ແພັກເກັດ
+    // # ແກ້ຈາກສ່ວນໃດ: initState ທີ່ຄິດເອງຈາກ role/email/flag
+    // # ແກ້ເຮັດຫຍັງ: Membership ຖືກ refresh ຕັ້ງແຕ່ຕອນ login/ເປີດແອັບ ຈຶ່ງມີຄ່າພ້ອມແລ້ວ
+    _isMemberState = Membership.isPremiere;
 
     if (widget.book != null) {
       _title = widget.book!.title;
@@ -61,21 +64,15 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
     _fetchReadingHistory();
   }
 
+  // # ເຮັດຫຍັງ: ໃຫ້ Membership ດຶງສະຖານະໃໝ່ ແທນການເອີ້ນ API ແລ້ວຕີຄວາມເອງ
+  // # ຍ້ອນຫຍັງ: ໂຄ້ດເກົ່າຕີຄວາມ payment_status ຢູ່ໜ້ານີ້ບ່ອນດຽວ ໜ້າອື່ນຈຶ່ງບໍ່ຮູ້
+  // #          ແລະ ບໍ່ໄດ້ກວດ end_date ເລີຍ - subscription ໝົດອາຍຸແລ້ວກໍ່ຍັງເຂົ້າໄດ້
+  // # ແກ້ຈາກສ່ວນໃດ: _checkLiveMemberStatus() ທີ່ເອີ້ນ getUserSubscriptionStatus ໂດຍກົງ
+  // # ແກ້ເຮັດຫຍັງ: ຍັງດຶງໃໝ່ຕອນເປີດໜ້ານີ້ (ເຜື່ອແອດມິນຫາກໍ່ອະນຸມັດ) ແຕ່ຜົນໄປລົງ
+  // #             ບ່ອນກາງ ໜ້າອື່ນທີ່ເປີດຕໍ່ຈຶ່ງເຫັນຄ່າດຽວກັນ
   Future<void> _checkLiveMemberStatus() async {
-    final user = ApiService.currentUser ?? {};
-    final userId = user['user_id'] ?? user['id'];
-    if (userId != null) {
-      final parsedId = int.tryParse(userId.toString());
-      if (parsedId != null) {
-        final sub = await ApiService.getUserSubscriptionStatus(parsedId);
-        if (sub != null) {
-          final status = (sub['status'] ?? sub['payment_status'] ?? '').toString().toLowerCase();
-          if (status == 'approved' || status == 'active') {
-            if (mounted) setState(() => _isMemberState = true);
-          }
-        }
-      }
-    }
+    await Membership.refresh();
+    if (mounted) setState(() => _isMemberState = Membership.isPremiere);
   }
 
   bool get _isMember => _isMemberState;

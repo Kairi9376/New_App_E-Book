@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../theme/app_theme.dart';
 import '../../models/kyc_model.dart';
 import '../../services/api_service.dart';
+import '../../services/membership.dart';
 import '../../services/file_picker_helper.dart';
 import '../../services/notification_service.dart';
 import '../../models/notification_model.dart';
@@ -56,7 +57,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final rawUserId = profile['user_id'] ?? profile['id'];
     final int userId = rawUserId != null ? (int.tryParse(rawUserId.toString()) ?? 3) : 3;
     final liveKyc = await ApiService.getUserKycStatus(userId);
-    final liveSub = await ApiService.getUserSubscriptionStatus(userId);
+    // # ເຮັດຫຍັງ: ຫຸ້ມ getUserSubscriptionStatus ດ້ວຍ try/catch
+    // # ຍ້ອນຫຍັງ: method ນີ້ຖືກແກ້ໃຫ້ throw ຕອນຄຳຮ້ອງລົ້ມເຫຼວ (ແທນທີ່ຈະຄືນ null
+    // #          ທັງກໍລະນີ 'ບໍ່ມີແພັກເກັດ' ແລະ 'ຕິດຕໍ່ບໍ່ໄດ້') ຖ້າບໍ່ຫຸ້ມໄວ້
+    // #          exception ຈະຕັດ method ກາງຄັນ ແລ້ວ setState ດ້ານລຸ່ມບໍ່ຖືກເອີ້ນ
+    // #          ໜ້າຈະຄ້າງຢູ່ສະຖານະກຳລັງໂຫຼດຕະຫຼອດ
+    // # ແກ້ຈາກສ່ວນໃດ: ການເອີ້ນແບບບໍ່ມີ try/catch
+    // # ແກ້ເຮັດຫຍັງ: ຖ້າດຶງບໍ່ໄດ້ໃຫ້ເປັນ null ແລ້ວໜ້າຈໍໂຫຼດສ່ວນທີ່ເຫຼືອຕໍ່ໄດ້
+    Map<String, dynamic>? liveSub;
+    try {
+      liveSub = await ApiService.getUserSubscriptionStatus(userId);
+    } catch (_) {
+      liveSub = null;
+    }
 
     if (mounted) {
       setState(() {
@@ -696,9 +709,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final user = _userProfile.isNotEmpty ? _userProfile : (ApiService.currentUser ?? {});
     final firstName = user['first_name'] ?? 'ສົມຊາຍ';
     final lastName = user['last_name'] ?? 'ໃຈດີ';
-    final role = (user['role'] ?? 'user').toString().toLowerCase();
     final email = user['email'] ?? 'user@gmail.com';
-    final isPremiere = role == 'admin' || role == 'employee' || email == 'member@gmail.com';
+    // # ເຮັດຫຍັງ: ປ່ຽນມາອ່ານ Membership.isPremiere ແທນການຕັດສິນເອງ
+    // # ຍ້ອນຫຍັງ: ເງື່ອນໄຂເກົ່າ role=='admin'||role=='employee'||email=='member@gmail.com'
+    // #          ຕັດສິນດ້ວຍ email ທີ່ hardcode ໄວ້ ຜູ້ໃຊ້ຈິງທີ່ຊື້ແພັກເກັດແລ້ວ
+    // #          ຈຶ່ງບໍ່ເຄີຍຖືກນັບເປັນສະມາຊິກ ແລະ ບໍ່ໄດ້ກວດວັນໝົດອາຍຸນຳ
+    // # ແກ້ຈາກສ່ວນໃດ: ເງື່ອນໄຂທີ່ຂຽນຊ້ຳກັນຢູ່ 4 ໜ້າ
+    // # ແກ້ເຮັດຫຍັງ: ອີງ subscription ຈິງຈາກ backend + ກວດວັນໝົດອາຍຸ ບ່ອນດຽວ
+    final isPremiere = Membership.isPremiere;
 
     return RefreshIndicator(
       onRefresh: _fetchProfile,

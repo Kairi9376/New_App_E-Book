@@ -15,6 +15,7 @@ import '../models/downloads_model.dart';
 import '../models/kyc_model.dart';
 import '../models/notification_model.dart';
 import 'api_config.dart';
+import 'membership.dart';
 
 class ApiService {
   // Shared token & session data
@@ -59,6 +60,12 @@ class ApiService {
   static Future<void> clearSession() async {
     currentUser = null;
     authToken = null;
+    // # ເຮັດຫຍັງ: ລ້າງສະຖານະສະມາຊິກພ້ອມ session
+    // # ຍ້ອນຫຍັງ: Membership ເປັນ static ຖ້າບໍ່ລ້າງ ຜູ້ໃຊ້ຄົນຕໍ່ໄປທີ່ login
+    // #          ໃນເຄື່ອງດຽວກັນຈະສືບທອດສິດ Premiere ຂອງຄົນກ່ອນໜ້າ
+    // # ແກ້ຈາກສ່ວນໃດ: clearSession() ທີ່ລ້າງແຕ່ currentUser ກັບ authToken
+    // # ແກ້ເຮັດຫຍັງ: ອອກຈາກລະບົບແລ້ວສິດຫາຍໄປພ້ອມກັນ
+    Membership.clear();
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove('currentUser');
@@ -95,6 +102,12 @@ class ApiService {
         authToken = data['token'];
         currentUser = data['user'];
         await saveSession(currentUser!, authToken);
+        // # ເຮັດຫຍັງ: ດຶງສະຖານະສະມາຊິກທັນທີຫຼັງ login ສຳເລັດ
+        // # ຍ້ອນຫຍັງ: ໜ້າຈໍທີ່ເປີດຕໍ່ຈາກ login ອ່ານ Membership.isPremiere ທັນທີ
+        // #          ຖ້າບໍ່ດຶງກ່ອນ ຈະໄດ້ຄ່າ false ຂອງຜູ້ໃຊ້ຄົນກ່ອນ ຫຼື ຄ່າເລີ່ມຕົ້ນ
+        // # ແກ້ຈາກສ່ວນໃດ: login() ທີ່ບັນທຶກ session ແລ້ວຄືນຜົນເລີຍ
+        // # ແກ້ເຮັດຫຍັງ: ຮັບປະກັນວ່າສິດຖືກຕ້ອງຕັ້ງແຕ່ໜ້າທຳອິດຫຼັງເຂົ້າລະບົບ
+        await Membership.refresh();
         return {'success': true, 'token': authToken, 'user': currentUser};
       } else {
         return {
@@ -819,16 +832,26 @@ class ApiService {
           .get(url, headers: _headers)
           .timeout(const Duration(seconds: 5));
 
+      // # ເຮັດຫຍັງ: ແຍກ "ບໍ່ມີແພັກເກັດ" ອອກຈາກ "ຄຳຮ້ອງລົ້ມເຫຼວ"
+      // # ຍ້ອນຫຍັງ: ຂອງເກົ່າຄືນ null ທັງສອງກໍລະນີ ຜູ້ເອີ້ນຈຶ່ງແຍກບໍ່ອອກ
+      // #          Membership.refresh ຈຶ່ງລ້າງສິດຖິ້ມທຸກຄັ້ງທີ່ເນັດສະດຸດ ຫຼື 401
+      // #          ສະມາຊິກຈິງທີ່ຈ່າຍເງິນແລ້ວຈຶ່ງກາຍເປັນຜູ້ໃຊ້ທຳມະດາຊົ່ວຄາວ
+      // #          ໂດຍບໍ່ຮູ້ສາເຫດ - ເປັນບັນຫາຄອບຄົວດຽວກັບ mock fallback ທີ່ຫາກໍ່ຕັດອອກ
+      // # ແກ້ຈາກສ່ວນໃດ: return null; ຢູ່ທັງ 2 ບ່ອນ (ນອກ if ແລະ ໃນ catch)
+      // # ແກ້ເຮັດຫຍັງ: throw ຕອນຕິດຕໍ່ບໍ່ໄດ້ ໃຫ້ Membership ຮັກສາຄ່າເກົ່າໄວ້
+      // #             ສ່ວນ null ໝາຍເຖິງ "server ຕອບແລ້ວວ່າບໍ່ມີແພັກເກັດ" ຢ່າງດຽວ
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['success'] == true && data['subscription'] != null) {
           return Map<String, dynamic>.from(data['subscription']);
         }
+        return null; // server ຕອບແລ້ວ - ຜູ້ໃຊ້ນີ້ບໍ່ມີແພັກເກັດຈິງໆ
       }
-      return null;
+      throw Exception(
+          'getUserSubscriptionStatus HTTP ${response.statusCode}');
     } catch (e) {
       debugPrint('ApiService getUserSubscriptionStatus error: $e');
-      return null;
+      rethrow;
     }
   }
 

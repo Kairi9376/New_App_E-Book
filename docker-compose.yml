@@ -43,6 +43,14 @@ services:
   # Host port 5001 -> container 5000 (macOS AirPlay Receiver holds 5000).
   # The Flutter client's ApiConfig.apiPort must match this host port.
   # ------------------------------------------------------------------
+  # # ເຮັດຫຍັງ: ບັນທຶກເຕືອນເລື່ອງ env ຄ້າງຂອງ container
+  # # ຍ້ອນຫຍັງ: `docker compose up -d --build backend` rebuild image ໃໝ່ ແຕ່ຖ້າ service
+  # #          spec ບໍ່ປ່ຽນ Compose ຈະໃຊ້ container ເກົ່າຕໍ່ ພ້ອມ env ທີ່ resolve ໄວ້ແຕ່ຕອນ
+  # #          ສ້າງຄັ້ງທຳອິດ ການແກ້ຄ່າໃນ .env ຈຶ່ງບໍ່ມີຜົນ ແລະ ຫາສາເຫດຍາກຫຼາຍ
+  # #          (ອາການທີ່ພົບຈິງ: JWT_SECRET ຄ້າງເປັນຄ່າເກົ່າ ເຮັດໃຫ້ທຸກ API ຄືນ 401
+  # #           ທັງທີ່ login ສຳເລັດ)
+  # # ແກ້ຈາກສ່ວນໃດ: ບໍ່ເຄີຍມີບັນທຶກເລື່ອງນີ້ໄວ້
+  # # ແກ້ເຮັດຫຍັງ: ຫຼັງແກ້ .env ໃຫ້ໃຊ້ `docker compose up -d --force-recreate backend`
   backend:
     build:
       context: ./Backend

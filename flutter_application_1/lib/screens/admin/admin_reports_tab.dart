@@ -76,7 +76,16 @@ class AdminReportsTab extends StatelessWidget {
 
     // 3. Calculate User Demographics & KYC Metrics
     final totalUsers = adminUsers.length;
-    final premiereUsersCount = adminUsers.where((u) => (u['role'] ?? '') == 'admin' || (u['role'] ?? '') == 'employee' || (u['email'] ?? '') == 'member@gmail.com').length;
+    // # ເຮັດຫຍັງ: ນັບສະມາຊິກຈາກ subscription ຈິງ ແທນການນັບ role + email hardcode
+    // # ຍ້ອນຫຍັງ: ເງື່ອນໄຂເກົ່ານັບ admin/employee ເປັນ "ສະມາຊິກ" ເຊິ່ງບິດເບືອນລາຍງານ
+    // #          (ພະນັກງານບໍ່ແມ່ນລູກຄ້າ) ແລະ ນັບ member@gmail.com ຢ່າງດຽວ ຜູ້ໃຊ້ຈິງ
+    // #          ທີ່ຊື້ແພັກເກັດຈຶ່ງບໍ່ຖືກນັບເລີຍ - ຕົວເລກລາຍງານຈຶ່ງຜິດທັງສອງທາງ
+    // # ແກ້ຈາກສ່ວນໃດ: ການນັບທີ່ where ດ້ວຍ role ແລະ email
+    // # ແກ້ເຮັດຫຍັງ: ນັບຈາກ subscriptions ທີ່ payment_status = active ເຊິ່ງເປັນ
+    // #             ຕົວເລກລູກຄ້າຈິງທີ່ຈ່າຍເງິນແລ້ວ
+    final premiereUsersCount = subscriptions
+        .where((s) => (s['payment_status'] ?? '').toString().toLowerCase() == 'active')
+        .length;
     final kycApprovedCount = kycSubmissions.where((k) => k.status == KycStatus.approved).length;
     final kycPendingCount = kycSubmissions.where((k) => k.status == KycStatus.pending).length;
     final kycRejectedCount = kycSubmissions.where((k) => k.status == KycStatus.rejected).length;

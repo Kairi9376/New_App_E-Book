@@ -4,6 +4,7 @@ import '../../theme/app_theme.dart';
 import '../../models/book_model.dart';
 import '../../models/kyc_model.dart';
 import '../../services/api_service.dart';
+import '../../services/membership.dart';
 import '../../utils/image_helper.dart';
 import 'history_screen.dart';
 import 'saved_screen.dart';
@@ -115,10 +116,13 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
 
 
   bool get _isMember {
-    final user = ApiService.currentUser ?? {};
-    final role = user['role'] ?? 'user';
-    final email = user['email'] ?? '';
-    return role == 'admin' || role == 'employee' || email == 'member@gmail.com';
+    // # ເຮັດຫຍັງ: ປ່ຽນມາອ່ານ Membership.isPremiere ແທນການຕັດສິນເອງ
+    // # ຍ້ອນຫຍັງ: ເງື່ອນໄຂເກົ່າ role=='admin'||role=='employee'||email=='member@gmail.com'
+    // #          ຕັດສິນດ້ວຍ email ທີ່ hardcode ໄວ້ ຜູ້ໃຊ້ຈິງທີ່ຊື້ແພັກເກັດແລ້ວ
+    // #          ຈຶ່ງບໍ່ເຄີຍຖືກນັບເປັນສະມາຊິກ ແລະ ບໍ່ໄດ້ກວດວັນໝົດອາຍຸນຳ
+    // # ແກ້ຈາກສ່ວນໃດ: ເງື່ອນໄຂທີ່ຂຽນຊ້ຳກັນຢູ່ 4 ໜ້າ
+    // # ແກ້ເຮັດຫຍັງ: ອີງ subscription ຈິງຈາກ backend + ກວດວັນໝົດອາຍຸ ບ່ອນດຽວ
+    return Membership.isPremiere;
   }
 
   void _showMembershipRequiredDialog() {
@@ -275,9 +279,13 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
     final user = ApiService.currentUser ?? {};
     final firstName = user['first_name'] ?? 'ສົມຊາຍ';
     final lastName = user['last_name'] ?? 'ໃຈດີ';
-    final role = user['role'] ?? 'user';
-    final email = user['email'] ?? '';
-    final isPremiere = role == 'admin' || role == 'employee' || email == 'member@gmail.com';
+    // # ເຮັດຫຍັງ: ປ່ຽນມາອ່ານ Membership.isPremiere ແທນການຕັດສິນເອງ
+    // # ຍ້ອນຫຍັງ: ເງື່ອນໄຂເກົ່າ role=='admin'||role=='employee'||email=='member@gmail.com'
+    // #          ຕັດສິນດ້ວຍ email ທີ່ hardcode ໄວ້ ຜູ້ໃຊ້ຈິງທີ່ຊື້ແພັກເກັດແລ້ວ
+    // #          ຈຶ່ງບໍ່ເຄີຍຖືກນັບເປັນສະມາຊິກ ແລະ ບໍ່ໄດ້ກວດວັນໝົດອາຍຸນຳ
+    // # ແກ້ຈາກສ່ວນໃດ: ເງື່ອນໄຂທີ່ຂຽນຊ້ຳກັນຢູ່ 4 ໜ້າ
+    // # ແກ້ເຮັດຫຍັງ: ອີງ subscription ຈິງຈາກ backend + ກວດວັນໝົດອາຍຸ ບ່ອນດຽວ
+    final isPremiere = Membership.isPremiere;
 
     return Row(
       children: [

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'theme/app_theme.dart';
 import 'services/api_service.dart';
 import 'services/auth_gate.dart';
+import 'services/membership.dart';
 import 'services/notification_service.dart';
 import 'screens/login_screen.dart';
 import 'screens/User/user_login_screen.dart';
@@ -57,6 +58,15 @@ class _AppInitializerState extends State<AppInitializer> {
   Future<void> _checkSavedSession() async {
     final hasSession = await ApiService.loadSession();
     await NotificationService.init();
+
+    // # ເຮັດຫຍັງ: ດຶງສະຖານະສະມາຊິກຫຼັງກູ້ session ຄືນ
+    // # ຍ້ອນຫຍັງ: session ທີ່ເກັບໄວ້ມີແຕ່ຂໍ້ມູນ user ບໍ່ມີ subscription ຖ້າບໍ່ດຶງໃໝ່
+    // #          ຜູ້ໃຊ້ທີ່ຊື້ແພັກເກັດແລ້ວ ພໍເປີດແອັບຮອບໜ້າຈະກາຍເປັນ General User ອີກ
+    // # ແກ້ຈາກສ່ວນໃດ: _checkSavedSession() ທີ່ໂຫຼດແຕ່ session ກັບ notification
+    // # ແກ້ເຮັດຫຍັງ: ທຸກໜ້າອ່ານ Membership.isPremiere ໄດ້ຄ່າຖືກຕັ້ງແຕ່ເປີດແອັບ
+    if (hasSession && ApiService.currentUser != null) {
+      await Membership.refresh();
+    }
     if (!mounted) return;
 
     // # ເຮັດຫຍັງ: ກວດ role ຂອງ session ທີ່ກູ້ຄືນມາ ວ່າກົງກັບ platform ປັດຈຸບັນບໍ່
