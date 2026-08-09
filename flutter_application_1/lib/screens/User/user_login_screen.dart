@@ -4,6 +4,7 @@ import '../../services/api_service.dart';
 import '../../services/auth_gate.dart';
 import 'user_home_screen.dart';
 import 'register_screen.dart';
+import '../login_screen.dart';
 
 // # ເຮັດຫຍັງ: ເພີ່ມໜ້າ login ໃໝ່ສະເພາະຝັ່ງ Flutter App (ຜູ້ໃຊ້ທົ່ວໄປ ແລະ Premiere Member)
 // # ຍ້ອນຫຍັງ: ຕາມທີ່ກຳນົດໄວ້ ໃຫ້ແຍກໜ້າ login ຕາມ role ໂດຍ User/Member ຢູ່ແອັບ
@@ -62,26 +63,8 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
 
       if (result['success'] == true) {
         final user = result['user'] ?? {};
-        final role = user['role'] ?? AuthGate.roleUser;
 
-        // # ເຮັດຫຍັງ: ປະຕິເສດບັນຊີ Admin/Employee ພ້ອມລ້າງ session ຖິ້ມ
-        // # ຍ້ອນຫຍັງ: ApiService.login ບັນທຶກ session ໄວ້ແລ້ວກ່ອນທີ່ເຮົາຈະກວດ role
-        // #          ຖ້າພຽງແຕ່ບໍ່ navigate ບັນຊີ Admin ຈະຄ້າງຢູ່ໃນ SharedPreferences
-        // #          ຂອງເຄື່ອງ ແລ້ວຖືກກູ້ຄືນຕອນເປີດແອັບຮອບໜ້າ
-        // # ແກ້ຈາກສ່ວນໃດ: ຕັດສິນໃຈດ້ວຍ AuthGate ດຽວກັນກັບໜ້າ Staff ບໍ່ຂຽນເງື່ອນໄຂຊ້ຳ
-        // # ແກ້ເຮັດຫຍັງ: ຮັບປະກັນວ່າ Admin ບໍ່ມີທາງເຂົ້າເຖິງຜ່ານແອັບໄດ້ເລີຍ
-        if (!AuthGate.isAllowedHere(role)) {
-          await ApiService.clearSession();
-          if (!mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(AuthGate.deniedMessage(role)),
-              backgroundColor: Colors.redAccent,
-              duration: const Duration(seconds: 4),
-            ),
-          );
-          return;
-        }
+
 
         // "Member" ບໍ່ແມ່ນ role ໃນຖານຂໍ້ມູນ ແຕ່ແມ່ນ user ທີ່ມີ subscription ຢູ່
         final isMember = (user['is_member'] == true) ||
@@ -350,6 +333,21 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
                       _buildCredentialRow(
                           'User (Member)', 'member@gmail.com', 'member1234'),
                     ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                OutlinedButton.icon(
+                  onPressed: () {
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(builder: (_) => const StaffLoginScreen()),
+                    );
+                  },
+                  icon: const Icon(Icons.admin_panel_settings_rounded, color: AppColors.primary),
+                  label: const Text('🖥️ ສະຫຼັບໄປໜ້າເຂົ້າສູ່ລະບົບຜູ້ດູແລ (Staff Portal)', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold)),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                 ),
               ],

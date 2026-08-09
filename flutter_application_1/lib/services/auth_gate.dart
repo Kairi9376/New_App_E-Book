@@ -37,21 +37,13 @@ class AuthGate {
         : AuthAudience.customer;
   }
 
-  /// ກຸ່ມສິດທີ່ platform ປັດຈຸບັນຮອງຮັບ - Web ຮັບແຕ່ staff, App ຮັບແຕ່ customer
-  static AuthAudience get audienceForPlatform =>
-      kIsWeb ? AuthAudience.staff : AuthAudience.customer;
+  /// ກຸ່ມສິດທີ່ platform ປັດຈຸບັນຮອງຮັບ - ຮອງຮັບທຸກ role ໃນທຸກ platform
+  static AuthAudience get audienceForPlatform => AuthAudience.customer;
 
-  /// role ນີ້ເຂົ້າໃຊ້ platform ປັດຈຸບັນໄດ້ບໍ່
-  static bool isAllowedHere(String? role) =>
-      audienceOf(role) == audienceForPlatform;
+  /// ทุก role สามารถใช้งานใน platform นี้ได้
+  static bool isAllowedHere(String? role) => true;
 
-  // # ເຮັດຫຍັງ: ຄືນຂໍ້ຄວາມແຈ້ງເຫດຜົນຕອນ role ຜິດ platform
-  // # ຍ້ອນຫຍັງ: ຖ້າແຈ້ງພຽງ "ເຂົ້າບໍ່ໄດ້" ຜູ້ໃຊ້ຈະເຂົ້າໃຈຜິດວ່າລະຫັດຜ່ານຜິດ ແລ້ວລອງຊ້ຳ
-  // # ແກ້ຈາກສ່ວນໃດ: ຂອງເກົ່າບໍ່ມີກໍລະນີນີ້ເລີຍ ເພາະທຸກ role ເຂົ້າໄດ້ໝົດທຸກ platform
-  // # ແກ້ເຮັດຫຍັງ: ບອກຊັດວ່າຕ້ອງໄປໃຊ້ຊ່ອງທາງໃດແທນ
   static String deniedMessage(String? role) {
-    return audienceOf(role) == AuthAudience.staff
-        ? '⛔ ບັນຊີ Admin/ພະນັກງານ ໃຊ້ໄດ້ຜ່ານ Web ເທົ່ານັ້ນ ບໍ່ຮອງຮັບໃນແອັບ'
-        : '⛔ ບັນຊີຜູ້ໃຊ້ທົ່ວໄປ/ສະມາຊິກ ໃຊ້ໄດ້ຜ່ານແອັບເທົ່ານັ້ນ ບໍ່ຮອງຮັບໃນ Web';
+    return '';
   }
 }

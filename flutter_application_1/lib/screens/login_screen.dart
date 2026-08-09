@@ -4,13 +4,9 @@ import '../services/api_service.dart';
 import '../services/auth_gate.dart';
 import 'admin/admin_dashboard_screen.dart';
 import 'employee/employee_dashboard_screen.dart';
+import 'User/user_home_screen.dart';
+import 'User/user_login_screen.dart';
 
-// # ເຮັດຫຍັງ: ປ່ຽນໜ້ານີ້ຈາກ login ລວມທຸກ role ມາເປັນ login ສະເພາະ Staff (Admin/Employee) ບົນ Web
-// # ຍ້ອນຫຍັງ: ຕາມທີ່ກຳນົດໄວ້ Admin ຕ້ອງເຮັດວຽກຢູ່ Web ເທົ່ານັ້ນ ບໍ່ກ່ຽວຂ້ອງກັບ Flutter App
-// # ແກ້ຈາກສ່ວນໃດ: ຂອງເກົ່າຊື່ LoginScreen ຮັບທຸກ role ແລ້ວແຍກທາງໄປ 3 ໜ້າ
-// #              (Admin / Employee / User) ຈາກໜ້າດຽວກັນ
-// # ແກ້ເຮັດຫຍັງ: ເຫຼືອແຕ່ 2 ທາງ (Admin/Employee) ແລະ ປະຕິເສດບັນຊີຜູ້ໃຊ້ທົ່ວໄປ
-// #             ສ່ວນ User/Member ຍ້າຍໄປ UserLoginScreen ໃນ screens/User/user_login_screen.dart
 class StaffLoginScreen extends StatefulWidget {
   const StaffLoginScreen({super.key});
 
@@ -63,26 +59,7 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
 
       if (result['success'] == true) {
         final user = result['user'] ?? {};
-        final role = user['role'] ?? AuthGate.roleUser;
-
-        // # ເຮັດຫຍັງ: ກວດ role ຕໍ່ platform ກ່ອນ ຖ້າບໍ່ແມ່ນ Staff ໃຫ້ລ້າງ session ຖິ້ມ
-        // # ຍ້ອນຫຍັງ: ApiService.login ບັນທຶກ session ໄວ້ແລ້ວຕັ້ງແຕ່ຕອນ request ສຳເລັດ
-        // #          ຖ້າພຽງແຕ່ບໍ່ navigate ຜູ້ໃຊ້ທົ່ວໄປຈະຍັງຄ້າງ login ຢູ່ ແລ້ວໂຫຼດໜ້າໃໝ່
-        // #          ຈະຖືກກູ້ session ເຂົ້າລະບົບໄດ້ ກາຍເປັນຊ່ອງຮົ່ວ
-        // # ແກ້ຈາກສ່ວນໃດ: ຂອງເກົ່າມີ else ສຸດທ້າຍພາ role ອື່ນໄປ UserHomeScreen ໂດຍບໍ່ກວດຫຍັງ
-        // # ແກ້ເຮັດຫຍັງ: ຕັດ session ຖິ້ມ ແລ້ວແຈ້ງເຫດຜົນ ບໍ່ໃຫ້ຄ້າງສະຖານະເຄິ່ງກາງ
-        if (!AuthGate.isAllowedHere(role)) {
-          await ApiService.clearSession();
-          if (!mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(AuthGate.deniedMessage(role)),
-              backgroundColor: Colors.redAccent,
-              duration: const Duration(seconds: 4),
-            ),
-          );
-          return;
-        }
+        final role = (user['role'] ?? AuthGate.roleUser).toString().toLowerCase();
 
         if (role == AuthGate.roleAdmin) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -92,7 +69,7 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
             ),
           );
           _navigateTo(const AdminDashboardScreen());
-        } else {
+        } else if (role == AuthGate.roleEmployee) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('ເຂົ້າສູ່ລະບົບສຳເລັດໃນຖານະ: Employee (ພະນັກງານຈັດການ PDF)'),
@@ -100,6 +77,14 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
             ),
           );
           _navigateTo(const EmployeeDashboardScreen());
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('ເຂົ້າສູ່ລະບົບສຳເລັດໃນຖານະ: ຜູ້ໃຊ້ງານ E-Book (User Portal)'),
+              backgroundColor: Color(0xFF3B82F6),
+            ),
+          );
+          _navigateTo(const UserHomeScreen());
         }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -311,7 +296,24 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
                       // # ແກ້ເຮັດຫຍັງ: ເຫຼືອແຕ່ 2 ບັນຊີ Staff ສ່ວນ User/Member ຍ້າຍໄປໜ້າ login ຂອງແອັບ
                       _buildCredentialRow('Admin', 'admin@gmail.com', 'admin123456'),
                       _buildCredentialRow('Employees', 'employee@gmail.com', 'employee123'),
+                      _buildCredentialRow('User (General)', 'user1234@gmail.com', 'user1234'),
+                      _buildCredentialRow('Premiere Member', 'member@gmail.com', 'member1234'),
                     ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                OutlinedButton.icon(
+                  onPressed: () {
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(builder: (_) => const UserLoginScreen()),
+                    );
+                  },
+                  icon: const Icon(Icons.swap_horiz_rounded, color: AppColors.primary),
+                  label: const Text('📱 ສະຫຼັບໄປໜ້າເຂົ້າສູ່ລະບົບຜູ້ໃຊ້ທົ່ວໄປ (User Portal)', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold)),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                 ),
               ],
