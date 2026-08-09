@@ -18,15 +18,16 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # of the product and file versions while build-number is used as the build suffix.
 version: 1.0.0+1
 
-# # ເຮັດຫຍັງ: ຍົກ SDK constraint ຈາກ '>=2.19.4' ຂຶ້ນເປັນ '>=3.10.0' ແລະ ເພີ່ມ flutter constraint
-# # ຍ້ອນຫຍັງ: package ໃໝ່ບັງຄັບຂັ້ນຕໍ່າໄວ້ຢູ່ແລ້ວ (pdfrx ຕ້ອງການ sdk ^3.10.0 ກັບ
-# #          flutter >=3.41.0 ສ່ວນ file_picker ຕ້ອງການ sdk >=3.4.0) ຖ້າປະ constraint ເກົ່າໄວ້
-# #          ຈະເປັນຄຳໝັ້ນສັນຍາທີ່ຜິດ - ຄົນທີ່ໃຊ້ Dart 2.19 ຈະ pub get ຜ່ານແຕ່ build ລົ້ມ
-# # ແກ້ຈາກສ່ວນໃດ: environment ເດີມທີ່ຂຽນ sdk: '>=2.19.4 <4.0.0' ຢ່າງດຽວ
-# # ແກ້ເຮັດຫຍັງ: ບອກຄວາມຈິງວ່າໂປຣເຈັກຕ້ອງການ Flutter 3.41+ ຜູ້ພັດທະນາໃນ Windows
-# #             ຈຶ່ງຮູ້ຕັ້ງແຕ່ຕອນ pub get ບໍ່ແມ່ນໄປພັງຕອນ build
+# # ເຮັດຫຍັງ: ຕັ້ງ constraint ໃຫ້ຕົງກັບ package ຮຸ່ນທີ່ໃຊ້ຈິງຫຼັງ merge branch Nutt
+# # ຍ້ອນຫຍັງ: ຫຼັງ merge, pdfrx ຖືກຫຼຸດເປັນ ^1.3.5 ເຊິ່ງຕ້ອງການ sdk >=3.7.0 ແລະ
+# #          flutter >=3.29.0 ແຕ່ pubspec ຍັງປະກາດ sdk >=2.19.4 ໂດຍບໍ່ມີ flutter
+# #          constraint ເລີຍ - ຄົນທີ່ໃຊ້ Dart 2.19 ຈຶ່ງເຫັນວ່າຜ່ານ ແຕ່ pub ຈະລົ້ມຈິງ
+# # ແກ້ຈາກສ່ວນໃດ: environment ທີ່ branch Nutt ຄືນເປັນ sdk '>=2.19.4 <4.0.0' ຢ່າງດຽວ
+# # ແກ້ເຮັດຫຍັງ: ເລືອກຂັ້ນຕໍ່າທີ່ຕໍ່າສຸດເທົ່າທີ່ package ຍອມ ເພື່ອໃຫ້ທັງເຄື່ອງ Windows
+# #             (Flutter ເກົ່າກວ່າ) ແລະ macOS (Flutter 3.44) ໃຊ້ຮ່ວມກັນໄດ້
 environment:
-  sdk: '>=2.19.4 <4.0.0'
+  sdk: '>=3.7.0 <4.0.0'
+  flutter: '>=3.29.0'
 
 # Dependencies specify other packages that your package needs in order to work.
 # To automatically upgrade your package dependencies to the latest versions

@@ -43,8 +43,15 @@ class WebPlatform {
     final normalized = accept.toLowerCase();
     final isPdfOnly = normalized.contains('pdf') && !normalized.contains('image');
 
-    // file_picker 11 ໃຫ້ pickFiles ເປັນ static ແລ້ວ (ຮຸ່ນເກົ່າໃຊ້ FilePicker.platform)
-    final result = await FilePicker.pickFiles(
+    // # ເຮັດຫຍັງ: ປ່ຽນກັບມາໃຊ້ FilePicker.platform.pickFiles()
+    // # ຍ້ອນຫຍັງ: ຫຼັງ merge branch Nutt ເຂົ້າມາ file_picker ຖືກຫຼຸດເປັນ ^5.5.0
+    // #          ເຊິ່ງ pickFiles ເປັນ instance member ຢູ່ໃຕ້ FilePicker.platform
+    // #          ສ່ວນ static FilePicker.pickFiles() ແມ່ນ API ຂອງຮຸ່ນ 11 ຈຶ່ງ compile ບໍ່ຜ່ານ
+    // #          (git ບໍ່ແຈ້ງ conflict ເພາະຄົນລະໄຟລ໌ - ເປັນ semantic conflict)
+    // # ແກ້ຈາກສ່ວນໃດ: ບັນທັດທີ່ເອີ້ນ FilePicker.pickFiles() ແບບ static
+    // # ແກ້ເຮັດຫຍັງ: ໃຊ້ຮຸ່ນ 5.5.0 ໄດ້ ເຊິ່ງເປັນຮຸ່ນທີ່ Windows (Flutter ເກົ່າກວ່າ)
+    // #             ແລະ macOS (Flutter 3.44) ໃຊ້ຮ່ວມກັນໄດ້ທັງສອງເຄື່ອງ
+    final result = await FilePicker.platform.pickFiles(
       type: isPdfOnly ? FileType.custom : FileType.image,
       allowedExtensions: isPdfOnly ? const ['pdf'] : null,
       // ຕ້ອງເປັນ true ເພື່ອໃຫ້ໄດ້ bytes ມາເລີຍ ຊັ້ນເທິງສົ່ງ bytes ໄປ backend
