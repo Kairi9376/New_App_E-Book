@@ -230,7 +230,7 @@ class _BookManagementScreenState extends State<BookManagementScreen> {
             errorBuilder: (_, __, ___) => Container(color: const Color(0xFFE2E8F0)),
           ),
           Container(
-            color: Colors.black.withOpacity(0.25),
+            color: Colors.black.withValues(alpha: 0.25),
           ),
           const Center(
             child: Icon(Icons.picture_as_pdf_rounded, color: Colors.white, size: 28),
@@ -262,7 +262,7 @@ class _BookManagementScreenState extends State<BookManagementScreen> {
             Container(
               padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
-                color: const Color(0xFF10B981).withOpacity(0.2),
+                color: const Color(0xFF10B981).withValues(alpha: 0.2),
                 shape: BoxShape.circle,
               ),
               child: const Icon(Icons.menu_book_rounded,
@@ -417,12 +417,12 @@ class _BookManagementScreenState extends State<BookManagementScreen> {
                     color: AppColors.primary,
                     child: filteredBooks.isEmpty
                         ? ListView(
-                            children: [
-                              const SizedBox(height: 80),
-                              const Icon(Icons.search_off_rounded,
+                            children: const [
+                              SizedBox(height: 80),
+                              Icon(Icons.search_off_rounded,
                                   size: 48, color: AppColors.textSecondary),
-                              const SizedBox(height: 8),
-                              const Center(
+                              SizedBox(height: 8),
+                              Center(
                                 child: Text('ບໍ່ພົບຂໍ້ມູນປຶ້ມທີ່ຄົ້ນຫາ',
                                     style: TextStyle(
                                         color: AppColors.textSecondary)),
@@ -538,7 +538,7 @@ class _BookManagementScreenState extends State<BookManagementScreen> {
                           color: const Color(0xFFECFDF5),
                           borderRadius: BorderRadius.circular(6),
                         ),
-                        child: Row(
+                        child: const Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(Icons.picture_as_pdf_rounded,
@@ -653,7 +653,7 @@ class _BookManagementScreenState extends State<BookManagementScreen> {
                 ),
                 Switch(
                   value: !book.isHidden, // ON = Visible, OFF = Hidden
-                  activeColor: Colors.green,
+                  activeThumbColor: Colors.green,
                   onChanged: _togglingBookIds.contains(book.id)
                       ? null // ปิดการกดระหว่าง loading
                       : (val) => _toggleHidden(book, val),

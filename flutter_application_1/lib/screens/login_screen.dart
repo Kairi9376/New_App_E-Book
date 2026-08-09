@@ -128,7 +128,7 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
                   width: 90,
                   height: 90,
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.1),
+                    color: AppColors.primary.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(
@@ -293,11 +293,11 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
+                      const Row(
                         children: [
-                          const Icon(Icons.info_outline_rounded, size: 16, color: AppColors.primary),
-                          const SizedBox(width: 6),
-                          const Text(
+                          Icon(Icons.info_outline_rounded, size: 16, color: AppColors.primary),
+                          SizedBox(width: 6),
+                          Text(
                             'ບັນຊີສຳລັບທົດລອງລະບົບ (Mock Data):',
                             style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.primary),
                           ),

@@ -1,6 +1,21 @@
+// # ເຮັດຫຍັງ: ປ່ຽນ print() ເປັນ debugPrint() ທັງໄຟລ໌
+// # ຍ້ອນຫຍັງ: print() ຖືກຮັກສາໄວ້ໃນ release build ຈຶ່ງຮົ່ວລາຍລະອຽດ error ຂອງ API
+// #          ອອກສູ່ log ຂອງເຄື່ອງຜູ້ໃຊ້ ແລະ ຖ້າຂໍ້ຄວາມຍາວເກີນ Android ຈະຕັດຖິ້ມກາງຄັນ
+// #          ສ່ວນ debugPrint ຈຳກັດອັດຕາການພິມ ແລະ ຖືກຕັດອອກຕອນ build release
+// # ແກ້ຈາກສ່ວນໃດ: ທຸກຈຸດທີ່ເອີ້ນ print() ໃນ catch block ຂອງໄຟລ໌ນີ້
+// # ແກ້ເຮັດຫຍັງ: log ຍັງເຫັນຕອນ debug ຄືເກົ່າ ແຕ່ບໍ່ຕິດໄປກັບ build ທີ່ສົ່ງມອບ
+import 'package:flutter/foundation.dart';
 import 'dart:async';
-// ignore: avoid_web_libraries_in_flutter
+// # ເຮັດຫຍັງ: ປິດຄຳເຕືອນ deprecated ຂອງ dart:html ແລະ dart:js ສະເພາະໄຟລ໌ນີ້
+// # ຍ້ອນຫຍັງ: ສອງ library ນີ້ deprecated ແລ້ວ (ໃຫ້ໄປໃຊ້ package:web + dart:js_interop)
+// #          ແຕ່ຍັງເປັນທາງດຽວທີ່ໂຄ້ດປັດຈຸບັນໃຊ້ຄວບຄຸມ iframe ຂອງ PDF.js ໄດ້
+// #          ຄຳເຕືອນຈຶ່ງເປັນສຽງລົບກວນ ບໍ່ແມ່ນສິ່ງທີ່ຕ້ອງແກ້ດຽວນີ້
+// # ແກ້ຈາກສ່ວນໃດ: ໄຟລ໌ນີ້ມີແຕ່ ignore ຂອງ avoid_web_libraries_in_flutter
+// # ແກ້ເຮັດຫຍັງ: ເຫຼືອ 0 ຄຳເຕືອນ ເພື່ອໃຫ້ຄຳເຕືອນໃໝ່ທີ່ເກີດຂຶ້ນຈິງບໍ່ຖືກກົມກືນໄປ
+// #             (ວຽກຍ້າຍໄປ package:web ຄວນເຮັດເປັນ task ຕ່າງຫາກ)
+// ignore: avoid_web_libraries_in_flutter, deprecated_member_use
 import 'dart:html' as html;
+// ignore: avoid_web_libraries_in_flutter, deprecated_member_use
 import 'dart:js' as js;
 
 import 'picked_file.dart';
@@ -48,8 +63,7 @@ class WebPlatform {
       );
     } catch (e) {
       // ລົງທະບຽນຊ້ຳ viewType ເກົ່າຈະ throw - ບໍ່ແມ່ນຂໍ້ຜິດພາດທີ່ຕ້ອງຢຸດການເຮັດວຽກ
-      // ignore: avoid_print
-      print('Platform view registration info: $e');
+      debugPrint('Platform view registration info: $e');
     }
   }
 

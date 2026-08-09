@@ -128,7 +128,7 @@ class _EmployeeBookDetailScreenState extends State<EmployeeBookDetailScreen> {
           errorBuilder: (_, __, ___) => Container(color: Colors.grey.shade200),
         ),
         Container(
-          color: Colors.black.withOpacity(0.25),
+          color: Colors.black.withValues(alpha: 0.25),
         ),
         const Center(
           child: Icon(Icons.menu_book_rounded, color: Colors.white, size: 48),
@@ -223,8 +223,8 @@ class _EmployeeBookDetailScreenState extends State<EmployeeBookDetailScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        children: const [
+                      const Row(
+                        children: [
                           Icon(Icons.info_outline_rounded,
                               color: AppColors.primary, size: 18),
                           SizedBox(width: 6),
@@ -261,8 +261,8 @@ class _EmployeeBookDetailScreenState extends State<EmployeeBookDetailScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        children: const [
+                      const Row(
+                        children: [
                           Icon(Icons.folder_zip_rounded,
                               color: AppColors.primary, size: 18),
                           SizedBox(width: 6),
@@ -304,8 +304,8 @@ class _EmployeeBookDetailScreenState extends State<EmployeeBookDetailScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        children: const [
+                      const Row(
+                        children: [
                           Icon(Icons.tune_rounded,
                               color: AppColors.primary, size: 18),
                           SizedBox(width: 6),
@@ -365,13 +365,13 @@ class _EmployeeBookDetailScreenState extends State<EmployeeBookDetailScreen> {
                                 color: Colors.red.shade50,
                                 borderRadius: BorderRadius.circular(8),
                               ),
-                              child: Row(
+                              child: const Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  const Icon(Icons.visibility_off_rounded,
+                                  Icon(Icons.visibility_off_rounded,
                                       size: 14, color: Colors.redAccent),
-                                  const SizedBox(width: 4),
-                                  const Text(
+                                  SizedBox(width: 4),
+                                  Text(
                                     'Hidden',
                                     style: TextStyle(
                                       fontSize: 12,
@@ -393,13 +393,13 @@ class _EmployeeBookDetailScreenState extends State<EmployeeBookDetailScreen> {
                                 color: Colors.red.shade50,
                                 borderRadius: BorderRadius.circular(8),
                               ),
-                              child: Row(
+                              child: const Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  const Icon(Icons.delete_outline_rounded,
+                                  Icon(Icons.delete_outline_rounded,
                                       size: 14, color: Colors.redAccent),
-                                  const SizedBox(width: 4),
-                                  const Text(
+                                  SizedBox(width: 4),
+                                  Text(
                                     'Deleted',
                                     style: TextStyle(
                                       fontSize: 12,
@@ -429,8 +429,8 @@ class _EmployeeBookDetailScreenState extends State<EmployeeBookDetailScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        children: const [
+                      const Row(
+                        children: [
                           Icon(Icons.notes_rounded,
                               color: AppColors.primary, size: 18),
                           SizedBox(width: 6),
@@ -469,8 +469,8 @@ class _EmployeeBookDetailScreenState extends State<EmployeeBookDetailScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        children: const [
+                      const Row(
+                        children: [
                           Icon(Icons.calendar_today_rounded,
                               color: AppColors.primary, size: 18),
                           SizedBox(width: 6),

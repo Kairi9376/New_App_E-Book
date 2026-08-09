@@ -66,6 +66,22 @@ services:
       - backend-uploads:/app/uploads
     networks:
       - ebook-network
+    # # ເຮັດຫຍັງ: ເພີ່ມ healthcheck ໃຫ້ backend
+    # # ຍ້ອນຫຍັງ: ມີໃຫ້ແຕ່ mysql ຖ້າ backend ຄ້າງ (ບໍ່ຕອບ HTTP ແຕ່ process ຍັງຢູ່)
+    # #          Docker ຈະຖືວ່າປົກກະຕິ ແລ້ວ restart: unless-stopped ຈະບໍ່ຊ່ວຍຫຍັງເລີຍ
+    # # ແກ້ຈາກສ່ວນໃດ: service backend ບໍ່ມີ healthcheck ເລີຍ
+    # # ແກ້ເຮັດຫຍັງ: ຍິງ /api/health ດ້ວຍ node (image alpine ບໍ່ມີ curl ຕິດມາ)
+    # #             ໃຫ້ docker compose ps ບອກສະຖານະຈິງ ແລະ ຮູ້ຕອນ backend ຕາຍ
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "require('http').get('http://127.0.0.1:5000/api/health',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
 
   # ------------------------------------------------------------------
   # phpMyAdmin

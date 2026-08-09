@@ -152,8 +152,8 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: const [
+              const Row(
+                children: [
                   Icon(Icons.download_for_offline_rounded, color: AppColors.primary, size: 26),
                   SizedBox(width: 8),
                   Text(
@@ -184,7 +184,7 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
               border: Border.all(color: const Color(0xFFE2E8F0)),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.02),
+                  color: Colors.black.withValues(alpha: 0.02),
                   blurRadius: 6,
                   offset: const Offset(0, 2),
                 ),
@@ -242,18 +242,18 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
                 : displayList.isEmpty
-                    ? Center(
+                    ? const Center(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const Icon(Icons.cloud_download_outlined, size: 64, color: Color(0xFFCBD5E1)),
-                            const SizedBox(height: 12),
-                            const Text(
+                            Icon(Icons.cloud_download_outlined, size: 64, color: Color(0xFFCBD5E1)),
+                            SizedBox(height: 12),
+                            Text(
                               'ບໍ່ມີໄຟລ໌ດາວໂຫຼດໃນເຄື່ອງ',
                               style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.textSecondary),
                             ),
-                            const SizedBox(height: 6),
-                            const Text(
+                            SizedBox(height: 6),
+                            Text(
                               'ກົດປຸ່ມດາວໂຫຼດ 📥 ໃນໜ້າໜັງສືເພື່ອບັນທຶກໄວ້ອ່ານອອບໄລນ໌',
                               style: TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
                               textAlign: TextAlign.center,
@@ -295,7 +295,7 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
           border: Border.all(color: const Color(0xFFE2E8F0)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.03),
+              color: Colors.black.withValues(alpha: 0.03),
               blurRadius: 8,
               offset: const Offset(0, 3),
             ),

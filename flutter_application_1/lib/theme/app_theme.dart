@@ -26,7 +26,12 @@ class AppTheme {
         primary: AppColors.primary,
         onPrimary: Colors.white,
         secondary: AppColors.primaryLight,
-        background: AppColors.background,
+        // # ເຮັດຫຍັງ: ຕັດ background ອອກຈາກ ColorScheme
+        // # ຍ້ອນຫຍັງ: ColorScheme.background ຖືກ deprecate ຫຼັງ Flutter 3.18 ໃຫ້ໃຊ້
+        // #          surface ແທນ ແລະ ບັນທັດຖັດໄປກຳນົດ surface ໄວ້ຢູ່ແລ້ວ
+        // #          ຈຶ່ງເປັນການກຳນົດຊ້ຳທີ່ບໍ່ມີຜົນ
+        // # ແກ້ຈາກສ່ວນໃດ: ColorScheme.light(...) ທີ່ມີທັງ background ແລະ surface
+        // # ແກ້ເຮັດຫຍັງ: ສີພື້ນຫຼັງຍັງມາຈາກ scaffoldBackgroundColor ດ້ານລຸ່ມຄືເກົ່າ
         surface: AppColors.surface,
       ),
       scaffoldBackgroundColor: AppColors.background,

@@ -133,7 +133,7 @@ class ImageHelper {
             errorBuilder: (_, __, ___) => Container(color: Colors.blueGrey.shade200),
           ),
           Container(
-            color: Colors.black.withOpacity(0.25),
+            color: Colors.black.withValues(alpha: 0.25),
           ),
           const Center(
             child: Icon(Icons.book_rounded, color: Colors.white, size: 36),
@@ -154,7 +154,7 @@ class ImageHelper {
       context: context,
       barrierDismissible: true,
       builder: (dialogCtx) => Dialog(
-        backgroundColor: Colors.black.withOpacity(0.92),
+        backgroundColor: Colors.black.withValues(alpha: 0.92),
         insetPadding: const EdgeInsets.all(12),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         child: Stack(
@@ -190,7 +190,7 @@ class ImageHelper {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.75),
+                    color: Colors.black.withValues(alpha: 0.75),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(

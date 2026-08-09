@@ -1,3 +1,10 @@
+// # ເຮັດຫຍັງ: ປ່ຽນ print() ເປັນ debugPrint() ທັງໄຟລ໌
+// # ຍ້ອນຫຍັງ: print() ຖືກຮັກສາໄວ້ໃນ release build ຈຶ່ງຮົ່ວລາຍລະອຽດ error ຂອງ API
+// #          ອອກສູ່ log ຂອງເຄື່ອງຜູ້ໃຊ້ ແລະ ຖ້າຂໍ້ຄວາມຍາວເກີນ Android ຈະຕັດຖິ້ມກາງຄັນ
+// #          ສ່ວນ debugPrint ຈຳກັດອັດຕາການພິມ ແລະ ຖືກຕັດອອກຕອນ build release
+// # ແກ້ຈາກສ່ວນໃດ: ທຸກຈຸດທີ່ເອີ້ນ print() ໃນ catch block ຂອງໄຟລ໌ນີ້
+// # ແກ້ເຮັດຫຍັງ: log ຍັງເຫັນຕອນ debug ຄືເກົ່າ ແຕ່ບໍ່ຕິດໄປກັບ build ທີ່ສົ່ງມອບ
+import 'package:flutter/foundation.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -28,7 +35,7 @@ class ApiService {
         await prefs.remove('authToken');
       }
     } catch (e) {
-      print('ApiService saveSession error: $e');
+      debugPrint('ApiService saveSession error: $e');
     }
   }
 
@@ -44,7 +51,7 @@ class ApiService {
         return true;
       }
     } catch (e) {
-      print('ApiService loadSession error: $e');
+      debugPrint('ApiService loadSession error: $e');
     }
     return false;
   }
@@ -57,7 +64,7 @@ class ApiService {
       await prefs.remove('currentUser');
       await prefs.remove('authToken');
     } catch (e) {
-      print('ApiService clearSession error: $e');
+      debugPrint('ApiService clearSession error: $e');
     }
   }
 
@@ -96,13 +103,16 @@ class ApiService {
         };
       }
     } catch (e) {
-      print('ApiService login error: $e');
-      // Fallback for mock login if server is offline
-      final res = _mockLoginFallback(email, password);
-      if (res['success'] == true && res['user'] != null) {
-        await saveSession(res['user'], res['token']);
-      }
-      return res;
+      // # ເຮັດຫຍັງ: ຕັດ _mockLoginFallback ອອກ ຕອນຕິດຕໍ່ server ບໍ່ໄດ້ໃຫ້ລົ້ມເຫຼວ
+      // # ຍ້ອນຫຍັງ: ຂອງເກົ່າສ້າງ session admin (user_id 1) ໃນເຄື່ອງ **ໂດຍບໍ່ມີ token**
+      // #          ຜູ້ໃຊ້ຈຶ່ງເຫັນໜ້າ Admin ເຕັມຮູບແບບ ແຕ່ທຸກຄຳຮ້ອງຈະ 401
+      // #          ກາຍເປັນແອັບທີ່ເບິ່ງຄືເຂົ້າໄດ້ແຕ່ໃຊ້ຫຍັງບໍ່ໄດ້ ແລະ ຫຼອກຜູ້ໃຊ້
+      // # ແກ້ຈາກສ່ວນໃດ: catch ຂອງ login() ທີ່ເອີ້ນ _mockLoginFallback ແລ້ວ saveSession
+      // # ແກ້ເຮັດຫຍັງ: ແຈ້ງບອກຊັດວ່າຕິດຕໍ່ server ບໍ່ໄດ້ ຜູ້ໃຊ້ຈຶ່ງຮູ້ວ່າຕ້ອງກວດເນັດ/backend
+      return {
+        'success': false,
+        'message': 'ຕິດຕໍ່ server ບໍ່ໄດ້ ກະລຸນາກວດການເຊື່ອມຕໍ່ແລ້ວລອງໃໝ່',
+      };
     }
   }
 
@@ -134,21 +144,15 @@ class ApiService {
       }
       return data;
     } catch (e) {
-      print('ApiService register error: $e');
-      // Mock fallback registration for User
-      final newMockUser = {
-        'user_id': DateTime.now().millisecondsSinceEpoch,
-        'email': userData['email'],
-        'first_name': userData['first_name'] ?? 'ຜູ້ໃຊ້',
-        'last_name': userData['last_name'] ?? 'ໃໝ່',
-        'role': 'user', // Strictly General User
-        'status': 'active',
-      };
-      currentUser = newMockUser;
+      // # ເຮັດຫຍັງ: ຕັດ mock registration ອອກ
+      // # ຍ້ອນຫຍັງ: ຂອງເກົ່າແຈ້ງ "ລົງທະບຽນສຳເລັດ" ພ້ອມສ້າງ user ປອມໃນໜ່ວຍຄວາມຈຳ
+      // #          ທັງທີ່ backend ບໍ່ໄດ້ບັນທຶກຫຍັງເລີຍ ຜູ້ໃຊ້ຈຶ່ງເຊື່ອວ່າມີບັນຊີແລ້ວ
+      // #          ແຕ່ພໍ login ຮອບໜ້າຈະເຂົ້າບໍ່ໄດ້ ໂດຍບໍ່ຮູ້ສາເຫດ
+      // # ແກ້ຈາກສ່ວນໃດ: catch ຂອງ register() ທີ່ຄືນ success:true ພ້ອມ newMockUser
+      // # ແກ້ເຮັດຫຍັງ: ບອກຄວາມຈິງວ່າລົງທະບຽນບໍ່ສຳເລັດ
       return {
-        'success': true,
-        'message': 'ລົງທະບຽນບັນຊີຜູ້ໃຊ້ສຳເລັດ (Mock Connection)',
-        'user': newMockUser,
+        'success': false,
+        'message': 'ຕິດຕໍ່ server ບໍ່ໄດ້ ລົງທະບຽນບໍ່ສຳເລັດ ກະລຸນາລອງໃໝ່',
       };
     }
   }
@@ -165,12 +169,14 @@ class ApiService {
     try {
       final queryParams = <String, String>{};
       if (search != null && search.isNotEmpty) queryParams['search'] = search;
-      if (categoryId != null && categoryId.isNotEmpty)
+      if (categoryId != null && categoryId.isNotEmpty) {
         queryParams['category_id'] = categoryId;
+      }
       if (isFree != null) queryParams['is_free'] = isFree ? 'true' : 'false';
       if (status != null && status.isNotEmpty) queryParams['status'] = status;
-      if (uploadedBy != null && uploadedBy.isNotEmpty)
+      if (uploadedBy != null && uploadedBy.isNotEmpty) {
         queryParams['uploaded_by'] = uploadedBy;
+      }
 
       final userRole = role ?? currentUser?['role'];
       if (userRole != null && userRole.toString().isNotEmpty) {
@@ -194,11 +200,16 @@ class ApiService {
         }
       }
     } catch (e) {
-      print('ApiService getBooks error: $e');
+      debugPrint('ApiService getBooks error: $e');
     }
 
-    // Fallback to local mock data if backend connection fails or offline
-    return _allMockBooks();
+    // # ເຮັດຫຍັງ: ຄືນລາຍການຫວ່າງ ແທນທີ່ຈະຄືນ _allMockBooks()
+    // # ຍ້ອນຫຍັງ: ຂອງເກົ່າສະແດງປຶ້ມປອມທີ່ hardcode ໄວ້ຕອນ backend ຕິດຕໍ່ບໍ່ໄດ້
+    // #          ຜູ້ໃຊ້ຈຶ່ງເຫັນຄັງປຶ້ມທີ່ບໍ່ມີຢູ່ຈິງ ກົດເຂົ້າອ່ານກໍ່ບໍ່ໄດ້
+    // #          ແລະ ຜູ້ພັດທະນາກໍ່ບໍ່ຮູ້ວ່າ backend ລົ້ມ ເພາະໜ້າຈໍຍັງມີຂໍ້ມູນຢູ່
+    // # ແກ້ຈາກສ່ວນໃດ: ບັນທັດສຸດທ້າຍຂອງ getBooks() ທີ່ return _allMockBooks()
+    // # ແກ້ເຮັດຫຍັງ: ລາຍການຫວ່າງເປັນຄວາມຈິງ - UI ຈະສະແດງ "ບໍ່ມີປຶ້ມ" ຢ່າງຖືກຕ້ອງ
+    return [];
   }
 
   // 4. Books: Get book detail
@@ -217,16 +228,15 @@ class ApiService {
         }
       }
     } catch (e) {
-      print('ApiService getBookById error: $e');
+      debugPrint('ApiService getBookById error: $e');
     }
 
-    // Fallback to mock books search
-    final allMocks = _allMockBooks();
-    try {
-      return allMocks.firstWhere((b) => b.id == id);
-    } catch (_) {
-      return allMocks.isNotEmpty ? allMocks.first : null;
-    }
+    // # ເຮັດຫຍັງ: ຄືນ null ແທນທີ່ຈະຄົ້ນຫາໃນ _allMockBooks()
+    // # ຍ້ອນຫຍັງ: ຂອງເກົ່າຮ້າຍກວ່າ getBooks ອີກ - ຖ້າຫາ id ບໍ່ພົບໃນ mock
+    // #          ມັນຄືນ "ປຶ້ມຫົວທຳອິດ" ແທນ ຜູ້ໃຊ້ຈຶ່ງກົດປຶ້ມ A ແຕ່ໄດ້ປຶ້ມ B
+    // # ແກ້ຈາກສ່ວນໃດ: ບລັອກ fallback ທ້າຍ getBookById() ທີ່ firstWhere ແລ້ວ .first
+    // # ແກ້ເຮັດຫຍັງ: null ບອກຜູ້ເອີ້ນວ່າໂຫຼດບໍ່ໄດ້ ໃຫ້ UI ແຈ້ງເຕືອນຢ່າງຖືກຕ້ອງ
+    return null;
   }
 
   // 5. Books: Create / Add new book (For Employee)
@@ -244,7 +254,7 @@ class ApiService {
 
       return jsonDecode(response.body);
     } catch (e) {
-      print('ApiService createBook error: $e');
+      debugPrint('ApiService createBook error: $e');
       return {
         'success': false,
         'message': 'ບໍ່ສາມາດບັນທຶກປຶ້ມໄປຍັງຫຼັງບ້ານໄດ້: $e'
@@ -262,6 +272,17 @@ class ApiService {
     try {
       final url = Uri.parse('${ApiConfig.baseUrl}/upload');
       final request = http.MultipartRequest('POST', url);
+
+      // # ເຮັດຫຍັງ: ຕິດ Authorization header ໃສ່ຄຳຮ້ອງອັບໂຫຼດ
+      // # ຍ້ອນຫຍັງ: MultipartRequest ບໍ່ໄດ້ໃຊ້ _headers ຄືກັບຄຳຮ້ອງອື່ນ ຈຶ່ງບໍ່ເຄີຍສົ່ງ
+      // #          token ໄປເລີຍ ພໍ backend ຕິດ requireAuth ໃສ່ /api/upload ແລ້ວ
+      // #          ການອັບໂຫຼດທຸກຢ່າງຈະ 401 ທັນທີ
+      // # ແກ້ຈາກສ່ວນໃດ: uploadFile() ທີ່ສ້າງ MultipartRequest ໂດຍບໍ່ຕັ້ງ headers
+      // # ແກ້ເຮັດຫຍັງ: ໃສ່ສະເພາະ Authorization ບໍ່ໃສ່ Content-Type ເພາະ multipart
+      // #             ຕ້ອງໃຫ້ package ກຳນົດ boundary ເອງ
+      if (authToken != null) {
+        request.headers['Authorization'] = 'Bearer $authToken';
+      }
 
       if (oldFileUrl != null && oldFileUrl.isNotEmpty) {
         request.fields['old_file_url'] = oldFileUrl;
@@ -302,7 +323,7 @@ class ApiService {
         };
       }
     } catch (e) {
-      print('ApiService uploadFile error: $e');
+      debugPrint('ApiService uploadFile error: $e');
       return {'success': false, 'message': 'ເກີດຂໍ້ຜິດພາດໃນການອັບໂຫຼດ: $e'};
     }
   }
@@ -322,7 +343,7 @@ class ApiService {
         }
       }
     } catch (e) {
-      print('ApiService getCategories error: $e');
+      debugPrint('ApiService getCategories error: $e');
     }
 
     return [
@@ -349,7 +370,7 @@ class ApiService {
         }
       }
     } catch (e) {
-      print('ApiService getUsers error: $e');
+      debugPrint('ApiService getUsers error: $e');
     }
 
     return [
@@ -404,7 +425,7 @@ class ApiService {
       final data = jsonDecode(response.body);
       return response.statusCode == 200 && data['success'] == true;
     } catch (e) {
-      print('ApiService updateUserStatus error: $e');
+      debugPrint('ApiService updateUserStatus error: $e');
       // # ເຮັດຫຍັງ: ປ່ຽນຈາກ return true ເປັນ return false ຕອນເກີດ exception
       // # ຍ້ອນຫຍັງ: ຂອງເກົ່າຄືນ true ໃຫ້ "offline dev mode" ເຮັດໃຫ້ UI ຂຶ້ນວ່າສຳເລັດ
       // #          ທັງທີ່ backend ບໍ່ໄດ້ບັນທຶກຫຍັງເລີຍ - ນີ້ຄືເຫດຜົນທີ່ bug
@@ -432,7 +453,7 @@ class ApiService {
       final data = jsonDecode(response.body);
       return response.statusCode == 200 && data['success'] == true;
     } catch (e) {
-      print('ApiService updateUser error: $e');
+      debugPrint('ApiService updateUser error: $e');
       // # ເຮັດຫຍັງ: ປ່ຽນຈາກ return true ເປັນ return false ຕອນເກີດ exception
       // # ຍ້ອນຫຍັງ: ຂອງເກົ່າຄືນ true ໃຫ້ "offline dev mode" ເຮັດໃຫ້ UI ຂຶ້ນວ່າສຳເລັດ
       // #          ທັງທີ່ backend ບໍ່ໄດ້ບັນທຶກຫຍັງເລີຍ - ນີ້ຄືເຫດຜົນທີ່ bug
@@ -460,7 +481,7 @@ class ApiService {
       return (response.statusCode == 200 || response.statusCode == 201) &&
           data['success'] == true;
     } catch (e) {
-      print('ApiService createUser error: $e');
+      debugPrint('ApiService createUser error: $e');
       // # ເຮັດຫຍັງ: ປ່ຽນຈາກ return true ເປັນ return false ຕອນເກີດ exception
       // # ຍ້ອນຫຍັງ: ຂອງເກົ່າຄືນ true ໃຫ້ "offline dev mode" ເຮັດໃຫ້ UI ຂຶ້ນວ່າສຳເລັດ
       // #          ທັງທີ່ backend ບໍ່ໄດ້ບັນທຶກຫຍັງເລີຍ - ນີ້ຄືເຫດຜົນທີ່ bug
@@ -487,7 +508,7 @@ class ApiService {
         }
       }
     } catch (e) {
-      print('ApiService getKycList error: $e');
+      debugPrint('ApiService getKycList error: $e');
     }
 
     return [];
@@ -513,7 +534,7 @@ class ApiService {
       final data = jsonDecode(response.body);
       return response.statusCode == 200 && data['success'] == true;
     } catch (e) {
-      print('ApiService updateKycStatus error: $e');
+      debugPrint('ApiService updateKycStatus error: $e');
       return false;
     }
   }
@@ -534,7 +555,7 @@ class ApiService {
       return (response.statusCode == 200 || response.statusCode == 201) &&
           data['success'] == true;
     } catch (e) {
-      print('ApiService submitKyc error: $e');
+      debugPrint('ApiService submitKyc error: $e');
       return false;
     }
   }
@@ -554,7 +575,7 @@ class ApiService {
       }
       return null;
     } catch (e) {
-      print('ApiService getUserKycStatus error: $e');
+      debugPrint('ApiService getUserKycStatus error: $e');
       return null;
     }
   }
@@ -575,7 +596,7 @@ class ApiService {
       final data = jsonDecode(response.body);
       return response.statusCode == 200 && data['success'] == true;
     } catch (e) {
-      print('ApiService updateBook error: $e');
+      debugPrint('ApiService updateBook error: $e');
       return false;
     }
   }
@@ -604,7 +625,7 @@ class ApiService {
       final data = jsonDecode(response.body);
       return response.statusCode == 200 && data['success'] == true;
     } catch (e) {
-      print('ApiService updateBookStatus error: $e');
+      debugPrint('ApiService updateBookStatus error: $e');
       return false;
     }
   }
@@ -620,7 +641,7 @@ class ApiService {
       final data = jsonDecode(response.body);
       return response.statusCode == 200 && data['success'] == true;
     } catch (e) {
-      print('ApiService deleteBook error: $e');
+      debugPrint('ApiService deleteBook error: $e');
       return false;
     }
   }
@@ -644,7 +665,7 @@ class ApiService {
         }
       }
     } catch (e) {
-      print('ApiService getDeletedBooks error: $e');
+      debugPrint('ApiService getDeletedBooks error: $e');
     }
     return [];
   }
@@ -660,7 +681,7 @@ class ApiService {
       final data = jsonDecode(response.body);
       return response.statusCode == 200 && data['success'] == true;
     } catch (e) {
-      print('ApiService restoreBook error: $e');
+      debugPrint('ApiService restoreBook error: $e');
       return false;
     }
   }
@@ -680,7 +701,7 @@ class ApiService {
       final data = jsonDecode(response.body);
       return response.statusCode == 201 && data['success'] == true;
     } catch (e) {
-      print('ApiService createCategory error: $e');
+      debugPrint('ApiService createCategory error: $e');
       return false;
     }
   }
@@ -700,7 +721,7 @@ class ApiService {
       final data = jsonDecode(response.body);
       return response.statusCode == 200 && data['success'] == true;
     } catch (e) {
-      print('ApiService updateCategory error: $e');
+      debugPrint('ApiService updateCategory error: $e');
       return false;
     }
   }
@@ -716,7 +737,7 @@ class ApiService {
       final data = jsonDecode(response.body);
       return response.statusCode == 200 && data['success'] == true;
     } catch (e) {
-      print('ApiService deleteCategory error: $e');
+      debugPrint('ApiService deleteCategory error: $e');
       return false;
     }
   }
@@ -736,7 +757,7 @@ class ApiService {
         }
       }
     } catch (e) {
-      print('ApiService getSubscriptions error: $e');
+      debugPrint('ApiService getSubscriptions error: $e');
     }
     return [];
   }
@@ -761,7 +782,7 @@ class ApiService {
       final data = jsonDecode(response.body);
       return response.statusCode == 200 && data['success'] == true;
     } catch (e) {
-      print('ApiService updateSubscriptionStatus error: $e');
+      debugPrint('ApiService updateSubscriptionStatus error: $e');
       return false;
     }
   }
@@ -784,7 +805,7 @@ class ApiService {
       }
       return false;
     } catch (e) {
-      print('ApiService createSubscription error: $e');
+      debugPrint('ApiService createSubscription error: $e');
       return false;
     }
   }
@@ -806,7 +827,7 @@ class ApiService {
       }
       return null;
     } catch (e) {
-      print('ApiService getUserSubscriptionStatus error: $e');
+      debugPrint('ApiService getUserSubscriptionStatus error: $e');
       return null;
     }
   }
@@ -828,7 +849,7 @@ class ApiService {
         }
       }
     } catch (e) {
-      print('ApiService getPackages error: $e');
+      debugPrint('ApiService getPackages error: $e');
     }
     return [
       {
@@ -873,7 +894,7 @@ class ApiService {
       final data = jsonDecode(response.body);
       return response.statusCode == 201 && data['success'] == true;
     } catch (e) {
-      print('ApiService createPackage error: $e');
+      debugPrint('ApiService createPackage error: $e');
       return false;
     }
   }
@@ -894,7 +915,7 @@ class ApiService {
       final data = jsonDecode(response.body);
       return response.statusCode == 200 && data['success'] == true;
     } catch (e) {
-      print('ApiService updatePackageStatus error: $e');
+      debugPrint('ApiService updatePackageStatus error: $e');
       return false;
     }
   }
@@ -915,7 +936,7 @@ class ApiService {
       final data = jsonDecode(response.body);
       return response.statusCode == 200 && data['success'] == true;
     } catch (e) {
-      print('ApiService updatePackage error: $e');
+      debugPrint('ApiService updatePackage error: $e');
       return false;
     }
   }
@@ -935,7 +956,7 @@ class ApiService {
         }
       }
     } catch (e) {
-      print('ApiService getAuthors error: $e');
+      debugPrint('ApiService getAuthors error: $e');
     }
     return [
       {'author_id': 1, 'name': 'ຄຳພູນ ບຸນທະວີ'},
@@ -958,7 +979,7 @@ class ApiService {
       final data = jsonDecode(response.body);
       return response.statusCode == 201 && data['success'] == true;
     } catch (e) {
-      print('ApiService createAuthor error: $e');
+      debugPrint('ApiService createAuthor error: $e');
       return false;
     }
   }
@@ -979,7 +1000,7 @@ class ApiService {
       final data = jsonDecode(response.body);
       return response.statusCode == 200 && data['success'] == true;
     } catch (e) {
-      print('ApiService updateAuthor error: $e');
+      debugPrint('ApiService updateAuthor error: $e');
       return false;
     }
   }
@@ -995,7 +1016,7 @@ class ApiService {
       final data = jsonDecode(response.body);
       return response.statusCode == 200 && data['success'] == true;
     } catch (e) {
-      print('ApiService deleteAuthor error: $e');
+      debugPrint('ApiService deleteAuthor error: $e');
       return false;
     }
   }
@@ -1015,7 +1036,7 @@ class ApiService {
         }
       }
     } catch (e) {
-      print('ApiService getAuditLogs error: $e');
+      debugPrint('ApiService getAuditLogs error: $e');
     }
     return [];
   }
@@ -1045,7 +1066,7 @@ class ApiService {
 
       return response.statusCode == 200 || response.statusCode == 201;
     } catch (e) {
-      print('ApiService logAudit error: $e');
+      debugPrint('ApiService logAudit error: $e');
       return false;
     }
   }
@@ -1071,12 +1092,34 @@ class ApiService {
         }
       }
     } catch (e) {
-      print('ApiService getHistory error: $e');
+      debugPrint('ApiService getHistory error: $e');
     }
     return MockHistoryData.historyItems;
   }
 
   // 22b. User: Record Reading History & Progress
+  // # ເຮັດຫຍັງ: ເພີ່ມ method ໃໝ່ເອີ້ນ POST /books/:id/increment-readers
+  // # ຍ້ອນຫຍັງ: backend ມີ endpoint ນີ້ມາແຕ່ຕົ້ນ ແລະ ຖານຂໍ້ມູນມີຖັນ readers_count
+  // #          ແຕ່ບໍ່ມີໃຜເອີ້ນເລີຍ ຕົວນັບຜູ້ອ່ານຈຶ່ງເປັນ 0 ຕະຫຼອດ ແລະ ໜ້າແອັບ
+  // #          ສະແດງ "ຜູ້ອ່ານ 350" ຈາກຄ່າ seed ທີ່ບໍ່ເຄີຍປ່ຽນ
+  // # ແກ້ຈາກສ່ວນໃດ: ApiService ບໍ່ມີ method ຄູ່ກັບ endpoint ນີ້ເລີຍ
+  // # ແກ້ເຮັດຫຍັງ: ໃຫ້ pdf_viewer_screen ເອີ້ນຕອນເປີດອ່ານ ຕົວນັບຈຶ່ງເພີ່ມຈິງ
+  static Future<bool> incrementReadersCount(String bookId) async {
+    try {
+      final url =
+          Uri.parse('${ApiConfig.baseUrl}/books/$bookId/increment-readers');
+      final response = await http
+          .post(url, headers: _headers)
+          .timeout(const Duration(seconds: 5));
+
+      final data = jsonDecode(response.body);
+      return response.statusCode == 200 && data['success'] == true;
+    } catch (e) {
+      debugPrint('ApiService incrementReadersCount error: $e');
+      return false;
+    }
+  }
+
   static Future<bool> recordReadingHistory(
       {required String bookId,
       required int lastPageRead,
@@ -1106,8 +1149,14 @@ class ApiService {
       return response.statusCode == 200 ||
           response.statusCode == 201 && data['success'] == true;
     } catch (e) {
-      print('ApiService recordReadingHistory error: $e');
-      return true;
+      debugPrint('ApiService recordReadingHistory error: $e');
+      // # ເຮັດຫຍັງ: ປ່ຽນ return true; ໃນ catch ເປັນ return false;
+      // # ຍ້ອນຫຍັງ: ຄືນ true ຕອນເກີດ exception ເຮັດໃຫ້ UI ຂຶ້ນວ່າບັນທຶກສຳເລັດ
+      // #          ທັງທີ່ backend ບໍ່ໄດ້ຮັບຫຍັງເລີຍ (ເນັດຂາດ, 401, server ລົ້ມ)
+      // #          ຜູ້ໃຊ້ຈຶ່ງເຂົ້າໃຈວ່າຂໍ້ມູນຖືກເກັບແລ້ວ ແຕ່ຫາຍໄປຕອນໂຫຼດໃໝ່
+      // # ແກ້ຈາກສ່ວນໃດ: catch block ຂອງ function ນີ້
+      // # ແກ້ເຮັດຫຍັງ: ລົ້ມເຫຼວແລ້ວບອກວ່າລົ້ມເຫຼວ ໃຫ້ UI ແຈ້ງເຕືອນໄດ້ຖືກຕ້ອງ
+      return false;
     }
   }
 
@@ -1132,7 +1181,7 @@ class ApiService {
         }
       }
     } catch (e) {
-      print('ApiService getSavedBooks error: $e');
+      debugPrint('ApiService getSavedBooks error: $e');
     }
     return MockSavedData.savedItems;
   }
@@ -1158,7 +1207,7 @@ class ApiService {
         }
       }
     } catch (e) {
-      print('ApiService getDownloads error: $e');
+      debugPrint('ApiService getDownloads error: $e');
     }
     return MockDownloadsData.downloadedItems;
   }
@@ -1186,8 +1235,14 @@ class ApiService {
       return response.statusCode == 200 ||
           response.statusCode == 201 && data['success'] == true;
     } catch (e) {
-      print('ApiService recordDownload error: $e');
-      return true;
+      debugPrint('ApiService recordDownload error: $e');
+      // # ເຮັດຫຍັງ: ປ່ຽນ return true; ໃນ catch ເປັນ return false;
+      // # ຍ້ອນຫຍັງ: ຄືນ true ຕອນເກີດ exception ເຮັດໃຫ້ UI ຂຶ້ນວ່າບັນທຶກສຳເລັດ
+      // #          ທັງທີ່ backend ບໍ່ໄດ້ຮັບຫຍັງເລີຍ (ເນັດຂາດ, 401, server ລົ້ມ)
+      // #          ຜູ້ໃຊ້ຈຶ່ງເຂົ້າໃຈວ່າຂໍ້ມູນຖືກເກັບແລ້ວ ແຕ່ຫາຍໄປຕອນໂຫຼດໃໝ່
+      // # ແກ້ຈາກສ່ວນໃດ: catch block ຂອງ function ນີ້
+      // # ແກ້ເຮັດຫຍັງ: ລົ້ມເຫຼວແລ້ວບອກວ່າລົ້ມເຫຼວ ໃຫ້ UI ແຈ້ງເຕືອນໄດ້ຖືກຕ້ອງ
+      return false;
     }
   }
 
@@ -1206,8 +1261,14 @@ class ApiService {
       final data = jsonDecode(response.body);
       return response.statusCode == 200 && data['success'] == true;
     } catch (e) {
-      print('ApiService deleteDownload error: $e');
-      return true;
+      debugPrint('ApiService deleteDownload error: $e');
+      // # ເຮັດຫຍັງ: ປ່ຽນ return true; ໃນ catch ເປັນ return false;
+      // # ຍ້ອນຫຍັງ: ຄືນ true ຕອນເກີດ exception ເຮັດໃຫ້ UI ຂຶ້ນວ່າບັນທຶກສຳເລັດ
+      // #          ທັງທີ່ backend ບໍ່ໄດ້ຮັບຫຍັງເລີຍ (ເນັດຂາດ, 401, server ລົ້ມ)
+      // #          ຜູ້ໃຊ້ຈຶ່ງເຂົ້າໃຈວ່າຂໍ້ມູນຖືກເກັບແລ້ວ ແຕ່ຫາຍໄປຕອນໂຫຼດໃໝ່
+      // # ແກ້ຈາກສ່ວນໃດ: catch block ຂອງ function ນີ້
+      // # ແກ້ເຮັດຫຍັງ: ລົ້ມເຫຼວແລ້ວບອກວ່າລົ້ມເຫຼວ ໃຫ້ UI ແຈ້ງເຕືອນໄດ້ຖືກຕ້ອງ
+      return false;
     }
   }
 
@@ -1233,8 +1294,14 @@ class ApiService {
       return response.statusCode == 200 ||
           response.statusCode == 201 && data['success'] == true;
     } catch (e) {
-      print('ApiService toggleBookmark error: $e');
-      return true;
+      debugPrint('ApiService toggleBookmark error: $e');
+      // # ເຮັດຫຍັງ: ປ່ຽນ return true; ໃນ catch ເປັນ return false;
+      // # ຍ້ອນຫຍັງ: ຄືນ true ຕອນເກີດ exception ເຮັດໃຫ້ UI ຂຶ້ນວ່າບັນທຶກສຳເລັດ
+      // #          ທັງທີ່ backend ບໍ່ໄດ້ຮັບຫຍັງເລີຍ (ເນັດຂາດ, 401, server ລົ້ມ)
+      // #          ຜູ້ໃຊ້ຈຶ່ງເຂົ້າໃຈວ່າຂໍ້ມູນຖືກເກັບແລ້ວ ແຕ່ຫາຍໄປຕອນໂຫຼດໃໝ່
+      // # ແກ້ຈາກສ່ວນໃດ: catch block ຂອງ function ນີ້
+      // # ແກ້ເຮັດຫຍັງ: ລົ້ມເຫຼວແລ້ວບອກວ່າລົ້ມເຫຼວ ໃຫ້ UI ແຈ້ງເຕືອນໄດ້ຖືກຕ້ອງ
+      return false;
     }
   }
 
@@ -1264,7 +1331,7 @@ class ApiService {
         }
       }
     } catch (e) {
-      print('ApiService getUserProfile error: $e');
+      debugPrint('ApiService getUserProfile error: $e');
     }
     return currentUser ??
         {
@@ -1317,7 +1384,13 @@ class ApiService {
           .timeout(const Duration(seconds: 3));
       return true;
     } catch (_) {
-      return true;
+      // # ເຮັດຫຍັງ: ປ່ຽນ return true; ໃນ catch ເປັນ return false;
+      // # ຍ້ອນຫຍັງ: ຄືນ true ຕອນເກີດ exception ເຮັດໃຫ້ UI ຂຶ້ນວ່າບັນທຶກສຳເລັດ
+      // #          ທັງທີ່ backend ບໍ່ໄດ້ຮັບຫຍັງເລີຍ (ເນັດຂາດ, 401, server ລົ້ມ)
+      // #          ຜູ້ໃຊ້ຈຶ່ງເຂົ້າໃຈວ່າຂໍ້ມູນຖືກເກັບແລ້ວ ແຕ່ຫາຍໄປຕອນໂຫຼດໃໝ່
+      // # ແກ້ຈາກສ່ວນໃດ: catch block ຂອງ function ນີ້
+      // # ແກ້ເຮັດຫຍັງ: ລົ້ມເຫຼວແລ້ວບອກວ່າລົ້ມເຫຼວ ໃຫ້ UI ແຈ້ງເຕືອນໄດ້ຖືກຕ້ອງ
+      return false;
     }
   }
 
@@ -1335,7 +1408,13 @@ class ApiService {
           .timeout(const Duration(seconds: 3));
       return true;
     } catch (_) {
-      return true;
+      // # ເຮັດຫຍັງ: ປ່ຽນ return true; ໃນ catch ເປັນ return false;
+      // # ຍ້ອນຫຍັງ: ຄືນ true ຕອນເກີດ exception ເຮັດໃຫ້ UI ຂຶ້ນວ່າບັນທຶກສຳເລັດ
+      // #          ທັງທີ່ backend ບໍ່ໄດ້ຮັບຫຍັງເລີຍ (ເນັດຂາດ, 401, server ລົ້ມ)
+      // #          ຜູ້ໃຊ້ຈຶ່ງເຂົ້າໃຈວ່າຂໍ້ມູນຖືກເກັບແລ້ວ ແຕ່ຫາຍໄປຕອນໂຫຼດໃໝ່
+      // # ແກ້ຈາກສ່ວນໃດ: catch block ຂອງ function ນີ້
+      // # ແກ້ເຮັດຫຍັງ: ລົ້ມເຫຼວແລ້ວບອກວ່າລົ້ມເຫຼວ ໃຫ້ UI ແຈ້ງເຕືອນໄດ້ຖືກຕ້ອງ
+      return false;
     }
   }
 
@@ -1348,68 +1427,17 @@ class ApiService {
           .timeout(const Duration(seconds: 3));
       return true;
     } catch (_) {
-      return true;
+      // # ເຮັດຫຍັງ: ປ່ຽນ return true; ໃນ catch ເປັນ return false;
+      // # ຍ້ອນຫຍັງ: ຄືນ true ຕອນເກີດ exception ເຮັດໃຫ້ UI ຂຶ້ນວ່າບັນທຶກສຳເລັດ
+      // #          ທັງທີ່ backend ບໍ່ໄດ້ຮັບຫຍັງເລີຍ (ເນັດຂາດ, 401, server ລົ້ມ)
+      // #          ຜູ້ໃຊ້ຈຶ່ງເຂົ້າໃຈວ່າຂໍ້ມູນຖືກເກັບແລ້ວ ແຕ່ຫາຍໄປຕອນໂຫຼດໃໝ່
+      // # ແກ້ຈາກສ່ວນໃດ: catch block ຂອງ function ນີ້
+      // # ແກ້ເຮັດຫຍັງ: ລົ້ມເຫຼວແລ້ວບອກວ່າລົ້ມເຫຼວ ໃຫ້ UI ແຈ້ງເຕືອນໄດ້ຖືກຕ້ອງ
+      return false;
     }
   }
 
   // Helper Fallback Mock Books
-  static List<BookModel> _allMockBooks() {
-    return [
-      ...MockBookData.popularBooks,
-      ...MockBookData.newBooks,
-      ...MockBookData.recommendedBooks,
-    ];
-  }
 
   // Helper Fallback Mock Login
-  static Map<String, dynamic> _mockLoginFallback(
-      String email, String password) {
-    if (email == 'admin@gmail.com' && password == 'admin123456') {
-      return {
-        'success': true,
-        'user': {
-          'user_id': 1,
-          'email': email,
-          'first_name': 'Admin',
-          'last_name': 'System',
-          'role': 'admin'
-        }
-      };
-    } else if (email == 'employee@gmail.com' && password == 'employee123') {
-      return {
-        'success': true,
-        'user': {
-          'user_id': 2,
-          'email': email,
-          'first_name': 'Staff',
-          'last_name': 'Employee',
-          'role': 'employee'
-        }
-      };
-    } else if (email == 'member@gmail.com' && password == 'member1234') {
-      return {
-        'success': true,
-        'user': {
-          'user_id': 3,
-          'email': email,
-          'first_name': 'Premiere',
-          'last_name': 'Member',
-          'role': 'user'
-        }
-      };
-    } else if (email == 'user1234@gmail.com' && password == 'user1234') {
-      return {
-        'success': true,
-        'user': {
-          'user_id': 4,
-          'email': email,
-          'first_name': 'General',
-          'last_name': 'User',
-          'role': 'user'
-        }
-      };
-    } else {
-      return {'success': false, 'message': 'ອີເມວ ຫຼື ລະຫັດຜ່ານບໍ່ຖືກຕ້ອງ'};
-    }
-  }
 }

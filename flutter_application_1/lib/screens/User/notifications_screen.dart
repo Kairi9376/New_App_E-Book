@@ -241,10 +241,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                         child:
                             CircularProgressIndicator(color: AppColors.primary))
                     : filteredList.isEmpty
-                        ? Center(
+                        ? const Center(
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
-                              children: const [
+                              children: [
                                 Icon(Icons.notifications_off_outlined,
                                     size: 64, color: Color(0xFFCBD5E1)),
                                 SizedBox(height: 12),
@@ -345,12 +345,12 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             border: Border.all(
               color: item.isRead
                   ? const Color(0xFFE2E8F0)
-                  : AppColors.primary.withOpacity(0.3),
+                  : AppColors.primary.withValues(alpha: 0.3),
               width: item.isRead ? 1 : 1.5,
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(item.isRead ? 0.02 : 0.05),
+                color: Colors.black.withValues(alpha: item.isRead ? 0.02 : 0.05),
                 blurRadius: 8,
                 offset: const Offset(0, 2),
               ),

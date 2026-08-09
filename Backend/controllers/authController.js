@@ -17,71 +17,38 @@ exports.login = async (req, res) => {
     const rawInput = inputVal;
     const cleanPassword = password.trim();
 
-    const mockAccounts = {
-      'admin@gmail.com': { password: 'admin123456', role: 'admin', first_name: 'Admin', last_name: 'System' },
-      'employee@gmail.com': { password: 'employee123', role: 'employee', first_name: 'Staff', last_name: 'Employee' },
-      'user1234@gmail.com': { password: 'user1234', role: 'user', first_name: 'General', last_name: 'User' },
-      'member@gmail.com': { password: 'member1234', role: 'user', first_name: 'Premiere', last_name: 'Member' }
-    };
-
+    // # ເຮັດຫຍັງ: ຕັດ 3 ທາງລັດຂອງການ login ອອກ ເຫຼືອແຕ່ການກວດດ້ວຍ bcrypt
+    // # ຍ້ອນຫຍັງ: ຂອງເກົ່າມີຊ່ອງໂຫວ່ຮ້າຍແຮງ 3 ຢ່າງທີ່ພິສູດແລ້ວດ້ວຍ curl:
+    // #   1) allowedPasswords ຝັງລະຫັດ '123456' ໄວ້ໃຫ້ທຸກບັນຊີ seed ເຮັດໃຫ້
+    // #      admin@gmail.com / 123456 ເຂົ້າໄດ້ ເຖິງແມ່ນ DB ຈະເກັບ bcrypt hash ຈິງ
+    // #      ແລະ ປ່ຽນລະຫັດຜ່ານກໍ່ບໍ່ຊ່ວຍ ເພາະການກວດນີ້ຢູ່ນອກ bcrypt
+    // #   2) user.password_hash === cleanPassword ຍອມຮັບລະຫັດ plaintext ໃນ DB
+    // #   3) mockAccounts ສ້າງ session admin (user_id 1) ຕອນ DB ຫາບໍ່ພົບ ຫຼື ລົ້ມ
+    // #      ແປວ່າ DB ລົ້ມ = ໃຜກໍ່ເປັນ admin ໄດ້
+    // # ແກ້ຈາກສ່ວນໃດ: ບລັອກ mockAccounts, ຂັ້ນຕອນ 2 ແລະ 3 ຂອງການທຽບລະຫັດຜ່ານ
+    // # ແກ້ເຮັດຫຍັງ: ເຫຼືອທາງດຽວຄື bcrypt.compare ກັບ hash ໃນ DB
+    // #             ບັນຊີທີ່ເກັບລະຫັດ plaintext ໄວ້ຈະ login ບໍ່ໄດ້ອີກ ຕ້ອງ reset ໃໝ່
     let user = null;
 
-    try {
-      const [rows] = await pool.query(
-        `SELECT * FROM users 
-         WHERE LOWER(email) = ? 
-            OR phone_number = ? 
-            OR REPLACE(phone_number, ' ', '') = ?`,
-        [cleanInput, rawInput, rawInput.replace(/\s+/g, '')]
-      );
-      if (rows.length > 0) {
-        user = rows[0];
-      }
-    } catch (dbErr) {
-      console.warn('MySQL User Query Warning:', dbErr.message);
+    const [rows] = await pool.query(
+      `SELECT * FROM users
+       WHERE LOWER(email) = ?
+          OR phone_number = ?
+          OR REPLACE(phone_number, ' ', '') = ?`,
+      [cleanInput, rawInput, rawInput.replace(/\s+/g, '')]
+    );
+    if (rows.length > 0) {
+      user = rows[0];
     }
 
     let isMatch = false;
 
-    if (user) {
-      // 1. Try bcrypt verification
-      if (user.password_hash && (user.password_hash.startsWith('$2a$') || user.password_hash.startsWith('$2b$'))) {
-        try {
-          isMatch = await bcrypt.compare(cleanPassword, user.password_hash);
-        } catch (_) {}
-      }
-
-      // 2. Try direct string equality (for plain text passwords in DB like '123456')
-      if (!isMatch && user.password_hash === cleanPassword) {
-        isMatch = true;
-      }
-
-      // 3. Try fallback for default credentials (both '123456' and legacy passwords)
-      if (!isMatch) {
-        const allowedPasswords = {
-          'admin@gmail.com': ['123456', 'admin123456'],
-          'employee@gmail.com': ['123456', 'employee123'],
-          'user1234@gmail.com': ['123456', 'user1234'],
-          'member@gmail.com': ['123456', 'member1234']
-        };
-
-        if (allowedPasswords[cleanEmail] && allowedPasswords[cleanEmail].includes(cleanPassword)) {
-          isMatch = true;
-        }
-      }
-    } else {
-      // Fallback if MySQL database/table is not yet imported into phpMyAdmin
-      if (mockAccounts[cleanEmail] && mockAccounts[cleanEmail].password === cleanPassword) {
-        isMatch = true;
-        const mock = mockAccounts[cleanEmail];
-        user = {
-          user_id: cleanEmail === 'admin@gmail.com' ? 1 : cleanEmail === 'employee@gmail.com' ? 2 : cleanEmail === 'member@gmail.com' ? 4 : 3,
-          email: cleanEmail,
-          first_name: mock.first_name,
-          last_name: mock.last_name,
-          role: mock.role,
-          status: 'active'
-        };
+    if (user && user.password_hash) {
+      try {
+        isMatch = await bcrypt.compare(cleanPassword, user.password_hash);
+      } catch (_) {
+        // hash ຮູບແບບບໍ່ຖືກຕ້ອງ (ເຊັ່ນ plaintext ເກົ່າ) - ຖືວ່າບໍ່ຜ່ານ
+        isMatch = false;
       }
     }
 
@@ -95,7 +62,12 @@ exports.login = async (req, res) => {
 
     const token = jwt.sign(
       { user_id: user.user_id, email: user.email, role: user.role },
-      process.env.JWT_SECRET || 'secret',
+      // # ເຮັດຫຍັງ: ຕັດ fallback || 'secret' ອອກ
+      // # ຍ້ອນຫຍັງ: ຖ້າ env ຫາຍ token ຈະຖືກເຊັນດ້ວຍຄຳວ່າ 'secret' ທີ່ໃຜກໍ່ເດົາໄດ້
+      // #          ແລ້ວປອມ token ເປັນ admin ໄດ້ທັນທີ
+      // # ແກ້ຈາກສ່ວນໃດ: jwt.sign(..., process.env.JWT_SECRET || 'secret', ...)
+      // # ແກ້ເຮັດຫຍັງ: server.js ກວດ JWT_SECRET ຕອນ start ຢູ່ແລ້ວ ຈຶ່ງບໍ່ຕ້ອງມີ fallback
+      process.env.JWT_SECRET,
       { expiresIn: '7d' }
     );
 

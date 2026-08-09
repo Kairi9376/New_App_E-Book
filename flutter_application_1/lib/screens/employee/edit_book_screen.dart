@@ -362,7 +362,7 @@ class _EditBookScreenState extends State<EditBookScreen> {
             fit: StackFit.expand,
             children: [
               Image.asset('assets/BookCover.jpg', fit: BoxFit.cover),
-              Container(color: Colors.black.withOpacity(0.25)),
+              Container(color: Colors.black.withValues(alpha: 0.25)),
               const Center(child: Icon(Icons.image_outlined, color: Colors.white)),
             ],
           ),
@@ -414,8 +414,8 @@ class _EditBookScreenState extends State<EditBookScreen> {
           icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Row(
-          children: const [
+        title: const Row(
+          children: [
             Icon(Icons.edit_note_rounded, color: Colors.white, size: 22),
             SizedBox(width: 8),
             Text(
@@ -447,7 +447,7 @@ class _EditBookScreenState extends State<EditBookScreen> {
                           borderRadius: BorderRadius.circular(16),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.05),
+                              color: Colors.black.withValues(alpha: 0.05),
                               blurRadius: 15,
                               offset: const Offset(0, 4),
                             ),
@@ -460,8 +460,8 @@ class _EditBookScreenState extends State<EditBookScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // Section 1: Basic Info
-                        Row(
-                          children: const [
+                        const Row(
+                          children: [
                             Icon(Icons.info_outline_rounded,
                                 color: AppColors.primary, size: 18),
                             SizedBox(width: 6),
@@ -493,7 +493,7 @@ class _EditBookScreenState extends State<EditBookScreen> {
                           children: [
                             Expanded(
                               child: DropdownButtonFormField<int>(
-                                value: _dbAuthors.any((a) =>
+                                initialValue: _dbAuthors.any((a) =>
                                         a['author_id'] == _selectedAuthorId)
                                     ? _selectedAuthorId
                                     : (_dbAuthors.isNotEmpty
@@ -513,8 +513,9 @@ class _EditBookScreenState extends State<EditBookScreen> {
                                   );
                                 }).toList(),
                                 onChanged: (val) {
-                                  if (val != null)
+                                  if (val != null) {
                                     setState(() => _selectedAuthorId = val);
+                                  }
                                 },
                                 validator: (val) =>
                                     val == null ? 'ກະລຸນາເລືອກນັກຂຽນ' : null,
@@ -537,7 +538,7 @@ class _EditBookScreenState extends State<EditBookScreen> {
                             Expanded(
                               flex: 3,
                               child: DropdownButtonFormField<String>(
-                                value: _languages.any(
+                                initialValue: _languages.any(
                                         (l) => l['code'] == _selectedLanguage)
                                     ? _selectedLanguage
                                     : null,
@@ -554,8 +555,9 @@ class _EditBookScreenState extends State<EditBookScreen> {
                                               const TextStyle(fontSize: 12)));
                                 }).toList(),
                                 onChanged: (val) {
-                                  if (val != null)
+                                  if (val != null) {
                                     setState(() => _selectedLanguage = val);
+                                  }
                                 },
                               ),
                             ),
@@ -585,8 +587,8 @@ class _EditBookScreenState extends State<EditBookScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Row(
-                              children: const [
+                            const Row(
+                              children: [
                                 Icon(Icons.category_rounded,
                                     color: AppColors.primary, size: 18),
                                 SizedBox(width: 6),
@@ -669,8 +671,8 @@ class _EditBookScreenState extends State<EditBookScreen> {
                         const SizedBox(height: 18),
 
                         // Section 3: Files Upload
-                        Row(
-                          children: const [
+                        const Row(
+                          children: [
                             Icon(Icons.folder_zip_rounded,
                                 color: AppColors.primary, size: 18),
                             SizedBox(width: 6),
@@ -700,7 +702,7 @@ class _EditBookScreenState extends State<EditBookScreen> {
                                     height: 44,
                                     decoration: BoxDecoration(
                                       color:
-                                          AppColors.primary.withOpacity(0.15),
+                                          AppColors.primary.withValues(alpha: 0.15),
                                       borderRadius: BorderRadius.circular(8),
                                     ),
                                     child: const Icon(
@@ -834,8 +836,8 @@ class _EditBookScreenState extends State<EditBookScreen> {
                         const SizedBox(height: 18),
 
                         // Section 4: Permission
-                        Row(
-                          children: const [
+                        const Row(
+                          children: [
                             Icon(Icons.tune_rounded,
                                 color: AppColors.primary, size: 18),
                             SizedBox(width: 6),
@@ -866,7 +868,7 @@ class _EditBookScreenState extends State<EditBookScreen> {
                                 subtitle: const Text(
                                     'ເປີດໃຫ້ສະມາຊິກທົ່ວໄປອ່ານໄດ້ໂດຍບໍ່ຕ້ອງສະໝັກສະມາຊິກ'),
                                 value: _isFree,
-                                activeColor: Colors.green,
+                                activeThumbColor: Colors.green,
                                 onChanged: (val) =>
                                     setState(() => _isFree = val),
                               ),
@@ -879,7 +881,7 @@ class _EditBookScreenState extends State<EditBookScreen> {
                                 subtitle: const Text(
                                     'ເປີດໃຫ້ດາວໂຫຼດຟຣີທຸກຄົນ (ຫາກປິດໄວ້ เฉพาะสมาชิก VIP/Premiere ເທົ່ານັ້ນທີ່ດາວໂຫຼດໄດ້)'),
                                 value: _isFreeDownload,
-                                activeColor: const Color(0xFF2563EB),
+                                activeThumbColor: const Color(0xFF2563EB),
                                 onChanged: (val) =>
                                     setState(() => _isFreeDownload = val),
                               ),
@@ -892,7 +894,7 @@ class _EditBookScreenState extends State<EditBookScreen> {
                                 subtitle: const Text(
                                     'ເຊື່ອງປຶ້ມບໍ່ໃຫ້ສະແດງໃນໜ້າຫຼັກ (is_hidden = TRUE)'),
                                 value: _isHidden,
-                                activeColor: Colors.redAccent,
+                                activeThumbColor: Colors.redAccent,
                                 onChanged: (val) =>
                                     setState(() => _isHidden = val),
                               ),

@@ -204,10 +204,18 @@ CREATE TABLE IF NOT EXISTS audit_logs (
 
 -- 1. Insert Initial Users
 INSERT INTO users (user_id, email, password_hash, first_name, last_name, phone_number, role, status) VALUES
-(1, 'admin@gmail.com', '$2a$10$w8T.tK.yvT4N9w6P8L8L.e7pA0rQ1z3m6V5N7P9L3K1J', 'ຜູ້ດູແລ', 'ລະບົບ (Admin)', '02055551111', 'admin', 'active'),
-(2, 'employee@gmail.com', '$2a$10$w8T.tK.yvT4N9w6P8L8L.e7pA0rQ1z3m6V5N7P9L3K1J', 'ພະນັກງານ', 'ຈັດການຄັງ', '02055552222', 'employee', 'active'),
-(3, 'user1234@gmail.com', '$2a$10$w8T.tK.yvT4N9w6P8L8L.e7pA0rQ1z3m6V5N7P9L3K1J', 'ສົມຊາຍ', 'ໃຈດີ', '02055553333', 'user', 'active'),
-(4, 'member@gmail.com', '$2a$10$w8T.tK.yvT4N9w6P8L8L.e7pA0rQ1z3m6V5N7P9L3K1J', 'ພຣີມ່ຽມ', 'ສະມາຊິກ', '02055554444', 'user', 'active')
+-- # ເຮັດຫຍັງ: ປ່ຽນ password_hash ຂອງ 4 ບັນຊີ seed ເປັນ bcrypt hash ຈິງ
+-- # ຍ້ອນຫຍັງ: ຂອງເກົ່າໃຊ້ສະຕຣິງດຽວກັນທັງ 4 ບັນຊີ ແລະ ຍາວພຽງ 50 ຕົວອັກສອນ
+-- #          (bcrypt ຈິງຕ້ອງ 60) ຈຶ່ງເປັນ hash ປອມທີ່ bcrypt.compare ບໍ່ມີວັນຜ່ານ
+-- #          ບັນຊີເຫຼົ່ານີ້ຈຶ່ງ login ໄດ້ຍ້ອນ allowedPasswords ໃນ authController ເທົ່ານັ້ນ
+-- #          ພໍຕັດ backdoor ນັ້ນອອກ ບັນຊີ seed ທັງໝົດຈຶ່ງເຂົ້າບໍ່ໄດ້
+-- # ແກ້ຈາກສ່ວນໃດ: INSERT INTO users ທີ່ວາງ hash ປອມອັນດຽວກັນໃສ່ທຸກແຖວ
+-- # ແກ້ເຮັດຫຍັງ: ແຕ່ລະບັນຊີມີ hash ຂອງລະຫັດຕົນເອງຕາມທີ່ເອກະສານ (GEMINI.md ຂໍ້ 3) ບອກ
+-- #             ຈຶ່ງ login ຜ່ານ bcrypt ໄດ້ຈິງ ໂດຍບໍ່ຕ້ອງມີທາງລັດໃດໆ
+(1, 'admin@gmail.com', '$2a$10$sJk.z11/HowyVD5ZBcnoEubM3Qrof4I0ABsiwSx/d0mwKgwNyQZ5y', 'ຜູ້ດູແລ', 'ລະບົບ (Admin)', '02055551111', 'admin', 'active'),
+(2, 'employee@gmail.com', '$2a$10$k.qcjb1AdPRs54cD8L7l4OCuXivqUSaO02UXbGOiZl7XPq4lSjyF2', 'ພະນັກງານ', 'ຈັດການຄັງ', '02055552222', 'employee', 'active'),
+(3, 'user1234@gmail.com', '$2a$10$p528LXEWFj12UA1BnMXkUueuB63.LH5uFGyqqJ41XMQJ5qrMYH0be', 'ສົມຊາຍ', 'ໃຈດີ', '02055553333', 'user', 'active'),
+(4, 'member@gmail.com', '$2a$10$/5uivn1mIj10.jV4mgnN/O5sJtVjIEBSRv6sNqKQ5PKyijceTo8EG', 'ພຣີມ່ຽມ', 'ສະມາຊິກ', '02055554444', 'user', 'active')
 ON DUPLICATE KEY UPDATE email=email;
 
 -- 2. Insert Authors
@@ -235,12 +243,20 @@ INSERT INTO packages (package_id, name, description, price, duration_days, is_fo
 ON DUPLICATE KEY UPDATE name=name;
 
 -- 5. Insert Books (มี is_free, is_free_download, status, approved_by, rejection_reason, readers_count, likes_count)
+-- # ເຮັດຫຍັງ: ປ່ຽນ cover_image_url ຂອງ seed ໃຫ້ຊີ້ໄປ assets/BookCover.jpg
+-- # ຍ້ອນຫຍັງ: ຂອງເກົ່າອ້າງ happiness/science/quantum/social_cover.jpg ເຊິ່ງ 4 ໄຟລ໌ນີ້
+-- #          ບໍ່ເຄີຍມີໃນ flutter_application_1/assets/ ເລີຍ (ມີແຕ່ BookCover.jpg
+-- #          ກັບ QRcodeDemo.svg) ທຸກປຶ້ມຈຶ່ງໂຫຼດຮູບບໍ່ໄດ້ ແລ້ວຕົກໄປໃຊ້ placeholder
+-- #          ພ້ອມ 404 ເຕັມ console ຂອງ browser
+-- # ແກ້ຈາກສ່ວນໃດ: ຄ່າ cover_image_url ໃນ INSERT INTO books
+-- # ແກ້ເຮັດຫຍັງ: ຊີ້ໄປໄຟລ໌ທີ່ມາພ້ອມແອັບຈິງ ຮູບຈຶ່ງຂຶ້ນ ແລະ ບໍ່ມີ 404 ອີກ
+-- #             (ເມື່ອມີຮູບປົກຈິງແລ້ວ ໃຫ້ອັບໂຫຼດຜ່ານໜ້າ Employee ແທນ)
 INSERT INTO books (book_id, title, author_id, language, page_count, file_size_bytes, description, cover_image_url, file_pdf_url, uploaded_by, status, approved_by, rejection_reason, is_free, is_free_download, is_hidden, readers_count, likes_count) VALUES
-(1, 'The Happiness Effect', 1, 'EN', 240, 15400000, 'ປຶ້ມຖ່າຍທອດເລື່ອງราวການສ້າງຄວາມສຸກ ແລະ ການມອງໂລກໃນແງ່ດີ', 'assets/happiness_cover.jpg', 'assets/sample_book.pdf', 2, 'approved', 1, NULL, TRUE, TRUE, FALSE, 125, 42),
-(2, 'High School Science (ວິທະຍາສາດ)', 4, 'LA', 310, 22100000, 'ຕຳລາຮຽນວິທະຍາສາດລະດັບມັດທະຍົມປາຍ ຄອບຄຸມພື້ນຖານຟິຊິກ ເຄມີ ຊີວະວິທະຍາ', 'assets/science_cover.jpg', 'assets/sample_book.pdf', 2, 'approved', 1, NULL, TRUE, FALSE, FALSE, 88, 31),
-(3, 'Quantum Mechanics', 2, 'EN', 450, 38000000, 'ເຈາະລຶກທິດສະດີຄວອນຕຳ ແລະ ກົນລະສາດສະໄໝໃໝ່', 'assets/quantum_cover.jpg', 'assets/sample_book.pdf', 2, 'approved', 1, NULL, FALSE, FALSE, FALSE, 64, 19),
-(4, 'ປຶ້ມສັງຄົມສຶກສາ', 3, 'LA', 180, 12000000, 'ຄວາມຮູ້ກ່ຽວກັບສັງຄົມ ວັດທະນະທຳ ແລະ ພູມສາດ', 'assets/social_cover.jpg', 'assets/sample_book.pdf', 2, 'approved', 1, NULL, TRUE, TRUE, FALSE, 210, 95),
-(5, 'Advances in Physics (ລໍຖ້າອະນຸມັດ)', 2, 'EN', 280, 18500000, 'ຕຳລາຟິຊິກຂັ້ນສູງ ສຳລັບນັກຮຽນ ແລະ ນັກວິໄຈ', 'assets/quantum_cover.jpg', 'assets/sample_book.pdf', 2, 'pending', NULL, NULL, TRUE, FALSE, FALSE, 0, 0)
+(1, 'The Happiness Effect', 1, 'EN', 240, 15400000, 'ປຶ້ມຖ່າຍທອດເລື່ອງราวການສ້າງຄວາມສຸກ ແລະ ການມອງໂລກໃນແງ່ດີ', 'assets/BookCover.jpg', 'assets/sample_book.pdf', 2, 'approved', 1, NULL, TRUE, TRUE, FALSE, 125, 42),
+(2, 'High School Science (ວິທະຍາສາດ)', 4, 'LA', 310, 22100000, 'ຕຳລາຮຽນວິທະຍາສາດລະດັບມັດທະຍົມປາຍ ຄອບຄຸມພື້ນຖານຟິຊິກ ເຄມີ ຊີວະວິທະຍາ', 'assets/BookCover.jpg', 'assets/sample_book.pdf', 2, 'approved', 1, NULL, TRUE, FALSE, FALSE, 88, 31),
+(3, 'Quantum Mechanics', 2, 'EN', 450, 38000000, 'ເຈາະລຶກທິດສະດີຄວອນຕຳ ແລະ ກົນລະສາດສະໄໝໃໝ່', 'assets/BookCover.jpg', 'assets/sample_book.pdf', 2, 'approved', 1, NULL, FALSE, FALSE, FALSE, 64, 19),
+(4, 'ປຶ້ມສັງຄົມສຶກສາ', 3, 'LA', 180, 12000000, 'ຄວາມຮູ້ກ່ຽວກັບສັງຄົມ ວັດທະນະທຳ ແລະ ພູມສາດ', 'assets/BookCover.jpg', 'assets/sample_book.pdf', 2, 'approved', 1, NULL, TRUE, TRUE, FALSE, 210, 95),
+(5, 'Advances in Physics (ລໍຖ້າອະນຸມັດ)', 2, 'EN', 280, 18500000, 'ຕຳລາຟິຊິກຂັ້ນສູງ ສຳລັບນັກຮຽນ ແລະ ນັກວິໄຈ', 'assets/BookCover.jpg', 'assets/sample_book.pdf', 2, 'pending', NULL, NULL, TRUE, FALSE, FALSE, 0, 0)
 ON DUPLICATE KEY UPDATE title=title;
 
 -- 6. Insert Book Categories

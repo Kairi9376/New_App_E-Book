@@ -294,7 +294,7 @@ class _EmployeeAddBookScreenState extends State<EmployeeAddBookScreen> {
             fit: StackFit.expand,
             children: [
               Image.asset('assets/BookCover.jpg', fit: BoxFit.cover),
-              Container(color: Colors.black.withOpacity(0.25)),
+              Container(color: Colors.black.withValues(alpha: 0.25)),
               const Center(child: Icon(Icons.image_outlined, color: Colors.white)),
             ],
           ),
@@ -338,8 +338,8 @@ class _EmployeeAddBookScreenState extends State<EmployeeAddBookScreen> {
           icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Row(
-          children: const [
+        title: const Row(
+          children: [
             Icon(Icons.picture_as_pdf_rounded, color: Colors.white, size: 22),
             SizedBox(width: 8),
             Text(
@@ -367,7 +367,7 @@ class _EmployeeAddBookScreenState extends State<EmployeeAddBookScreen> {
                           borderRadius: BorderRadius.circular(16),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.05),
+                              color: Colors.black.withValues(alpha: 0.05),
                               blurRadius: 15,
                               offset: const Offset(0, 4),
                             ),
@@ -380,8 +380,8 @@ class _EmployeeAddBookScreenState extends State<EmployeeAddBookScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // Section 1: Basic Info
-                        Row(
-                          children: const [
+                        const Row(
+                          children: [
                             Icon(Icons.info_outline_rounded, color: AppColors.primary, size: 18),
                             SizedBox(width: 6),
                             Text('1. ຂໍ້ມູນພື້ນຖານຂອງປຶ້ມ (General Info)', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.primary)),
@@ -405,7 +405,7 @@ class _EmployeeAddBookScreenState extends State<EmployeeAddBookScreen> {
                           children: [
                             Expanded(
                               child: DropdownButtonFormField<int>(
-                                value: _dbAuthors.any((a) => a['author_id'] == _selectedAuthorId) ? _selectedAuthorId : (_dbAuthors.isNotEmpty ? _dbAuthors.first['author_id'] : null),
+                                initialValue: _dbAuthors.any((a) => a['author_id'] == _selectedAuthorId) ? _selectedAuthorId : (_dbAuthors.isNotEmpty ? _dbAuthors.first['author_id'] : null),
                                 decoration: const InputDecoration(
                                   labelText: 'ນັກຂຽນ (Author - MySQL) *',
                                   prefixIcon: Icon(Icons.person_outline_rounded, color: AppColors.primary),
@@ -438,7 +438,7 @@ class _EmployeeAddBookScreenState extends State<EmployeeAddBookScreen> {
                             Expanded(
                               flex: 3,
                               child: DropdownButtonFormField<String>(
-                                value: _selectedLanguage,
+                                initialValue: _selectedLanguage,
                                 decoration: const InputDecoration(
                                   labelText: 'ພາສາ (Language - ENUM)',
                                   prefixIcon: Icon(Icons.language_rounded, color: AppColors.primary),
@@ -476,8 +476,8 @@ class _EmployeeAddBookScreenState extends State<EmployeeAddBookScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Row(
-                              children: const [
+                            const Row(
+                              children: [
                                 Icon(Icons.category_rounded, color: AppColors.primary, size: 18),
                                 SizedBox(width: 6),
                                 Text('2. ໝວດໝູ່ປຶ້ມ (Categories - ເລືອກໄດ້หลายໝວດໝູ່)', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.primary)),
@@ -536,8 +536,8 @@ class _EmployeeAddBookScreenState extends State<EmployeeAddBookScreen> {
                         const SizedBox(height: 18),
 
                         // Section 3: Files Upload
-                        Row(
-                          children: const [
+                        const Row(
+                          children: [
                             Icon(Icons.folder_zip_rounded, color: AppColors.primary, size: 18),
                             SizedBox(width: 6),
                             Text('3. ໄຟລ໌ PDF & ຮູບປົກ (Files & Cover)', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.primary)),
@@ -561,7 +561,7 @@ class _EmployeeAddBookScreenState extends State<EmployeeAddBookScreen> {
                                     width: 44,
                                     height: 44,
                                     decoration: BoxDecoration(
-                                      color: AppColors.primary.withOpacity(0.15),
+                                      color: AppColors.primary.withValues(alpha: 0.15),
                                       borderRadius: BorderRadius.circular(8),
                                     ),
                                     child: const Icon(Icons.picture_as_pdf_rounded, color: AppColors.primary),
@@ -645,7 +645,7 @@ class _EmployeeAddBookScreenState extends State<EmployeeAddBookScreen> {
                                 title: const Text('ອ່ານຟຣີ (Free Access)', style: TextStyle(fontWeight: FontWeight.bold)),
                                 subtitle: const Text('ເປີດໃຫ້ສະມາຊິກທົ່ວໄປອ່ານໄດ້ໂດຍບໍ່ຕ້ອງສະໝັກສະມາຊິກ'),
                                 value: _isFree,
-                                activeColor: Colors.green,
+                                activeThumbColor: Colors.green,
                                 onChanged: (val) => setState(() => _isFree = val),
                               ),
                               const Divider(height: 1),
@@ -654,7 +654,7 @@ class _EmployeeAddBookScreenState extends State<EmployeeAddBookScreen> {
                                 title: const Text('ດາວໂຫຼດຟຣີ (Free PDF Download)', style: TextStyle(fontWeight: FontWeight.bold)),
                                 subtitle: const Text('ເປີດໃຫ້ດາວໂຫຼດຟຣີທຸກຄົນ (ຫາກປິດໄວ້ เฉพาะสมาชิก VIP/Premiere ເທົ່ານັ້ນທີ່ດາວໂຫຼດໄດ້)'),
                                 value: _isFreeDownload,
-                                activeColor: const Color(0xFF2563EB),
+                                activeThumbColor: const Color(0xFF2563EB),
                                 onChanged: (val) => setState(() => _isFreeDownload = val),
                               ),
                             ],

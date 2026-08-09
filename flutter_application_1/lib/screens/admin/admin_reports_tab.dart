@@ -93,7 +93,7 @@ class AdminReportsTab extends StatelessWidget {
               borderRadius: BorderRadius.circular(16),
               border: Border.all(color: const Color(0xFFE2E8F0)),
               boxShadow: [
-                BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 2)),
+                BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 8, offset: const Offset(0, 2)),
               ],
             ),
             child: Row(
@@ -104,15 +104,15 @@ class AdminReportsTab extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: AppColors.primary.withOpacity(0.1),
+                        color: AppColors.primary.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: const Icon(Icons.analytics_rounded, color: AppColors.primary, size: 20),
                     ),
                     const SizedBox(width: 10),
-                    Column(
+                    const Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      children: const [
+                      children: [
                         Text('ລາຍງານສະຖິຕິ & ຜົນປະກອບການ', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
                         Text('Executive Reports & Analytics Overview', style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
                       ],
@@ -204,8 +204,8 @@ class AdminReportsTab extends StatelessWidget {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Row(
-                            children: const [
+                          const Row(
+                            children: [
                               Icon(Icons.pie_chart_rounded, color: AppColors.primary, size: 20),
                               SizedBox(width: 8),
                               Text('ສະຖິຕິການອະນຸມັດສະລິບໂອນເງິນ', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
@@ -242,11 +242,11 @@ class AdminReportsTab extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Row(
+                          const Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Row(
-                                children: const [
+                                children: [
                                   Icon(Icons.military_tech_rounded, color: Color(0xFFD97706), size: 20),
                                   SizedBox(width: 8),
                                   Text('Top 5 ປຶ້ມທີ່ມียອດອ່ານ & ໄລ້ສູງສຸດ', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
@@ -303,8 +303,8 @@ class AdminReportsTab extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Row(
-                            children: const [
+                          const Row(
+                            children: [
                               Icon(Icons.verified_user_rounded, color: Color(0xFF2563EB), size: 20),
                               SizedBox(width: 8),
                               Text('ສະຖານະການຢືນຢັນຕົວຕົນ (KYC Status)', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
@@ -339,7 +339,7 @@ class AdminReportsTab extends StatelessWidget {
               border: Border.all(color: const Color(0xFFE2E8F0)),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.03),
+                  color: Colors.black.withValues(alpha: 0.03),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
@@ -362,9 +362,9 @@ class AdminReportsTab extends StatelessWidget {
                           child: const Icon(Icons.history_toggle_off_rounded, color: AppColors.primary, size: 20),
                         ),
                         const SizedBox(width: 10),
-                        Column(
+                        const Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
-                          children: const [
+                          children: [
                             Text('ປະຫວັດກິດຈະກຳໃນລະບົບ (System Audit Logs)', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
                             Text('ບັນທຶກການເພີ່ມ, ແກ້ໄຂ, ລົບ, ອະນຸມັດ ແລະ ປະຕິເສດ ຂອງແອດມິນ ແລະ ພະນັກງານ', style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
                           ],
@@ -386,8 +386,8 @@ class AdminReportsTab extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(24),
                     alignment: Alignment.center,
-                    child: Column(
-                      children: const [
+                    child: const Column(
+                      children: [
                         Icon(Icons.rule_folder_outlined, size: 48, color: Colors.grey),
                         SizedBox(height: 8),
                         Text('ບໍ່ມີບັນທຶກກິດຈະກຳຍ້ອນຫຼັງ', style: TextStyle(fontSize: 14, color: AppColors.textSecondary, fontWeight: FontWeight.bold)),
@@ -441,7 +441,7 @@ class AdminReportsTab extends StatelessWidget {
                           Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: actionColor.withOpacity(0.1),
+                              color: actionColor.withValues(alpha: 0.1),
                               shape: BoxShape.circle,
                             ),
                             child: Icon(actionIcon, size: 18, color: actionColor),
@@ -456,7 +456,7 @@ class AdminReportsTab extends StatelessWidget {
                                     Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                                       decoration: BoxDecoration(
-                                        color: actionColor.withOpacity(0.12),
+                                        color: actionColor.withValues(alpha: 0.12),
                                         borderRadius: BorderRadius.circular(6),
                                       ),
                                       child: Text(
@@ -513,7 +513,7 @@ class AdminReportsTab extends StatelessWidget {
       decoration: BoxDecoration(
         color: bgColor,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: color.withOpacity(0.2)),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -565,7 +565,7 @@ class AdminReportsTab extends StatelessWidget {
         Container(
           width: 44,
           height: 44,
-          decoration: BoxDecoration(color: color.withOpacity(0.12), shape: BoxShape.circle),
+          decoration: BoxDecoration(color: color.withValues(alpha: 0.12), shape: BoxShape.circle),
           child: Center(
             child: Text('$count', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: color)),
           ),
@@ -586,8 +586,8 @@ class AdminReportsTab extends StatelessWidget {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Row(
-          children: const [
+        title: const Row(
+          children: [
             Icon(Icons.print_rounded, color: AppColors.primary, size: 22),
             SizedBox(width: 8),
             Text('ລາຍງານສະຫຼຸບຜູ້ບໍລິຫານ (Executive Summary)'),

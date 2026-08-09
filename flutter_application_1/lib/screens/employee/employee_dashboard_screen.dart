@@ -79,11 +79,11 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Row(
+        title: const Row(
           children: [
-            const Icon(Icons.logout_rounded, color: Color(0xFFDC2626)),
-            const SizedBox(width: 8),
-            const Text('ອອກຈາກລະບົບ'),
+            Icon(Icons.logout_rounded, color: Color(0xFFDC2626)),
+            SizedBox(width: 8),
+            Text('ອອກຈາກລະບົບ'),
           ],
         ),
         content:
@@ -135,7 +135,7 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
             Container(
               padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
-                color: const Color(0xFF10B981).withOpacity(0.2),
+                color: const Color(0xFF10B981).withValues(alpha: 0.2),
                 shape: BoxShape.circle,
               ),
               child: const Icon(Icons.badge_rounded,
@@ -210,7 +210,7 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: Colors.black.withValues(alpha: 0.08),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -304,7 +304,7 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.12),
+              color: color.withValues(alpha: 0.12),
               shape: BoxShape.circle,
             ),
             child: Icon(icon, size: 22, color: color),
@@ -383,19 +383,19 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
                           color: Colors.white, size: 30),
                     ),
                     const SizedBox(width: 16),
-                    Expanded(
+                    const Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
+                          Text(
                             'ເພີ່ມປຶ້ມໃໝ່ເຂົ້າຄັງ (ໄຟລ໌ PDF)',
                             style: TextStyle(
                                 fontSize: 15,
                                 fontWeight: FontWeight.bold,
                                 color: Color(0xFF065F46)),
                           ),
-                          const SizedBox(height: 4),
-                          const Text(
+                          SizedBox(height: 4),
+                          Text(
                             'ອັບໂຫຼດໄຟລ໌ PDF ຕັ້ງຄ່າຮູບປົກ ແລະ ລາຍລະອຽດຂອງປຶ້ມ',
                             style: TextStyle(
                                 fontSize: 12, color: Color(0xFF047857)),
@@ -448,19 +448,19 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
                   color: Colors.white, size: 30),
             ),
             const SizedBox(width: 16),
-            Expanded(
+            const Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     'Category Management (ຈັດການໝວດໝູ່)',
                     style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.bold,
                         color: Color(0xFF92400E)),
                   ),
-                  const SizedBox(height: 4),
-                  const Text(
+                  SizedBox(height: 4),
+                  Text(
                     'ຈັດການໝວດໝູ່ປຶ້ມ ເພີ່ມ ແກ້ໄຂ ລົບ',
                     style: TextStyle(fontSize: 12, color: Color(0xFFB45309)),
                   ),
@@ -499,19 +499,19 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
                   color: Colors.white, size: 30),
             ),
             const SizedBox(width: 16),
-            Expanded(
+            const Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     'Author Management (ຈັດການນັກຂຽນ)',
                     style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.bold,
                         color: Color(0xFF065F46)),
                   ),
-                  const SizedBox(height: 4),
-                  const Text(
+                  SizedBox(height: 4),
+                  Text(
                     'ຈັດການລາຍຊື່ນັກຂຽນ ເພີ່ມ ແກ້ໄຂ ລົບ',
                     style: TextStyle(fontSize: 12, color: Color(0xFF047857)),
                   ),
@@ -550,19 +550,19 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
                   color: Colors.white, size: 30),
             ),
             const SizedBox(width: 16),
-            Expanded(
+            const Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     'Book Management (ຈັດການປຶ້ມ)',
                     style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.bold,
                         color: Color(0xFF1E40AF)),
                   ),
-                  const SizedBox(height: 4),
-                  const Text(
+                  SizedBox(height: 4),
+                  Text(
                     'ຈັດການລາຍການປຶ້ມທັງໝົດ ຄົ້ນຫາ ແລະ ເບິ່ງຂໍ້ມູນ',
                     style: TextStyle(fontSize: 12, color: Color(0xFF2563EB)),
                   ),

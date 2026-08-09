@@ -207,7 +207,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             errorBuilder: (_, __, ___) => Container(color: const Color(0xFFE2E8F0)),
           ),
           Container(
-            color: Colors.black.withOpacity(0.25),
+            color: Colors.black.withValues(alpha: 0.25),
           ),
           const Center(
             child: Icon(Icons.menu_book_rounded, color: Colors.white, size: 28),
@@ -291,7 +291,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 SwitchListTile(
                   title: Text(isActive ? 'ສະຖານະ: ເປີດນຳໃຊ້ (Active)' : 'ສະຖານະ: ປິດນຳໃຊ້ (Inactive)'),
                   value: isActive,
-                  activeColor: Colors.green,
+                  activeThumbColor: Colors.green,
                   onChanged: (val) => setDialogState(() => isActive = val),
                 ),
               ],
@@ -382,7 +382,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                   title: Text(isActive ? 'ສະຖານະ: ເປີດນຳໃຊ້ (Active)' : 'ສະຖານະ: ປິດນຳໃຊ້ (Inactive)'),
                   subtitle: Text(isActive ? 'ຜູ້ໃຊ້ງານສາມາດເລືອກຊື້ໄດ້' : 'ຢຸດໃຫ້ບໍລິການຊົ່ວຄາວ ບໍ່ສະແດງໃນໜ້າຊື້'),
                   value: isActive,
-                  activeColor: Colors.green,
+                  activeThumbColor: Colors.green,
                   onChanged: (val) => setDialogState(() => isActive = val),
                 ),
               ],
@@ -607,15 +607,15 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 ),
                 borderRadius: BorderRadius.circular(10),
                 boxShadow: [
-                  BoxShadow(color: const Color(0xFF2563EB).withOpacity(0.4), blurRadius: 8, offset: const Offset(0, 2)),
+                  BoxShadow(color: const Color(0xFF2563EB).withValues(alpha: 0.4), blurRadius: 8, offset: const Offset(0, 2)),
                 ],
               ),
               child: const Icon(Icons.admin_panel_settings_rounded, color: Colors.white, size: 22),
             ),
             const SizedBox(width: 12),
-            Column(
+            const Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
+              children: [
                 Text('Enterprise Admin Portal', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 0.3)),
                 Text('ລະບົບຄຸ້ມຄອງ E-Book, KYC & Analytics', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11)),
               ],
@@ -811,7 +811,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: const Color(0xFFE2E8F0)),
         boxShadow: [
-          BoxShadow(color: color.withOpacity(0.06), blurRadius: 6, offset: const Offset(0, 2)),
+          BoxShadow(color: color.withValues(alpha: 0.06), blurRadius: 6, offset: const Offset(0, 2)),
         ],
       ),
       child: Row(
@@ -819,7 +819,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         children: [
           Container(
             padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(color: color.withOpacity(0.12), borderRadius: BorderRadius.circular(10)),
+            decoration: BoxDecoration(color: color.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(10)),
             child: Icon(icon, color: color, size: 20),
           ),
           const SizedBox(width: 8),
@@ -1033,8 +1033,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         context: context,
         builder: (ctx) => AlertDialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: Row(
-            children: const [
+          title: const Row(
+            children: [
               Icon(Icons.cancel_rounded, color: Colors.redAccent),
               SizedBox(width: 8),
               Text('ປະຕິເສດການອະນຸມັດປຶ້ມ'),
@@ -1551,7 +1551,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                     ),
                     Switch(
                       value: isActive,
-                      activeColor: Colors.green,
+                      activeThumbColor: Colors.green,
                       inactiveThumbColor: Colors.redAccent,
                       onChanged: (val) => _togglePackageStatus(pkg),
                     ),
@@ -1658,7 +1658,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                             final authorBio = (author['biography'] ?? '').toString();
                             return ListTile(
                               leading: CircleAvatar(
-                                backgroundColor: AppColors.primary.withOpacity(0.15),
+                                backgroundColor: AppColors.primary.withValues(alpha: 0.15),
                                 child: Text(authorName.isNotEmpty ? authorName[0].toUpperCase() : '?', style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary)),
                               ),
                               title: Text(authorName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
@@ -1693,8 +1693,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: const [
+                  const Row(
+                    children: [
                       Icon(Icons.security_rounded, color: Colors.indigo, size: 20),
                       SizedBox(width: 8),
                       Text('ບັນທຶກຄວາມປອດໄພ (Audit Logs)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),

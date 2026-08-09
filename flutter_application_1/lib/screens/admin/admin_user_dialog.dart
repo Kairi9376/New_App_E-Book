@@ -206,11 +206,11 @@ class _AdminUserFormScreenState extends State<AdminUserFormScreen> {
                             height: 90,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: _getRoleColor(_selectedRole).withOpacity(0.1),
+                              color: _getRoleColor(_selectedRole).withValues(alpha: 0.1),
                               border: Border.all(color: _getRoleColor(_selectedRole), width: 2.5),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.08),
+                                  color: Colors.black.withValues(alpha: 0.08),
                                   blurRadius: 10,
                                   offset: const Offset(0, 4),
                                 ),
@@ -220,7 +220,7 @@ class _AdminUserFormScreenState extends State<AdminUserFormScreen> {
                               _profileImageUrl,
                               firstName: firstChar,
                               size: 90,
-                              backgroundColor: _getRoleColor(_selectedRole).withOpacity(0.15),
+                              backgroundColor: _getRoleColor(_selectedRole).withValues(alpha: 0.15),
                             ),
                           ),
                           InkWell(
@@ -361,7 +361,7 @@ class _AdminUserFormScreenState extends State<AdminUserFormScreen> {
                         children: [
                           Expanded(
                             child: DropdownButtonFormField<String>(
-                              value: _selectedRole,
+                              initialValue: _selectedRole,
                               decoration: const InputDecoration(
                                 labelText: 'ສິດການນຳໃຊ້ (Role) *',
                                 prefixIcon: Icon(Icons.security_rounded, color: AppColors.primary),
@@ -382,7 +382,7 @@ class _AdminUserFormScreenState extends State<AdminUserFormScreen> {
                           const SizedBox(width: 12),
                           Expanded(
                             child: DropdownButtonFormField<String>(
-                              value: _selectedStatus,
+                              initialValue: _selectedStatus,
                               decoration: const InputDecoration(
                                 labelText: 'ສະຖານະບັນຊີ (Status) *',
                                 contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 12),
@@ -454,7 +454,7 @@ class _AdminUserFormScreenState extends State<AdminUserFormScreen> {
                             style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
                           ),
                           value: _isStudent,
-                          activeColor: AppColors.primary,
+                          activeThumbColor: AppColors.primary,
                           onChanged: (val) => setState(() => _isStudent = val),
                         ),
                       ),

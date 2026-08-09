@@ -37,7 +37,7 @@ class UserHomeScreen extends StatefulWidget {
 class _UserHomeScreenState extends State<UserHomeScreen> {
   int _selectedCategoryIndex = 0;
   int _currentBottomNavIndex = 0;
-  String _searchQuery = '';
+  final String _searchQuery = '';
   List<BookModel> _fetchedBooks = [];
   bool _isLoadingBooks = true;
   KycStatus _kycStatus = KycStatus.notSubmitted;
@@ -291,7 +291,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
               height: 46,
               fit: BoxFit.cover,
               placeholder: Container(
-                color: AppColors.primary.withOpacity(0.12),
+                color: AppColors.primary.withValues(alpha: 0.12),
                 child: Center(
                   child: Text(
                     firstName.isNotEmpty ? firstName[0].toUpperCase() : 'U',
@@ -417,7 +417,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF0047AB).withOpacity(0.2),
+            color: const Color(0xFF0047AB).withValues(alpha: 0.2),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -428,16 +428,16 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
+              color: Colors.white.withValues(alpha: 0.2),
               shape: BoxShape.circle,
             ),
             child: const Icon(Icons.verified_user_rounded, color: Colors.white, size: 22),
           ),
           const SizedBox(width: 12),
-          Expanded(
+          const Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
+              children: [
                 Text(
                   'ຢືນຢັນຕົວຕົນ (KYC) ເພື່ອສະໝັກແພັກເກັດສະມາຊິກ',
                   style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white),
@@ -509,14 +509,14 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
           border: Border.all(color: const Color(0xFFE2E8F0)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.02),
+              color: Colors.black.withValues(alpha: 0.02),
               blurRadius: 6,
               offset: const Offset(0, 2),
             ),
           ],
         ),
-        child: Row(
-          children: const [
+        child: const Row(
+          children: [
             Icon(Icons.search_rounded, color: AppColors.primary, size: 22),
             SizedBox(width: 12),
             Text(
@@ -573,8 +573,8 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Row(
-                        children: const [
+                      const Row(
+                        children: [
                           Icon(Icons.category_rounded, color: AppColors.primary, size: 22),
                           SizedBox(width: 8),
                           Text('ໝວດໝູ່ທັງໝົດ (All Categories)', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
@@ -706,10 +706,10 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                         decoration: BoxDecoration(
                           color: const Color(0xFFEFF6FF),
                           borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+                          border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
                         ),
-                        child: Row(
-                          children: const [
+                        child: const Row(
+                          children: [
                             Icon(Icons.grid_view_rounded, size: 15, color: AppColors.primary),
                             SizedBox(width: 5),
                             Text('ທັງໝົດ...', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 12)),
@@ -728,7 +728,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                     selectedColor: AppColors.primary,
                     backgroundColor: const Color(0xFFEFF3F8),
                     elevation: isSelected ? 1 : 0,
-                    shadowColor: AppColors.primary.withOpacity(0.3),
+                    shadowColor: AppColors.primary.withValues(alpha: 0.3),
                     labelStyle: TextStyle(
                       color: isSelected ? Colors.white : const Color(0xFF475569),
                       fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
@@ -765,7 +765,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: const Color(0xFFE2E8F0)),
                   boxShadow: [
-                    BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 4, offset: const Offset(0, 2)),
+                    BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 4, offset: const Offset(0, 2)),
                   ],
                 ),
                 child: const Icon(Icons.grid_view_rounded, color: AppColors.primary, size: 20),
@@ -913,7 +913,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
           border: Border.all(color: const Color(0xFFF1F5F9)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.03),
+              color: Colors.black.withValues(alpha: 0.03),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),

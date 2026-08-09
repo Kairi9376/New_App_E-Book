@@ -78,6 +78,18 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
     _listenToWebMessages();
     _registerWebIframe();
 
+    // # ເຮັດຫຍັງ: ນັບຜູ້ອ່ານເພີ່ມ 1 ຕອນເປີດໜ້າອ່ານ
+    // # ຍ້ອນຫຍັງ: backend ມີ POST /books/:id/increment-readers ແລະ DB ມີຖັນ
+    // #          readers_count ມາແຕ່ຕົ້ນ ແຕ່ບໍ່ມີໃຜເອີ້ນເລີຍ ຕົວເລກຜູ້ອ່ານທີ່ສະແດງ
+    // #          ໃນແອັບຈຶ່ງເປັນຄ່າ seed ທີ່ບໍ່ເຄີຍປ່ຽນ ບໍ່ສະທ້ອນການໃຊ້ງານຈິງ
+    // # ແກ້ຈາກສ່ວນໃດ: initState() ເອີ້ນແຕ່ _normalizePdfUrl/_listenToWebMessages/
+    // #              _registerWebIframe ໂດຍບໍ່ໄດ້ບອກ backend ວ່າມີຄົນເປີດອ່ານ
+    // # ແກ້ເຮັດຫຍັງ: ບໍ່ລໍຜົນ (fire-and-forget) ເພາະການນັບລົ້ມເຫຼວບໍ່ຄວນກັນຜູ້ໃຊ້ອ່ານປຶ້ມ
+    final targetBookId = widget.bookId;
+    if (targetBookId != null && targetBookId.isNotEmpty) {
+      ApiService.incrementReadersCount(targetBookId);
+    }
+
     Future.delayed(const Duration(milliseconds: 500), () {
       if (mounted) setState(() => _isLoading = false);
     });
@@ -393,8 +405,8 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Row(
-                          children: const [
+                        const Row(
+                          children: [
                             Icon(Icons.menu_book_rounded, color: AppColors.primary, size: 24),
                             SizedBox(width: 8),
                             Text(
@@ -509,7 +521,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
                                 return ListTile(
                                   dense: true,
                                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                                  tileColor: isCurrent ? AppColors.primary.withOpacity(0.25) : Colors.transparent,
+                                  tileColor: isCurrent ? AppColors.primary.withValues(alpha: 0.25) : Colors.transparent,
                                   leading: CircleAvatar(
                                     radius: 14,
                                     backgroundColor: isCurrent ? AppColors.primary : const Color(0xFF334155),
@@ -567,7 +579,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
                                       borderRadius: BorderRadius.circular(10),
                                       border: Border.all(color: isCurrent ? Colors.white : Colors.transparent, width: 1.5),
                                       boxShadow: isCurrent
-                                          ? [BoxShadow(color: AppColors.primary.withOpacity(0.5), blurRadius: 8, spreadRadius: 1)]
+                                          ? [BoxShadow(color: AppColors.primary.withValues(alpha: 0.5), blurRadius: 8, spreadRadius: 1)]
                                           : null,
                                     ),
                                     child: Center(
@@ -631,8 +643,8 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Row(
-                      children: const [
+                    const Row(
+                      children: [
                         Icon(Icons.info_outline_rounded, color: AppColors.primary, size: 24),
                         SizedBox(width: 8),
                         Text('ຂໍ້ມູນພື້ນຖານຂອງປຶ້ມ (Book Info)', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
@@ -725,7 +737,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.3),
+              color: AppColors.primary.withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Text('$zoomPercent%', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
@@ -743,7 +755,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 10),
             margin: const EdgeInsets.symmetric(vertical: 8),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.15),
+              color: Colors.white.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(10),
               border: Border.all(color: Colors.amber, width: 1),
             ),
@@ -824,7 +836,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.2),
+                      color: AppColors.primary.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(color: AppColors.primary, width: 0.8),
                     ),
@@ -971,7 +983,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
               border: Border(top: BorderSide(color: _isDarkMode ? const Color(0xFF334155) : const Color(0xFFE2E8F0))),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
+                  color: Colors.black.withValues(alpha: 0.1),
                   blurRadius: 10,
                   offset: const Offset(0, -2),
                 ),

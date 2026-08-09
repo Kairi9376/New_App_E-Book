@@ -119,7 +119,7 @@ class _AuthorManagementScreenState extends State<AuthorManagementScreen> {
             Container(
               padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
-                color: const Color(0xFF10B981).withOpacity(0.2),
+                color: const Color(0xFF10B981).withValues(alpha: 0.2),
                 shape: BoxShape.circle,
               ),
               child: const Icon(Icons.person_rounded,
@@ -176,12 +176,12 @@ class _AuthorManagementScreenState extends State<AuthorManagementScreen> {
                     color: AppColors.primary,
                     child: filteredAuthors.isEmpty
                         ? ListView(
-                            children: [
-                              const SizedBox(height: 80),
-                              const Icon(Icons.person_off_rounded,
+                            children: const [
+                              SizedBox(height: 80),
+                              Icon(Icons.person_off_rounded,
                                   size: 48, color: AppColors.textSecondary),
-                              const SizedBox(height: 8),
-                              const Center(
+                              SizedBox(height: 8),
+                              Center(
                                 child: Text('ບໍ່ພົບນັກຂຽນ',
                                     style: TextStyle(
                                         color: AppColors.textSecondary)),
@@ -225,7 +225,7 @@ class _AuthorManagementScreenState extends State<AuthorManagementScreen> {
         children: [
           CircleAvatar(
             radius: 24,
-            backgroundColor: AppColors.primary.withOpacity(0.15),
+            backgroundColor: AppColors.primary.withValues(alpha: 0.15),
             child: Text(
               author.name.isNotEmpty ? author.name[0].toUpperCase() : '?',
               style: const TextStyle(

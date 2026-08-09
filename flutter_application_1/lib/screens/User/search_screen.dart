@@ -192,8 +192,8 @@ class _SearchScreenState extends State<SearchScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Row(
-                        children: const [
+                      const Row(
+                        children: [
                           Icon(Icons.category_rounded, color: AppColors.primary, size: 22),
                           SizedBox(width: 8),
                           Text('ໝວດໝູ່ທັງໝົດ (All Categories)', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
@@ -326,7 +326,7 @@ class _SearchScreenState extends State<SearchScreen> {
                         avatar: const Icon(Icons.grid_view_rounded, size: 14, color: AppColors.primary),
                         backgroundColor: const Color(0xFFEFF6FF),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                        side: BorderSide(color: AppColors.primary.withOpacity(0.3)),
+                        side: BorderSide(color: AppColors.primary.withValues(alpha: 0.3)),
                         onPressed: _openAllCategoriesModal,
                       ),
                     );
@@ -460,11 +460,11 @@ class _SearchScreenState extends State<SearchScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          const Row(
             children: [
-              const Icon(Icons.trending_up_rounded, color: AppColors.primary, size: 20),
-              const SizedBox(width: 8),
-              const Text(
+              Icon(Icons.trending_up_rounded, color: AppColors.primary, size: 20),
+              SizedBox(width: 8),
+              Text(
                 'ຄຳຄົ້ນຫາຍອດນິຍົມ (Popular Searches)',
                 style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
               ),
@@ -514,7 +514,7 @@ class _SearchScreenState extends State<SearchScreen> {
         border: Border.all(color: const Color(0xFFE2E8F0)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 6,
             offset: const Offset(0, 2),
           ),

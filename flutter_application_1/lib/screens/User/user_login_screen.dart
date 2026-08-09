@@ -125,7 +125,7 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
                   width: 90,
                   height: 90,
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.1),
+                    color: AppColors.primary.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(
@@ -330,8 +330,8 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        children: const [
+                      const Row(
+                        children: [
                           Icon(Icons.info_outline_rounded,
                               size: 16, color: AppColors.primary),
                           SizedBox(width: 6),

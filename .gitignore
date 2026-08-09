@@ -33,3 +33,14 @@ build/
 # ================================
 Thumbs.db
 Desktop.ini
+
+# ================================
+# Node.js dependencies
+# ================================
+# # ເຮັດຫຍັງ: ເພີ່ມ node_modules ເຂົ້າ .gitignore
+# # ຍ້ອນຫຍັງ: ແຕ່ກ່ອນບໍ່ມີກົດນີ້ ເຮັດໃຫ້ Backend/node_modules ຖືກ commit ເຂົ້າ repo
+# #          ເຖິງ 1,522 ໄຟລ໌ / 12MB ເຊິ່ງ clone ຊ້າ ແລະ ຂັດແຍ້ງກັນເວລາ merge
+# #          ທັງທີ່ package-lock.json ສ້າງມັນຄືນໄດ້ຢູ່ແລ້ວດ້ວຍ npm ci
+# # ແກ້ຈາກສ່ວນໃດ: .gitignore ບໍ່ມີຄຳວ່າ node_modules ເລີຍ
+# # ແກ້ເຮັດຫຍັງ: ກັນບໍ່ໃຫ້ຖືກເພີ່ມອີກ (ຕ້ອງ git rm --cached ຄວບຄູ່ເພື່ອຖອນຂອງເກົ່າ)
+node_modules/
