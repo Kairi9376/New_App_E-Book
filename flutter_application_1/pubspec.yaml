@@ -26,8 +26,7 @@ version: 1.0.0+1
 # # ແກ້ເຮັດຫຍັງ: ບອກຄວາມຈິງວ່າໂປຣເຈັກຕ້ອງການ Flutter 3.41+ ຜູ້ພັດທະນາໃນ Windows
 # #             ຈຶ່ງຮູ້ຕັ້ງແຕ່ຕອນ pub get ບໍ່ແມ່ນໄປພັງຕອນ build
 environment:
-  sdk: '>=3.10.0 <4.0.0'
-  flutter: '>=3.41.0'
+  sdk: '>=2.19.4 <4.0.0'
 
 # Dependencies specify other packages that your package needs in order to work.
 # To automatically upgrade your package dependencies to the latest versions
@@ -46,8 +45,8 @@ dependencies:
   url_launcher: ^6.1.6
   flutter_svg: ^2.0.5
   shared_preferences: ^2.2.0
-  file_picker: ^11.0.3
-  pdfrx: ^2.4.7
+  file_picker: ^5.2.5
+  pdfrx: ^1.0.33
 
 dev_dependencies:
   flutter_test:

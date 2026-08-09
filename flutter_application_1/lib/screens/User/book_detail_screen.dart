@@ -31,9 +31,17 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
   int _lastPageRead = 0;
   int _selectedPageChunk = 0;
 
+  bool _isMemberState = false;
+
   @override
   void initState() {
     super.initState();
+    final user = ApiService.currentUser ?? {};
+    final role = (user['role'] ?? 'user').toString().toLowerCase();
+    final email = (user['email'] ?? '').toString().toLowerCase();
+    final isPremiereFlag = user['is_premiere'] == true || user['is_member'] == true || user['subscription_status'] == 'approved';
+    _isMemberState = role == 'admin' || role == 'employee' || email == 'member@gmail.com' || isPremiereFlag;
+
     if (widget.book != null) {
       _title = widget.book!.title;
       _author = widget.book!.author;
@@ -49,15 +57,28 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
       _imagePath = 'assets/sample_book.pdf';
     }
 
+    _checkLiveMemberStatus();
     _fetchReadingHistory();
   }
 
-  bool get _isMember {
+  Future<void> _checkLiveMemberStatus() async {
     final user = ApiService.currentUser ?? {};
-    final role = user['role'] ?? 'user';
-    final email = user['email'] ?? '';
-    return role == 'admin' || role == 'employee' || email == 'member@gmail.com';
+    final userId = user['user_id'] ?? user['id'];
+    if (userId != null) {
+      final parsedId = int.tryParse(userId.toString());
+      if (parsedId != null) {
+        final sub = await ApiService.getUserSubscriptionStatus(parsedId);
+        if (sub != null) {
+          final status = (sub['status'] ?? sub['payment_status'] ?? '').toString().toLowerCase();
+          if (status == 'approved' || status == 'active') {
+            if (mounted) setState(() => _isMemberState = true);
+          }
+        }
+      }
+    }
   }
+
+  bool get _isMember => _isMemberState;
 
   void _showMembershipRequiredDialog() {
     showDialog(
