@@ -297,3 +297,19 @@ INSERT INTO downloads (download_id, user_id, book_id, device_info) VALUES
 (1, 3, 4, 'Flutter Application'),
 (2, 3, 3, 'Flutter Application')
 ON DUPLICATE KEY UPDATE download_id=download_id;
+
+-- # ເຮັດຫຍັງ: ເພີ່ມຂໍ້ມູນຕົວຢ່າງໃສ່ຕາຕະລາງ notifications
+-- # ຍ້ອນຫຍັງ: ເປັນຕາຕະລາງດຽວ (ນອກຈາກ audit_logs ທີ່ສ້າງຕອນແລ່ນ) ທີ່ seed ບໍ່ມີ
+-- #          ແອັບຈຶ່ງເຄີຍ fallback ໄປໃຊ້ MockNotificationsData ທີ່ hardcode ໄວ້ໃນໂຄ້ດ
+-- #          ຜູ້ໃຊ້ຈຶ່ງເຫັນແຈ້ງເຕືອນປອມທີ່ບໍ່ແມ່ນຂອງຕົນ ແລະ ລຶບບໍ່ໄດ້
+-- # ແກ້ຈາກສ່ວນໃດ: database.sql ມີ INSERT ໃຫ້ 11 ຕາຕະລາງ ແຕ່ຂ້າມ notifications
+-- # ແກ້ເຮັດຫຍັງ: ຂໍ້ມູນຕົວຢ່າງມາຈາກຖານຂໍ້ມູນ ຈຶ່ງອ່ານ/ໝາຍວ່າອ່ານແລ້ວ/ລຶບໄດ້ຈິງ
+-- #             ຜ່ານ API ດຽວກັນກັບຂໍ້ມູນຈິງ
+INSERT INTO notifications (notification_id, user_id, title, message, type, is_read) VALUES
+(1, 3, '🎉 ຍິນດີຕ້ອນຮັບເຂົ້າສູ່ລະບົບ E-Book', 'ເລີ່ມຄົ້ນຫາ ແລະ ອ່ານປຶ້ມທີ່ທ່ານສົນໃຈໄດ້ເລີຍ', 'system', TRUE),
+(2, 3, '🛡️ ຢືນຢັນຕົວຕົນ (KYC) ຜ່ານແລ້ວ', 'ບັນຊີຂອງທ່ານຜ່ານການກວດສອບ ສາມາດສະໝັກແພັກເກັດສະມາຊິກໄດ້', 'kyc', TRUE),
+(3, 3, '📚 ມີປຶ້ມໃໝ່ເຂົ້າຄັງ', 'ປຶ້ມສັງຄົມສຶກສາ ຖືກເພີ່ມເຂົ້າຄັງແລ້ວ ລອງເປີດອ່ານເບິ່ງ', 'new_book', FALSE),
+(4, 4, '👑 ທ່ານເປັນສະມາຊິກ Premiere ແລ້ວ', 'ອ່ານ ແລະ ດາວໂຫຼດ e-Book ໄດ້ແບບບໍ່ຈຳກັດຕະຫຼອດອາຍຸແພັກເກັດ', 'subscription', FALSE),
+(5, 2, '📥 ມີປຶ້ມລໍຖ້າການອະນຸມັດ', 'Advances in Physics ລໍຖ້າແອດມິນກວດສອບ ແລະ ອະນຸມັດ', 'system', FALSE)
+ON DUPLICATE KEY UPDATE notification_id=notification_id;
+

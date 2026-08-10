@@ -88,40 +88,9 @@ class NotificationItem {
   }
 }
 
-class MockNotificationsData {
-  static List<NotificationItem> items = [
-    NotificationItem(
-      id: '1',
-      title: '🎉 ຢືນຢັນຕົວຕົນ (KYC) ສຳເລັດແລ້ວ!',
-      message: 'ບັນຊີຂອງທ່ານໄດ້ຮັບການອະນຸມັດ KYC ຮຽບຮ້ອຍແລ້ວ ສາມາດສະໝັກແພັກເກັດສະມາຊິກເພື່ອເລີ່ມດາວໂຫຼດ e-Book ໄດ້ທັນທີ',
-      type: NotificationType.kyc,
-      isRead: false,
-      createdAt: DateTime.now().subtract(const Duration(minutes: 25)),
-    ),
-    NotificationItem(
-      id: '2',
-      title: '📚 ປຶ້ມໃໝ່: "The Science of Thinking"',
-      message: 'ໜັງສື e-Book ເຫຼັ້ມໃໝ່ລ່າສຸດວາງຈຳໜ່າຍໃນຄັງແລ້ວ ພ້ອມໃຫ້ສະມາຊິກ Premiere ເຂົ້າອ່ານ ແລະ ດາວໂຫຼດຟຣີ',
-      type: NotificationType.book,
-      isRead: false,
-      createdAt: DateTime.now().subtract(const Duration(hours: 3)),
-      imagePath: 'assets/sample_cover.png',
-    ),
-    NotificationItem(
-      id: '3',
-      title: '💎 ແພັກເກັດ Premiere Member ໃກ້ໝົດອາຍຸ',
-      message: 'ແພັກເກັດສະມາຊິກຂອງທ່ານຈະໝົດອາຍຸໃນອີກ 3 ມື້ ຕໍ່ອາຍຸມື້ນີ້ຮັບສ່ວນຫຼຸດພິເສດ 10%',
-      type: NotificationType.subscription,
-      isRead: true,
-      createdAt: DateTime.now().subtract(const Duration(days: 1)),
-    ),
-    NotificationItem(
-      id: '4',
-      title: '🎓 ໂປຣໂມຊັນພິເສດສຳລັບນັກຮຽນ/ນັກສຶກສາ',
-      message: 'ສະໝັກແພັກເກັດ Student Special ຫຼຸດທັນທີ 50% ສຳລັບນັກຮຽນທີ່ຜ່ານການຢືນຢັນບັດນັກສຶກສາ',
-      type: NotificationType.promo,
-      isRead: true,
-      createdAt: DateTime.now().subtract(const Duration(days: 3)),
-    ),
-  ];
-}
+// # ເຮັດຫຍັງ: ລຶບ class Mock*Data ອອກຈາກໄຟລ໌ນີ້
+// # ຍ້ອນຫຍັງ: ເປັນຂໍ້ມູນຕົວຢ່າງທີ່ hardcode ໄວ້ໃນແອັບ ໃຊ້ເປັນ fallback ຕອນ API ລົ້ມ
+// #          ເຮັດໃຫ້ຜູ້ໃຊ້ເຫັນເນື້ອຫາປອມ ແລະ ປິດບັງບັນຫາຂອງ backend
+// # ແກ້ຈາກສ່ວນໃດ: class Mock*Data ທ້າຍໄຟລ໌ ພ້ອມກັບຜູ້ເອີ້ນໃນ api_service.dart
+// # ແກ້ເຮັດຫຍັງ: ຂໍ້ມູນຕົວຢ່າງຍ້າຍໄປຢູ່ Backend/database.sql ເປັນ seed ຂອງຖານຂໍ້ມູນ
+// #             ເຊິ່ງເປັນຂໍ້ມູນຈິງທີ່ແກ້ໄຂ/ລຶບໄດ້ຜ່ານໜ້າ Admin

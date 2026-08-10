@@ -128,8 +128,15 @@ class BookModel {
       parsedRating = double.tryParse(map['rating'].toString()) ?? 0.0;
     }
 
-    int parsedLikes = int.tryParse(map['like_count']?.toString() ?? map['likes']?.toString() ?? map['likeCount']?.toString() ?? '124') ?? 124;
-    int parsedViews = int.tryParse(map['view_count']?.toString() ?? map['views']?.toString() ?? map['readers']?.toString() ?? map['viewCount']?.toString() ?? '350') ?? 350;
+    // # ເຮັດຫຍັງ: ປ່ຽນຄ່າເລີ່ມຕົ້ນຂອງ likes/views ຈາກ 124/350 ເປັນ 0
+    // # ຍ້ອນຫຍັງ: ເລກ 124 ກັບ 350 ຖືກ hardcode ໄວ້ ປຶ້ມທຸກຫົວທີ່ backend ບໍ່ໄດ້ສົ່ງ
+    // #          ຄ່ານີ້ມາຈຶ່ງສະແດງ "124 ຖືກໃຈ / 350 ຜູ້ອ່ານ" ຄືກັນໝົດ ເປັນຕົວເລກປອມ
+    // #          ທີ່ຜູ້ໃຊ້ເຂົ້າໃຈວ່າແມ່ນສະຖິຕິຈິງ
+    // # ແກ້ຈາກສ່ວນໃດ: fallback '124' ແລະ '350' ໃນ BookModel.fromMap
+    // # ແກ້ເຮັດຫຍັງ: 0 ສະທ້ອນຄວາມຈິງວ່າຍັງບໍ່ມີໃຜອ່ານ/ຖືກໃຈ ສ່ວນຄ່າຈິງມາຈາກ
+    // #             ຖັນ readers_count/likes_count ໃນຖານຂໍ້ມູນ
+    int parsedLikes = int.tryParse(map['likes_count']?.toString() ?? map['like_count']?.toString() ?? map['likes']?.toString() ?? map['likeCount']?.toString() ?? '0') ?? 0;
+    int parsedViews = int.tryParse(map['readers_count']?.toString() ?? map['view_count']?.toString() ?? map['views']?.toString() ?? map['readers']?.toString() ?? map['viewCount']?.toString() ?? '0') ?? 0;
     bool parsedIsLiked = map['is_liked'] == 1 || map['is_liked'] == true || map['isLiked'] == true;
 
     int parsedPages = int.tryParse(map['page_count']?.toString() ??
@@ -230,79 +237,9 @@ class BookModel {
   }
 }
 
-class MockBookData {
-  static List<BookModel> popularBooks = [
-    BookModel(
-      id: '1',
-      title: 'The Happiness Effect',
-      author: 'Stephen T. Radentz',
-      likeCount: 1240,
-      viewCount: 4500,
-      tags: ['ຊີວິດ'],
-      imagePath: 'assets/sample_cover.png',
-      pdfUrl: 'assets/sample_book.pdf',
-      isPopular: true,
-    ),
-    BookModel(
-      id: '2',
-      title: 'High School Science',
-      author: 'Nageen Prakashan',
-      likeCount: 890,
-      viewCount: 3200,
-      tags: ['ວິທະຍາສາດ'],
-      imagePath: 'assets/sample_cover.png',
-      pdfUrl: 'assets/sample_book.pdf',
-      isPopular: true,
-    ),
-  ];
-
-  static List<BookModel> newBooks = [
-    BookModel(
-      id: '3',
-      title: 'Quantum Mechanics',
-      author: 'Dr. Elias Thorne',
-      likeCount: 450,
-      viewCount: 1800,
-      tags: ['ສິລະປະ'],
-      imagePath: 'assets/sample_cover.png',
-      pdfUrl: 'assets/sample_book.pdf',
-      isNew: true,
-    ),
-    BookModel(
-      id: '4',
-      title: 'Advances in Physics',
-      author: 'Dr. Elias Thorne',
-      likeCount: 320,
-      viewCount: 1200,
-      tags: ['ຜະຈົນໄພ'],
-      imagePath: 'assets/sample_cover.png',
-      pdfUrl: 'assets/sample_book.pdf',
-      isNew: true,
-    ),
-  ];
-
-  static List<BookModel> recommendedBooks = [
-    BookModel(
-      id: '6',
-      title: 'Learning English Book 3',
-      author: 'English Teacher',
-      likeCount: 2150,
-      viewCount: 6800,
-      tags: ['ພາສາອັງກິດ'],
-      imagePath: 'assets/sample_cover.png',
-      pdfUrl: 'assets/sample_book.pdf',
-      isRecommended: true,
-    ),
-    BookModel(
-      id: '7',
-      title: 'Everything you need to ace MATHS',
-      author: 'Award Winning teacher',
-      likeCount: 3400,
-      viewCount: 9200,
-      tags: ['ຄະນິດສາດ'],
-      imagePath: 'assets/sample_cover.png',
-      pdfUrl: 'assets/sample_book.pdf',
-      isRecommended: true,
-    ),
-  ];
-}
+// # ເຮັດຫຍັງ: ລຶບ class Mock*Data ອອກຈາກໄຟລ໌ນີ້
+// # ຍ້ອນຫຍັງ: ເປັນຂໍ້ມູນຕົວຢ່າງທີ່ hardcode ໄວ້ໃນແອັບ ໃຊ້ເປັນ fallback ຕອນ API ລົ້ມ
+// #          ເຮັດໃຫ້ຜູ້ໃຊ້ເຫັນເນື້ອຫາປອມ ແລະ ປິດບັງບັນຫາຂອງ backend
+// # ແກ້ຈາກສ່ວນໃດ: class Mock*Data ທ້າຍໄຟລ໌ ພ້ອມກັບຜູ້ເອີ້ນໃນ api_service.dart
+// # ແກ້ເຮັດຫຍັງ: ຂໍ້ມູນຕົວຢ່າງຍ້າຍໄປຢູ່ Backend/database.sql ເປັນ seed ຂອງຖານຂໍ້ມູນ
+// #             ເຊິ່ງເປັນຂໍ້ມູນຈິງທີ່ແກ້ໄຂ/ລຶບໄດ້ຜ່ານໜ້າ Admin

@@ -104,38 +104,9 @@ class DownloadedBookItem {
   }
 }
 
-class MockDownloadsData {
-  static List<DownloadedBookItem> downloadedItems = [
-    DownloadedBookItem(
-      id: '1',
-      downloadId: 1,
-      bookId: 4,
-      title: 'ປຶ້ມສັງຄົມສຶກສາ',
-      author: 'ດຣ.ຈອນ ວົງວິໄລ',
-      category: 'ສັງຄົມ',
-      pageCount: 180,
-      fileSizeBytes: 12000000,
-      likeCount: 95,
-      viewCount: 210,
-      rating: 4.8,
-      imagePath: 'assets/sample_cover.png',
-      pdfUrl: 'assets/sample_book.pdf',
-    ),
-    DownloadedBookItem(
-      id: '2',
-      downloadId: 2,
-      bookId: 3,
-      title: 'Quantum Mechanics',
-      author: 'Dr. Elias Thorne',
-      category: 'ເຕັກໂນໂລຊີ, ວິທະຍາສາດ',
-      pageCount: 450,
-      fileSizeBytes: 38000000,
-      likeCount: 19,
-      viewCount: 64,
-      rating: 4.9,
-      imagePath: 'assets/sample_cover.png',
-      pdfUrl: 'assets/sample_book.pdf',
-    ),
-  ];
-}
-
+// # ເຮັດຫຍັງ: ລຶບ class Mock*Data ອອກຈາກໄຟລ໌ນີ້
+// # ຍ້ອນຫຍັງ: ເປັນຂໍ້ມູນຕົວຢ່າງທີ່ hardcode ໄວ້ໃນແອັບ ໃຊ້ເປັນ fallback ຕອນ API ລົ້ມ
+// #          ເຮັດໃຫ້ຜູ້ໃຊ້ເຫັນເນື້ອຫາປອມ ແລະ ປິດບັງບັນຫາຂອງ backend
+// # ແກ້ຈາກສ່ວນໃດ: class Mock*Data ທ້າຍໄຟລ໌ ພ້ອມກັບຜູ້ເອີ້ນໃນ api_service.dart
+// # ແກ້ເຮັດຫຍັງ: ຂໍ້ມູນຕົວຢ່າງຍ້າຍໄປຢູ່ Backend/database.sql ເປັນ seed ຂອງຖານຂໍ້ມູນ
+// #             ເຊິ່ງເປັນຂໍ້ມູນຈິງທີ່ແກ້ໄຂ/ລຶບໄດ້ຜ່ານໜ້າ Admin

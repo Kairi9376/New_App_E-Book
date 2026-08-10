@@ -44,10 +44,12 @@ class _MembershipPackageScreenState extends State<MembershipPackageScreen> {
   Future<void> _loadBackendData() async {
     setState(() => _isLoading = true);
 
-    final user = ApiService.currentUser ?? {};
-    final rawUserId = user['user_id'] ?? user['id'];
-    final int userId =
-        rawUserId != null ? (int.tryParse(rawUserId.toString()) ?? 3) : 3;
+    // # ເຮັດຫຍັງ: ອ່ານ user_id ຜ່ານ ApiService.currentUserId ແທນການຕັ້ງຄ່າເລີ່ມຕົ້ນເປັນ 3
+    // # ຍ້ອນຫຍັງ: `?? 3` ໝາຍຄວາມວ່າຖ້າບໍ່ມີຜູ້ໃຊ້ login ຢູ່ ໜ້ານີ້ຈະໄປອ່ານ/ຂຽນ
+    // #          ຂໍ້ມູນຂອງບັນຊີ user_id = 3 (ສົມຊາຍ ໃຈດີ) ໂດຍອັດຕະໂນມັດ
+    // # ແກ້ຈາກສ່ວນໃດ: `int.tryParse(...) ?? 3 : 3` ທີ່ຂຽນຊ້ຳຢູ່ຫຼາຍໜ້າ
+    // # ແກ້ເຮັດຫຍັງ: ໃຊ້ຄ່າຈິງຂອງຜູ້ທີ່ login ຢູ່ ຖ້າບໍ່ມີກໍ່ໃຫ້ເປັນ 0 ເຊິ່ງບໍ່ຕົງກັບໃຜ
+    final int userId = ApiService.currentUserId ?? 0;
 
     final packages = await ApiService.getPackages();
     final kycModel = await ApiService.getUserKycStatus(userId);
@@ -75,6 +77,20 @@ class _MembershipPackageScreenState extends State<MembershipPackageScreen> {
       });
     }
   }
+
+
+  // # ເຮັດຫຍັງ: ເພີ່ມ getter ອ່ານຊື່/ອີເມວຈາກຜູ້ໃຊ້ທີ່ login ຢູ່
+  // # ຍ້ອນຫຍັງ: ໜ້ານີ້ເຄີຍ hardcode 'ຜູ້ໃຊ້ງານລະບົບ' ກັບ 'user1234@gmail.com'
+  // #          ໃສ່ KycModel ຂອງທຸກຄົນ
+  // # ແກ້ຈາກສ່ວນໃດ: ຄ່າຕົວຢ່າງທີ່ຂຽນໄວ້ໃນ KycModel ຢູ່ 2 ບ່ອນ
+  // # ແກ້ເຮັດຫຍັງ: ດຶງຈາກ session ຈິງ ຫວ່າງໄວ້ຖ້າບໍ່ມີ
+  String get _currentUserName {
+    final u = ApiService.currentUser ?? {};
+    return '${u['first_name'] ?? ''} ${u['last_name'] ?? ''}'.trim();
+  }
+
+  String get _currentUserEmail =>
+      (ApiService.currentUser?['email'] ?? '').toString();
 
   bool get _isUserStudent {
     final user = ApiService.currentUser ?? {};
@@ -164,11 +180,16 @@ class _MembershipPackageScreenState extends State<MembershipPackageScreen> {
                         builder: (context) => KycSubmissionScreen(
                           currentKyc: _liveKycModel ??
                               widget.userKyc ??
+                              // # ເຮັດຫຍັງ: ສ້າງ KycModel ຫວ່າງຈາກຂໍ້ມູນຜູ້ໃຊ້ຈິງ
+                              // # ຍ້ອນຫຍັງ: ຂອງເກົ່າ hardcode userId 'u123' ແລະ
+                              // #          ອີເມວ user1234@gmail.com ໃສ່ທຸກຄົນ
+                              // # ແກ້ຈາກສ່ວນໃດ: KycModel(...) ທີ່ໃສ່ຄ່າຕົວຢ່າງໄວ້
+                              // # ແກ້ເຮັດຫຍັງ: ອ່ານຈາກ ApiService.currentUser
                               KycModel(
-                                id: 'kyc_new',
-                                userId: 'u123',
-                                userName: 'ຜູ້ໃຊ້ງານລະບົບ',
-                                userEmail: 'user1234@gmail.com',
+                                id: '',
+                                userId: (ApiService.currentUserId ?? 0).toString(),
+                                userName: _currentUserName,
+                                userEmail: _currentUserEmail,
                                 idCardNumber: '',
                                 fullName: '',
                                 idCardImagePath: '',
@@ -297,11 +318,12 @@ class _MembershipPackageScreenState extends State<MembershipPackageScreen> {
 
               setDialogState(() => isSubmitting = true);
 
-              final user = ApiService.currentUser ?? {};
-              final rawUserId = user['user_id'] ?? user['id'];
-              final int userId = rawUserId != null
-                  ? (int.tryParse(rawUserId.toString()) ?? 3)
-                  : 3;
+              // # ເຮັດຫຍັງ: ໃຊ້ ApiService.currentUserId ແທນຄ່າເລີ່ມຕົ້ນ 3
+              // # ຍ້ອນຫຍັງ: ການສ້າງ subscription ດ້ວຍ user_id = 3 ຈະບັນທຶກການຊື້
+              // #          ແພັກເກັດໃສ່ບັນຊີຄົນອື່ນ ຖ້າ session ຫາຍລະຫວ່າງທາງ
+              // # ແກ້ຈາກສ່ວນໃດ: rawUserId != null ? (... ?? 3) : 3
+              // # ແກ້ເຮັດຫຍັງ: 0 ບໍ່ຕົງກັບບັນຊີໃດ backend ຈະປະຕິເສດ ດີກວ່າຂຽນຜິດຄົນ
+              final int userId = ApiService.currentUserId ?? 0;
 
               final success = await ApiService.createSubscription({
                 'user_id': userId,
@@ -732,11 +754,16 @@ class _MembershipPackageScreenState extends State<MembershipPackageScreen> {
                 MaterialPageRoute(
                   builder: (context) => KycSubmissionScreen(
                     currentKyc: widget.userKyc ??
+                        // # ເຮັດຫຍັງ: ສ້າງ KycModel ຫວ່າງຈາກຂໍ້ມູນຜູ້ໃຊ້ຈິງ
+                        // # ຍ້ອນຫຍັງ: ຂອງເກົ່າ hardcode userId 'u123' ແລະ ອີເມວ
+                        // #          user1234@gmail.com ໃສ່ທຸກຄົນ (ບ່ອນທີ 2 ຂອງໄຟລ໌ນີ້)
+                        // # ແກ້ຈາກສ່ວນໃດ: KycModel(...) ທີ່ໃສ່ຄ່າຕົວຢ່າງໄວ້
+                        // # ແກ້ເຮັດຫຍັງ: ອ່ານຈາກ ApiService.currentUser
                         KycModel(
-                          id: 'kyc_new',
-                          userId: 'u123',
-                          userName: 'ຜູ້ໃຊ້ງານລະບົບ',
-                          userEmail: 'user1234@gmail.com',
+                          id: '',
+                          userId: (ApiService.currentUserId ?? 0).toString(),
+                          userName: _currentUserName,
+                          userEmail: _currentUserEmail,
                           idCardNumber: '',
                           fullName: '',
                           idCardImagePath: '',

@@ -75,6 +75,19 @@ class ApiService {
     }
   }
 
+
+  // # ເຮັດຫຍັງ: ເພີ່ມ helper ອ່ານ user_id ຂອງຜູ້ທີ່ login ຢູ່ ຄືນ null ຖ້າບໍ່ມີ
+  // # ຍ້ອນຫຍັງ: ທົ່ວໄຟລ໌ນີ້ຂຽນ `user['user_id'] ?? 3` ຢູ່ 9 ບ່ອນ ຊຶ່ງແປວ່າ
+  // #          ຖ້າບໍ່ມີຜູ້ໃຊ້ login ຢູ່ ການກະທຳຈະຖືກບັນທຶກໃສ່ບັນຊີ user_id = 3
+  // #          (ສົມຊາຍ ໃຈດີ) ໂດຍອັດຕະໂນມັດ - ປະຫວັດການອ່ານ, ບຸກມາກ, ດາວໂຫຼດ
+  // #          ແລະ KYC ຂອງຄົນອື່ນຈຶ່ງອາດຖືກຂຽນທັບບັນຊີນັ້ນ
+  // # ແກ້ຈາກສ່ວນໃດ: ຄ່າເລີ່ມຕົ້ນ `?? 3` ທີ່ກະຈາຍຢູ່ທົ່ວ ApiService
+  // # ແກ້ເຮັດຫຍັງ: ຜູ້ເອີ້ນຕ້ອງກວດ null ແລ້ວຢຸດ ແທນທີ່ຈະຂຽນໃສ່ບັນຊີຜິດຄົນ
+  static int? get currentUserId {
+    final raw = currentUser?['user_id'] ?? currentUser?['id'];
+    return int.tryParse(raw?.toString() ?? '');
+  }
+
   // Headers helper
   static Map<String, String> get _headers {
     final map = {'Content-Type': 'application/json'};
@@ -1097,8 +1110,9 @@ class ApiService {
   // 22. User: Fetch Reading History
   static Future<List<HistoryBookItem>> getHistory() async {
     try {
-      final user = currentUser ?? {};
-      final userId = user['user_id'] ?? 3;
+      final userId = currentUserId;
+      // ບໍ່ມີຜູ້ໃຊ້ login ຢູ່ - ຢຸດແທນທີ່ຈະບັນທຶກໃສ່ບັນຊີ user_id=3
+      if (userId == null) return [];
 
       final url = Uri.parse('${ApiConfig.baseUrl}/history?user_id=$userId');
       final response = await http
@@ -1117,7 +1131,13 @@ class ApiService {
     } catch (e) {
       debugPrint('ApiService getHistory error: $e');
     }
-    return MockHistoryData.historyItems;
+    // # ເຮັດຫຍັງ: ຄືນລາຍການຫວ່າງ ແທນ Mock*Data ທີ່ hardcode ໄວ້
+    // # ຍ້ອນຫຍັງ: ຂໍ້ມູນປອມທີ່ຂຶ້ນຕອນ backend ລົ້ມ ເຮັດໃຫ້ຜູ້ໃຊ້ເຫັນລາຍການ
+    // #          ທີ່ບໍ່ມີຢູ່ຈິງ ກົດເຂົ້າໄປກໍ່ບໍ່ໄດ້ ແລະ ຜູ້ພັດທະນາບໍ່ຮູ້ວ່າ API ລົ້ມ
+    // #          ເພາະໜ້າຈໍຍັງມີເນື້ອຫາ - ບັນຫາຄອບຄົວດຽວກັບ mock fallback ອື່ນ
+    // # ແກ້ຈາກສ່ວນໃດ: ບັນທັດສຸດທ້າຍທີ່ return Mock*Data
+    // # ແກ້ເຮັດຫຍັງ: ຫວ່າງ = ຄວາມຈິງ ຂໍ້ມູນຕົວຢ່າງຍ້າຍໄປຢູ່ database.sql ແທນ
+    return [];
   }
 
   // 22b. User: Record Reading History & Progress
@@ -1148,8 +1168,9 @@ class ApiService {
       required int lastPageRead,
       int totalPages = 1}) async {
     try {
-      final user = currentUser ?? {};
-      final userId = user['user_id'] ?? 3;
+      final userId = currentUserId;
+      // ບໍ່ມີຜູ້ໃຊ້ login ຢູ່ - ຢຸດແທນທີ່ຈະບັນທຶກໃສ່ບັນຊີ user_id=3
+      if (userId == null) return false;
       final double progressPercent = totalPages > 0
           ? (lastPageRead / totalPages * 100.0).clamp(0.0, 100.0)
           : 0.0;
@@ -1186,8 +1207,9 @@ class ApiService {
   // 23. User: Fetch Saved/Bookmarked Books
   static Future<List<SavedBookItem>> getSavedBooks() async {
     try {
-      final user = currentUser ?? {};
-      final userId = user['user_id'] ?? 3;
+      final userId = currentUserId;
+      // ບໍ່ມີຜູ້ໃຊ້ login ຢູ່ - ຢຸດແທນທີ່ຈະບັນທຶກໃສ່ບັນຊີ user_id=3
+      if (userId == null) return [];
 
       final url = Uri.parse('${ApiConfig.baseUrl}/bookmarks?user_id=$userId');
       final response = await http
@@ -1206,14 +1228,21 @@ class ApiService {
     } catch (e) {
       debugPrint('ApiService getSavedBooks error: $e');
     }
-    return MockSavedData.savedItems;
+    // # ເຮັດຫຍັງ: ຄືນລາຍການຫວ່າງ ແທນ Mock*Data ທີ່ hardcode ໄວ້
+    // # ຍ້ອນຫຍັງ: ຂໍ້ມູນປອມທີ່ຂຶ້ນຕອນ backend ລົ້ມ ເຮັດໃຫ້ຜູ້ໃຊ້ເຫັນລາຍການ
+    // #          ທີ່ບໍ່ມີຢູ່ຈິງ ກົດເຂົ້າໄປກໍ່ບໍ່ໄດ້ ແລະ ຜູ້ພັດທະນາບໍ່ຮູ້ວ່າ API ລົ້ມ
+    // #          ເພາະໜ້າຈໍຍັງມີເນື້ອຫາ - ບັນຫາຄອບຄົວດຽວກັບ mock fallback ອື່ນ
+    // # ແກ້ຈາກສ່ວນໃດ: ບັນທັດສຸດທ້າຍທີ່ return Mock*Data
+    // # ແກ້ເຮັດຫຍັງ: ຫວ່າງ = ຄວາມຈິງ ຂໍ້ມູນຕົວຢ່າງຍ້າຍໄປຢູ່ database.sql ແທນ
+    return [];
   }
 
   // 24. User: Fetch Downloaded Offline Files
   static Future<List<DownloadedBookItem>> getDownloads() async {
     try {
-      final user = currentUser ?? {};
-      final userId = user['user_id'] ?? 3;
+      final userId = currentUserId;
+      // ບໍ່ມີຜູ້ໃຊ້ login ຢູ່ - ຢຸດແທນທີ່ຈະບັນທຶກໃສ່ບັນຊີ user_id=3
+      if (userId == null) return [];
 
       final url = Uri.parse('${ApiConfig.baseUrl}/downloads?user_id=$userId');
       final response = await http
@@ -1232,14 +1261,21 @@ class ApiService {
     } catch (e) {
       debugPrint('ApiService getDownloads error: $e');
     }
-    return MockDownloadsData.downloadedItems;
+    // # ເຮັດຫຍັງ: ຄືນລາຍການຫວ່າງ ແທນ Mock*Data ທີ່ hardcode ໄວ້
+    // # ຍ້ອນຫຍັງ: ຂໍ້ມູນປອມທີ່ຂຶ້ນຕອນ backend ລົ້ມ ເຮັດໃຫ້ຜູ້ໃຊ້ເຫັນລາຍການ
+    // #          ທີ່ບໍ່ມີຢູ່ຈິງ ກົດເຂົ້າໄປກໍ່ບໍ່ໄດ້ ແລະ ຜູ້ພັດທະນາບໍ່ຮູ້ວ່າ API ລົ້ມ
+    // #          ເພາະໜ້າຈໍຍັງມີເນື້ອຫາ - ບັນຫາຄອບຄົວດຽວກັບ mock fallback ອື່ນ
+    // # ແກ້ຈາກສ່ວນໃດ: ບັນທັດສຸດທ້າຍທີ່ return Mock*Data
+    // # ແກ້ເຮັດຫຍັງ: ຫວ່າງ = ຄວາມຈິງ ຂໍ້ມູນຕົວຢ່າງຍ້າຍໄປຢູ່ database.sql ແທນ
+    return [];
   }
 
   // 24b. User: Record Book Download
   static Future<bool> recordDownload(String bookId) async {
     try {
-      final user = currentUser ?? {};
-      final userId = user['user_id'] ?? 3;
+      final userId = currentUserId;
+      // ບໍ່ມີຜູ້ໃຊ້ login ຢູ່ - ຢຸດແທນທີ່ຈະບັນທຶກໃສ່ບັນຊີ user_id=3
+      if (userId == null) return false;
 
       final url = Uri.parse('${ApiConfig.baseUrl}/downloads');
       final response = await http
@@ -1272,8 +1308,9 @@ class ApiService {
   // 24c. User: Delete Download Record
   static Future<bool> deleteDownload(String downloadId) async {
     try {
-      final user = currentUser ?? {};
-      final userId = user['user_id'] ?? 3;
+      final userId = currentUserId;
+      // ບໍ່ມີຜູ້ໃຊ້ login ຢູ່ - ຢຸດແທນທີ່ຈະບັນທຶກໃສ່ບັນຊີ user_id=3
+      if (userId == null) return false;
 
       final url = Uri.parse(
           '${ApiConfig.baseUrl}/downloads/$downloadId?user_id=$userId');
@@ -1298,8 +1335,9 @@ class ApiService {
   // 25. User: Toggle Bookmark State
   static Future<bool> toggleBookmark(String bookId) async {
     try {
-      final user = currentUser ?? {};
-      final userId = user['user_id'] ?? 3;
+      final userId = currentUserId;
+      // ບໍ່ມີຜູ້ໃຊ້ login ຢູ່ - ຢຸດແທນທີ່ຈະບັນທຶກໃສ່ບັນຊີ user_id=3
+      if (userId == null) return false;
 
       final url = Uri.parse('${ApiConfig.baseUrl}/bookmarks');
       final response = await http
@@ -1356,26 +1394,28 @@ class ApiService {
     } catch (e) {
       debugPrint('ApiService getUserProfile error: $e');
     }
-    return currentUser ??
-        {
-          'user_id': 3,
-          'first_name': 'ສົມຊາຍ',
-          'last_name': 'ໃຈດີ',
-          'email': 'user1234@gmail.com',
-          'role': 'user',
-          'created_at': '2026-11-04',
-          'expires_at': '2026-12-04',
-        };
+    // # ເຮັດຫຍັງ: ຄືນ session ທີ່ມີຢູ່ ຫຼື map ຫວ່າງ ແທນຂໍ້ມູນຜູ້ໃຊ້ປອມ
+    // # ຍ້ອນຫຍັງ: ຂອງເກົ່າຄືນ 'ສົມຊາຍ ໃຈດີ / user1234@gmail.com / user_id 3'
+    // #          ຕອນດຶງບໍ່ໄດ້ ໜ້າໂປຣໄຟລ໌ຈຶ່ງສະແດງຊື່ ແລະ ອີເມວຂອງຄົນອື່ນ
+    // #          ໂດຍຜູ້ໃຊ້ບໍ່ຮູ້ວ່າບໍ່ແມ່ນຂໍ້ມູນຂອງຕົນ (ພົບຕອນແກ້ bug /user/profile 404)
+    // # ແກ້ຈາກສ່ວນໃດ: return currentUser ?? { ...ຂໍ້ມູນຕົວຢ່າງ... }
+    // # ແກ້ເຮັດຫຍັງ: ບໍ່ມີຂໍ້ມູນກໍ່ຄືນຫວ່າງ ໃຫ້ UI ສະແດງສະຖານະຫວ່າງແທນຂໍ້ມູນປອມ
+    return currentUser ?? {};
   }
 
   // 27. Notifications API
-  static final List<NotificationItem> _userNotifications =
-      List.from(MockNotificationsData.items);
+  // # ເຮັດຫຍັງ: ເລີ່ມຕົ້ນເປັນລາຍການຫວ່າງ ແທນການ copy ຈາກ MockNotificationsData
+  // # ຍ້ອນຫຍັງ: ແອັບຂຶ້ນແຈ້ງເຕືອນປອມທັນທີທີ່ເປີດ ກ່ອນຈະດຶງຂອງຈິງດ້ວຍຊ້ຳ
+  // #          ຜູ້ໃຊ້ຈຶ່ງເຫັນແຈ້ງເຕືອນທີ່ບໍ່ແມ່ນຂອງຕົນ
+  // # ແກ້ຈາກສ່ວນໃດ: List.from(MockNotificationsData.items)
+  // # ແກ້ເຮັດຫຍັງ: ຂໍ້ມູນຕົວຢ່າງຍ້າຍໄປຕາຕະລາງ notifications ໃນ database.sql
+  static final List<NotificationItem> _userNotifications = [];
 
   static Future<List<NotificationItem>> getNotifications() async {
     try {
-      final user = currentUser ?? {};
-      final userId = user['user_id'] ?? user['id'] ?? 3;
+      final userId = currentUserId;
+      // ບໍ່ມີຜູ້ໃຊ້ login ຢູ່ - ຢຸດແທນທີ່ຈະບັນທຶກໃສ່ບັນຊີ user_id=3
+      if (userId == null) return [];
       final url = Uri.parse('${ApiConfig.baseUrl}/notifications/user/$userId');
       final response = await http
           .get(url, headers: _headers)
@@ -1422,8 +1462,9 @@ class ApiService {
       for (int i = 0; i < _userNotifications.length; i++) {
         _userNotifications[i] = _userNotifications[i].copyWith(isRead: true);
       }
-      final user = currentUser ?? {};
-      final userId = user['user_id'] ?? user['id'] ?? 3;
+      final userId = currentUserId;
+      // ບໍ່ມີຜູ້ໃຊ້ login ຢູ່ - ຢຸດແທນທີ່ຈະບັນທຶກໃສ່ບັນຊີ user_id=3
+      if (userId == null) return false;
       final url = Uri.parse(
           '${ApiConfig.baseUrl}/notifications/user/$userId/read-all');
       await http

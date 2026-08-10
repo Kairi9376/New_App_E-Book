@@ -54,8 +54,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _fetchProfile() async {
     final profile = await ApiService.getUserProfile();
-    final rawUserId = profile['user_id'] ?? profile['id'];
-    final int userId = rawUserId != null ? (int.tryParse(rawUserId.toString()) ?? 3) : 3;
+    // # ເຮັດຫຍັງ: ອ່ານ user_id ຜ່ານ ApiService.currentUserId ແທນການຕັ້ງຄ່າເລີ່ມຕົ້ນເປັນ 3
+    // # ຍ້ອນຫຍັງ: `?? 3` ໝາຍຄວາມວ່າຖ້າບໍ່ມີຜູ້ໃຊ້ login ຢູ່ ໜ້ານີ້ຈະໄປອ່ານ/ຂຽນ
+    // #          ຂໍ້ມູນຂອງບັນຊີ user_id = 3 (ສົມຊາຍ ໃຈດີ) ໂດຍອັດຕະໂນມັດ
+    // # ແກ້ຈາກສ່ວນໃດ: `int.tryParse(...) ?? 3 : 3` ທີ່ຂຽນຊ້ຳຢູ່ຫຼາຍໜ້າ
+    // # ແກ້ເຮັດຫຍັງ: ໃຊ້ຄ່າຈິງຂອງຜູ້ທີ່ login ຢູ່ ຖ້າບໍ່ມີກໍ່ໃຫ້ເປັນ 0 ເຊິ່ງບໍ່ຕົງກັບໃຜ
+    final int userId = ApiService.currentUserId ?? 0;
     final liveKyc = await ApiService.getUserKycStatus(userId);
     // # ເຮັດຫຍັງ: ຫຸ້ມ getUserSubscriptionStatus ດ້ວຍ try/catch
     // # ຍ້ອນຫຍັງ: method ນີ້ຖືກແກ້ໃຫ້ throw ຕອນຄຳຮ້ອງລົ້ມເຫຼວ (ແທນທີ່ຈະຄືນ null
@@ -135,8 +139,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
         if (result['success'] == true) {
           final uploadedPath = result['url'] ?? result['path'] ?? 'uploads/profiles/${picked.name}';
-          final rawUserId = _userProfile['user_id'] ?? _userProfile['id'];
-          final int userId = rawUserId != null ? (int.tryParse(rawUserId.toString()) ?? 3) : 3;
+          // # ເຮັດຫຍັງ: ອ່ານ user_id ຜ່ານ ApiService.currentUserId ແທນການຕັ້ງຄ່າເລີ່ມຕົ້ນເປັນ 3
+          // # ຍ້ອນຫຍັງ: `?? 3` ໝາຍຄວາມວ່າຖ້າບໍ່ມີຜູ້ໃຊ້ login ຢູ່ ໜ້ານີ້ຈະໄປອ່ານ/ຂຽນ
+          // #          ຂໍ້ມູນຂອງບັນຊີ user_id = 3 (ສົມຊາຍ ໃຈດີ) ໂດຍອັດຕະໂນມັດ
+          // # ແກ້ຈາກສ່ວນໃດ: `int.tryParse(...) ?? 3 : 3` ທີ່ຂຽນຊ້ຳຢູ່ຫຼາຍໜ້າ
+          // # ແກ້ເຮັດຫຍັງ: ໃຊ້ຄ່າຈິງຂອງຜູ້ທີ່ login ຢູ່ ຖ້າບໍ່ມີກໍ່ໃຫ້ເປັນ 0 ເຊິ່ງບໍ່ຕົງກັບໃຜ
+          final int userId = ApiService.currentUserId ?? 0;
 
           // Save new profile picture URL to MySQL database
           await ApiService.updateUser(userId, {
@@ -378,9 +386,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         }
 
                         setDialogState(() => isSaving = true);
-                        final user = _userProfile.isNotEmpty ? _userProfile : (ApiService.currentUser ?? {});
-                        final rawUserId = user['user_id'] ?? user['id'];
-                        final int userId = rawUserId != null ? (int.tryParse(rawUserId.toString()) ?? 3) : 3;
+                        // # ເຮັດຫຍັງ: ອ່ານ user_id ຜ່ານ ApiService.currentUserId ແທນການຕັ້ງຄ່າເລີ່ມຕົ້ນເປັນ 3
+                        // # ຍ້ອນຫຍັງ: `?? 3` ໝາຍຄວາມວ່າຖ້າບໍ່ມີຜູ້ໃຊ້ login ຢູ່ ໜ້ານີ້ຈະໄປອ່ານ/ຂຽນ
+                        // #          ຂໍ້ມູນຂອງບັນຊີ user_id = 3 (ສົມຊາຍ ໃຈດີ) ໂດຍອັດຕະໂນມັດ
+                        // # ແກ້ຈາກສ່ວນໃດ: `int.tryParse(...) ?? 3 : 3` ທີ່ຂຽນຊ້ຳຢູ່ຫຼາຍໜ້າ
+                        // # ແກ້ເຮັດຫຍັງ: ໃຊ້ຄ່າຈິງຂອງຜູ້ທີ່ login ຢູ່ ຖ້າບໍ່ມີກໍ່ໃຫ້ເປັນ 0 ເຊິ່ງບໍ່ຕົງກັບໃຜ
+                        final int userId = ApiService.currentUserId ?? 0;
 
                         final success = await ApiService.updateUser(userId, {'password': newPass});
 
@@ -599,8 +610,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ? null
                     : () async {
                         setDialogState(() => isSaving = true);
-                        final rawUserId = user['user_id'] ?? user['id'];
-                        final int userId = rawUserId != null ? (int.tryParse(rawUserId.toString()) ?? 3) : 3;
+                        // # ເຮັດຫຍັງ: ອ່ານ user_id ຜ່ານ ApiService.currentUserId ແທນການຕັ້ງຄ່າເລີ່ມຕົ້ນເປັນ 3
+                        // # ຍ້ອນຫຍັງ: `?? 3` ໝາຍຄວາມວ່າຖ້າບໍ່ມີຜູ້ໃຊ້ login ຢູ່ ໜ້ານີ້ຈະໄປອ່ານ/ຂຽນ
+                        // #          ຂໍ້ມູນຂອງບັນຊີ user_id = 3 (ສົມຊາຍ ໃຈດີ) ໂດຍອັດຕະໂນມັດ
+                        // # ແກ້ຈາກສ່ວນໃດ: `int.tryParse(...) ?? 3 : 3` ທີ່ຂຽນຊ້ຳຢູ່ຫຼາຍໜ້າ
+                        // # ແກ້ເຮັດຫຍັງ: ໃຊ້ຄ່າຈິງຂອງຜູ້ທີ່ login ຢູ່ ຖ້າບໍ່ມີກໍ່ໃຫ້ເປັນ 0 ເຊິ່ງບໍ່ຕົງກັບໃຜ
+                        final int userId = ApiService.currentUserId ?? 0;
 
                         final updatePayload = {
                           'first_name': firstNameCtrl.text.trim(),
@@ -1067,7 +1082,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     onTap: () async {
                       final defaultKyc = _userKyc ?? KycModel(
                         id: 'kyc_new',
-                        userId: (_userProfile['user_id'] ?? 3).toString(),
+                        userId: (ApiService.currentUserId ?? 0).toString(),
                         userName: '${_userProfile['first_name'] ?? ''} ${_userProfile['last_name'] ?? ''}'.trim(),
                         userEmail: _userProfile['email'] ?? '',
                         idCardNumber: '',

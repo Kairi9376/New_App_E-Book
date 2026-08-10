@@ -22,13 +22,17 @@ class BookDetailScreen extends StatefulWidget {
 class _BookDetailScreenState extends State<BookDetailScreen> {
   bool _isBookmarked = false;
   bool _isLiked = false;
-  int _likeCount = 124;
-  int _viewCount = 350;
+  // # ເຮັດຫຍັງ: ຕັ້ງຄ່າເລີ່ມຕົ້ນເປັນ 0 ແທນ 124/350
+  // # ຍ້ອນຫຍັງ: ເປັນເລກ hardcode ທີ່ສະແດງອອກໜ້າຈໍທັນທີກ່ອນຂໍ້ມູນຈິງຈະມາ
+  // # ແກ້ຈາກສ່ວນໃດ: field initialiser ຂອງ _likeCount ແລະ _viewCount
+  // # ແກ້ເຮັດຫຍັງ: 0 ຈົນກວ່າຈະໄດ້ຄ່າຈິງຈາກ BookModel
+  int _likeCount = 0;
+  int _viewCount = 0;
 
   late String _title;
   late String _author;
   late String _imagePath;
-  int _totalPageCount = 120;
+  int _totalPageCount = 0;
   int _lastPageRead = 0;
   int _selectedPageChunk = 0;
 
@@ -51,13 +55,23 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
       _imagePath = widget.book!.imagePath;
       _isBookmarked = widget.book!.isBookmarked;
       _isLiked = widget.book!.isLiked;
-      _likeCount = widget.book!.likeCount > 0 ? widget.book!.likeCount : 124;
-      _viewCount = widget.book!.viewCount > 0 ? widget.book!.viewCount : 350;
-      _totalPageCount = widget.book!.pageCount > 0 ? widget.book!.pageCount : 120;
+      // # ເຮັດຫຍັງ: ໃຊ້ຄ່າຈິງຈາກ BookModel ໂດຍບໍ່ມີ fallback 124/350/120
+      // # ຍ້ອນຫຍັງ: ເລກເຫຼົ່ານີ້ຖືກ hardcode ໄວ້ ປຶ້ມທີ່ຍັງບໍ່ມີໃຜອ່ານຈຶ່ງສະແດງ
+      // #          "124 ຖືກໃຈ / 350 ຜູ້ອ່ານ / 120 ໜ້າ" ຄືກັນໝົດ ເປັນສະຖິຕິປອມ
+      // # ແກ້ຈາກສ່ວນໃດ: ເງື່ອນໄຂ `> 0 ? ຄ່າຈິງ : ເລກ hardcode`
+      // # ແກ້ເຮັດຫຍັງ: ສະແດງຄ່າຈິງຈາກຖານຂໍ້ມູນ (0 ກໍ່ຄື 0)
+      _likeCount = widget.book!.likeCount;
+      _viewCount = widget.book!.viewCount;
+      _totalPageCount = widget.book!.pageCount;
     } else {
-      _title = 'The Happiness Effect';
-      _author = 'Stephen T. Radentz';
-      _imagePath = 'assets/sample_book.pdf';
+      // # ເຮັດຫຍັງ: ປະຫວ່າງໄວ້ ແທນຊື່ປຶ້ມຕົວຢ່າງ
+      // # ຍ້ອນຫຍັງ: ຂອງເກົ່າໃສ່ 'The Happiness Effect' ຂອງ 'Stephen T. Radentz'
+      // #          ຖ້າເປີດໜ້ານີ້ໂດຍບໍ່ສົ່ງປຶ້ມມາ ຈະເຫັນປຶ້ມທີ່ບໍ່ໄດ້ເລືອກ
+      // # ແກ້ຈາກສ່ວນໃດ: ສາຂາ else ທີ່ໃສ່ຄ່າຕົວຢ່າງ
+      // # ແກ້ເຮັດຫຍັງ: ຫວ່າງ = ບອກຊັດວ່າບໍ່ມີຂໍ້ມູນປຶ້ມ
+      _title = '';
+      _author = '';
+      _imagePath = '';
     }
 
     _checkLiveMemberStatus();

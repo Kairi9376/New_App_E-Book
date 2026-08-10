@@ -103,31 +103,9 @@ class SavedBookItem {
   }
 }
 
-class MockSavedData {
-  static List<SavedBookItem> savedItems = [
-    SavedBookItem(
-      id: '1',
-      bookId: 3,
-      title: 'Quantum Mechanics',
-      author: 'Dr. Elias Thorne',
-      likeCount: 450,
-      viewCount: 1800,
-      category: 'ເຕັກໂນໂລຊີ',
-      imagePath: 'assets/sample_cover.png',
-      pdfUrl: 'assets/sample_book.pdf',
-      isBookmarked: true,
-    ),
-    SavedBookItem(
-      id: '2',
-      bookId: 2,
-      title: 'High School Science',
-      author: 'Nageen Prakashan',
-      likeCount: 890,
-      viewCount: 3200,
-      category: 'ວິທະຍາສາດ',
-      imagePath: 'assets/sample_cover.png',
-      pdfUrl: 'assets/sample_book.pdf',
-      isBookmarked: true,
-    ),
-  ];
-}
+// # ເຮັດຫຍັງ: ລຶບ class Mock*Data ອອກຈາກໄຟລ໌ນີ້
+// # ຍ້ອນຫຍັງ: ເປັນຂໍ້ມູນຕົວຢ່າງທີ່ hardcode ໄວ້ໃນແອັບ ໃຊ້ເປັນ fallback ຕອນ API ລົ້ມ
+// #          ເຮັດໃຫ້ຜູ້ໃຊ້ເຫັນເນື້ອຫາປອມ ແລະ ປິດບັງບັນຫາຂອງ backend
+// # ແກ້ຈາກສ່ວນໃດ: class Mock*Data ທ້າຍໄຟລ໌ ພ້ອມກັບຜູ້ເອີ້ນໃນ api_service.dart
+// # ແກ້ເຮັດຫຍັງ: ຂໍ້ມູນຕົວຢ່າງຍ້າຍໄປຢູ່ Backend/database.sql ເປັນ seed ຂອງຖານຂໍ້ມູນ
+// #             ເຊິ່ງເປັນຂໍ້ມູນຈິງທີ່ແກ້ໄຂ/ລຶບໄດ້ຜ່ານໜ້າ Admin

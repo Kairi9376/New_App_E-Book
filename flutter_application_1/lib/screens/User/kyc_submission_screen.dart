@@ -74,9 +74,12 @@ class _KycSubmissionScreenState extends State<KycSubmissionScreen> {
   }
 
   Future<void> _fetchLiveKycFromBackend() async {
-    final user = ApiService.currentUser ?? {};
-    final rawUserId = user['user_id'] ?? user['id'];
-    final int userId = rawUserId != null ? (int.tryParse(rawUserId.toString()) ?? 3) : 3;
+    // # ເຮັດຫຍັງ: ອ່ານ user_id ຜ່ານ ApiService.currentUserId ແທນການຕັ້ງຄ່າເລີ່ມຕົ້ນເປັນ 3
+    // # ຍ້ອນຫຍັງ: `?? 3` ໝາຍຄວາມວ່າຖ້າບໍ່ມີຜູ້ໃຊ້ login ຢູ່ ໜ້ານີ້ຈະໄປອ່ານ/ຂຽນ
+    // #          ຂໍ້ມູນຂອງບັນຊີ user_id = 3 (ສົມຊາຍ ໃຈດີ) ໂດຍອັດຕະໂນມັດ
+    // # ແກ້ຈາກສ່ວນໃດ: `int.tryParse(...) ?? 3 : 3` ທີ່ຂຽນຊ້ຳຢູ່ຫຼາຍໜ້າ
+    // # ແກ້ເຮັດຫຍັງ: ໃຊ້ຄ່າຈິງຂອງຜູ້ທີ່ login ຢູ່ ຖ້າບໍ່ມີກໍ່ໃຫ້ເປັນ 0 ເຊິ່ງບໍ່ຕົງກັບໃຜ
+    final int userId = ApiService.currentUserId ?? 0;
 
     final liveKyc = await ApiService.getUserKycStatus(userId);
     if (mounted && liveKyc != null) {
@@ -270,8 +273,25 @@ class _KycSubmissionScreenState extends State<KycSubmissionScreen> {
 
     setState(() => _isSubmitting = true);
 
-    final user = ApiService.currentUser ?? {};
-    final userId = user['user_id'] ?? 3;
+    // # ເຮັດຫຍັງ: ໃຊ້ ApiService.currentUserId ແທນຄ່າເລີ່ມຕົ້ນ 3
+    // # ຍ້ອນຫຍັງ: ການສົ່ງ KYC ດ້ວຍ user_id = 3 ຈະບັນທຶກເອກະສານຢືນຢັນຕົວຕົນ
+    // #          (ຮູບບັດປະຈຳຕົວ ແລະ ຮູບເຊວຟີ) ໃສ່ບັນຊີຄົນອື່ນ ຖ້າ session ຫາຍ
+    // #          ເປັນຂໍ້ມູນສ່ວນຕົວທີ່ອ່ອນໄຫວທີ່ສຸດໃນລະບົບ
+    // # ແກ້ຈາກສ່ວນໃດ: user['user_id'] ?? 3
+    // # ແກ້ເຮັດຫຍັງ: ບໍ່ມີ session ກໍ່ຢຸດ ພ້ອມແຈ້ງໃຫ້ເຂົ້າສູ່ລະບົບໃໝ່
+    final userId = ApiService.currentUserId;
+    if (userId == null) {
+      if (mounted) {
+        setState(() => _isSubmitting = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('⚠️ ບໍ່ພົບຂໍ້ມູນຜູ້ໃຊ້ ກະລຸນາເຂົ້າສູ່ລະບົບໃໝ່'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
+      return;
+    }
 
     final success = await ApiService.submitKyc({
       'user_id': userId,

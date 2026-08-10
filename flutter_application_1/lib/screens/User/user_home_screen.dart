@@ -83,9 +83,12 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
     );
 
     // Fetch live KYC status
-    final user = ApiService.currentUser ?? {};
-    final rawUserId = user['user_id'] ?? user['id'];
-    final int userId = rawUserId != null ? (int.tryParse(rawUserId.toString()) ?? 3) : 3;
+    // # ເຮັດຫຍັງ: ອ່ານ user_id ຜ່ານ ApiService.currentUserId ແທນການຕັ້ງຄ່າເລີ່ມຕົ້ນເປັນ 3
+    // # ຍ້ອນຫຍັງ: `?? 3` ໝາຍຄວາມວ່າຖ້າບໍ່ມີຜູ້ໃຊ້ login ຢູ່ ໜ້ານີ້ຈະໄປອ່ານ/ຂຽນ
+    // #          ຂໍ້ມູນຂອງບັນຊີ user_id = 3 (ສົມຊາຍ ໃຈດີ) ໂດຍອັດຕະໂນມັດ
+    // # ແກ້ຈາກສ່ວນໃດ: `int.tryParse(...) ?? 3 : 3` ທີ່ຂຽນຊ້ຳຢູ່ຫຼາຍໜ້າ
+    // # ແກ້ເຮັດຫຍັງ: ໃຊ້ຄ່າຈິງຂອງຜູ້ທີ່ login ຢູ່ ຖ້າບໍ່ມີກໍ່ໃຫ້ເປັນ 0 ເຊິ່ງບໍ່ຕົງກັບໃຜ
+    final int userId = ApiService.currentUserId ?? 0;
     final liveKyc = await ApiService.getUserKycStatus(userId);
 
     if (mounted) {
@@ -462,7 +465,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
           ElevatedButton(
             onPressed: () {
               final user = ApiService.currentUser ?? {};
-              final userId = (user['user_id'] ?? 3).toString();
+              final userId = (ApiService.currentUserId ?? 0).toString();
               final userName = '${user['first_name'] ?? ''} ${user['last_name'] ?? ''}'.trim();
               final userEmail = user['email'] ?? '';
 

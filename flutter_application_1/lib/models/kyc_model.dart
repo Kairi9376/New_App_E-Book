@@ -208,41 +208,9 @@ class KycModel {
   }
 }
 
-class MockKycData {
-  static List<KycModel> submissions = [
-    KycModel(
-      id: '1',
-      userId: '3',
-      userName: 'ສົມຊາຍ ໃຈດີ',
-      userEmail: 'user1234@gmail.com',
-      documentType: 'national_id',
-      idCardNumber: '1209900123456',
-      fullName: 'ສົມຊາຍ ໃຈດີ',
-      gender: 'male',
-      dateOfBirth: '1998-05-20',
-      idCardImagePath: 'assets/sample_id_card.png',
-      selfieImagePath: 'assets/sample_selfie.png',
-      isStudent: true,
-      schoolName: 'ມະຫາວິທະຍາໄລแห่งชาติลาว (NUOL)',
-      status: KycStatus.pending,
-      submittedAt: DateTime.now().subtract(const Duration(hours: 2)),
-    ),
-    KycModel(
-      id: '2',
-      userId: '4',
-      userName: 'ມະລິ ສີປະເສີດ',
-      userEmail: 'mali@gmail.com',
-      documentType: 'passport',
-      idCardNumber: 'P98765432',
-      fullName: 'ມະລິ ສີປະເສີດ',
-      gender: 'female',
-      dateOfBirth: '2001-11-12',
-      idCardImagePath: 'assets/sample_id_card.png',
-      selfieImagePath: 'assets/sample_selfie.png',
-      isStudent: false,
-      status: KycStatus.approved,
-      submittedAt: DateTime.now().subtract(const Duration(days: 1)),
-      reviewedAt: DateTime.now().subtract(const Duration(hours: 12)),
-    ),
-  ];
-}
+// # ເຮັດຫຍັງ: ລຶບ class Mock*Data ອອກຈາກໄຟລ໌ນີ້
+// # ຍ້ອນຫຍັງ: ເປັນຂໍ້ມູນຕົວຢ່າງທີ່ hardcode ໄວ້ໃນແອັບ ໃຊ້ເປັນ fallback ຕອນ API ລົ້ມ
+// #          ເຮັດໃຫ້ຜູ້ໃຊ້ເຫັນເນື້ອຫາປອມ ແລະ ປິດບັງບັນຫາຂອງ backend
+// # ແກ້ຈາກສ່ວນໃດ: class Mock*Data ທ້າຍໄຟລ໌ ພ້ອມກັບຜູ້ເອີ້ນໃນ api_service.dart
+// # ແກ້ເຮັດຫຍັງ: ຂໍ້ມູນຕົວຢ່າງຍ້າຍໄປຢູ່ Backend/database.sql ເປັນ seed ຂອງຖານຂໍ້ມູນ
+// #             ເຊິ່ງເປັນຂໍ້ມູນຈິງທີ່ແກ້ໄຂ/ລຶບໄດ້ຜ່ານໜ້າ Admin

@@ -320,38 +320,14 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
                 // # ຍ້ອນຫຍັງ: ບັນຊີ Admin/Employee ເຂົ້າຜ່ານແອັບບໍ່ໄດ້ ຈຶ່ງບໍ່ຄວນສະແດງໄວ້ນີ້
                 // # ແກ້ຈາກສ່ວນໃດ: ຄັດມາຈາກກ່ອງ Mock Data ໃນ login_screen.dart ທີ່ມີຄົບ 4 ບັນຊີ
                 // # ແກ້ເຮັດຫຍັງ: ຜູ້ທົດສອບເຫັນສະເພາະບັນຊີທີ່ໃຊ້ໄດ້ຈິງໃນຊ່ອງທາງນີ້
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF1F5F9),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0xFFE2E8F0)),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Row(
-                        children: [
-                          Icon(Icons.info_outline_rounded,
-                              size: 16, color: AppColors.primary),
-                          SizedBox(width: 6),
-                          Text(
-                            'ບັນຊີສຳລັບທົດລອງລະບົບ (Mock Data):',
-                            style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.primary),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 6),
-                      _buildCredentialRow(
-                          'User (General)', 'user1234@gmail.com', 'user1234'),
-                      _buildCredentialRow(
-                          'User (Member)', 'member@gmail.com', 'member1234'),
-                    ],
-                  ),
-                ),
+                // # ເຮັດຫຍັງ: ຕັດກ່ອງ "ບັນຊີສຳລັບທົດລອງລະບົບ (Mock Data)" ອອກ
+                // # ຍ້ອນຫຍັງ: ເປັນອີເມວ ແລະ ລະຫັດຜ່ານທີ່ hardcode ໄວ້ໃນ UI ຊຶ່ງ
+                // #          ຜູ້ໃຊ້ທົ່ວໄປເຫັນໄດ້ໝົດ - ໃຜເປີດແອັບກໍ່ຮູ້ລະຫັດ admin ທັນທີ
+                // #          ແລະ ຄ່າເຫຼົ່ານີ້ຈະລ້າສະໄໝທັນທີທີ່ປ່ຽນລະຫັດຜ່ານໃນຖານຂໍ້ມູນ
+                // # ແກ້ຈາກສ່ວນໃດ: Container ກ່ອງ Mock Data ພ້ອມ _buildCredentialRow
+                // # ແກ້ເຮັດຫຍັງ: ບັນຊີທົດລອງຍ້າຍໄປຢູ່ seed (Backend/database.sql) ແລະ
+                // #             ເອກະສານ GEMINI.md ຂໍ້ 3 ແທນ ບໍ່ຢູ່ໃນ UI ທີ່ສົ່ງໃຫ້ຜູ້ໃຊ້
+
               ],
             ),
           ),
@@ -360,36 +336,4 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
     );
   }
 
-  Widget _buildCredentialRow(String role, String email, String pwd) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 4.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            '$role:',
-            style: const TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary),
-          ),
-          InkWell(
-            onTap: () {
-              setState(() {
-                _emailController.text = email;
-                _passwordController.text = pwd;
-              });
-            },
-            child: Text(
-              '$email / $pwd',
-              style: const TextStyle(
-                  fontSize: 11,
-                  color: AppColors.primary,
-                  decoration: TextDecoration.underline),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }

@@ -283,37 +283,14 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
                 const SizedBox(height: 20),
 
                 // Mock Accounts Reference Helper Box
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF1F5F9),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0xFFE2E8F0)),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Row(
-                        children: [
-                          Icon(Icons.info_outline_rounded, size: 16, color: AppColors.primary),
-                          SizedBox(width: 6),
-                          Text(
-                            'ບັນຊີສຳລັບທົດລອງລະບົບ (Mock Data):',
-                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.primary),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 6),
-                      // # ເຮັດຫຍັງ: ຕັດບັນຊີທົດລອງຂອງ User/Member ອອກຈາກກ່ອງນີ້
-                      // # ຍ້ອນຫຍັງ: ສອງບັນຊີນັ້ນ login ຢູ່ Web ບໍ່ໄດ້ອີກແລ້ວ ຖ້າຍັງສະແດງໄວ້
-                      // #          ຜູ້ທົດສອບຈະກົດແລ້ວເຫັນຂໍ້ຄວາມປະຕິເສດ ໂດຍນຶກວ່າລະບົບພັງ
-                      // # ແກ້ຈາກສ່ວນໃດ: ກ່ອງ Mock Data ເດີມທີ່ລິສ 4 ບັນຊີທຸກ role
-                      // # ແກ້ເຮັດຫຍັງ: ເຫຼືອແຕ່ 2 ບັນຊີ Staff ສ່ວນ User/Member ຍ້າຍໄປໜ້າ login ຂອງແອັບ
-                      _buildCredentialRow('Admin', 'admin@gmail.com', 'admin123456'),
-                      _buildCredentialRow('Employees', 'employee@gmail.com', 'employee123'),
-                    ],
-                  ),
-                ),
+                // # ເຮັດຫຍັງ: ຕັດກ່ອງ "ບັນຊີສຳລັບທົດລອງລະບົບ (Mock Data)" ອອກ
+                // # ຍ້ອນຫຍັງ: ເປັນອີເມວ ແລະ ລະຫັດຜ່ານທີ່ hardcode ໄວ້ໃນ UI ຊຶ່ງ
+                // #          ຜູ້ໃຊ້ທົ່ວໄປເຫັນໄດ້ໝົດ - ໃຜເປີດແອັບກໍ່ຮູ້ລະຫັດ admin ທັນທີ
+                // #          ແລະ ຄ່າເຫຼົ່ານີ້ຈະລ້າສະໄໝທັນທີທີ່ປ່ຽນລະຫັດຜ່ານໃນຖານຂໍ້ມູນ
+                // # ແກ້ຈາກສ່ວນໃດ: Container ກ່ອງ Mock Data ພ້ອມ _buildCredentialRow
+                // # ແກ້ເຮັດຫຍັງ: ບັນຊີທົດລອງຍ້າຍໄປຢູ່ seed (Backend/database.sql) ແລະ
+                // #             ເອກະສານ GEMINI.md ຂໍ້ 3 ແທນ ບໍ່ຢູ່ໃນ UI ທີ່ສົ່ງໃຫ້ຜູ້ໃຊ້
+
               ],
             ),
           ),
@@ -322,30 +299,4 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
     );
   }
 
-  Widget _buildCredentialRow(String role, String email, String pwd) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 4.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            '$role:',
-            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
-          ),
-          InkWell(
-            onTap: () {
-              setState(() {
-                _emailController.text = email;
-                _passwordController.text = pwd;
-              });
-            },
-            child: Text(
-              '$email / $pwd',
-              style: const TextStyle(fontSize: 11, color: AppColors.primary, decoration: TextDecoration.underline),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }
