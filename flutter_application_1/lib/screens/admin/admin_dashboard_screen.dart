@@ -13,6 +13,249 @@ import '../login_screen.dart';
 import '../User/pdf_viewer_screen.dart';
 import '../../utils/image_helper.dart';
 
+// # ເຮັດຫຍັງ: ເພີ່ມຊຸດ design token ຂອງໜ້າ Admin (ສີ, ໄລຍະຫ່າງ, ມົນ, ຕົວອັກສອນ)
+// # ຍ້ອນຫຍັງ: ໄຟລ໌ນີ້ເຄີຍ hardcode ສີ (0xFFE2E8F0, Colors.orange.shade800, ...) ແລະ
+// #          ຂະໜາດຕົວອັກສອນ 8/10/11/12/13/14/15/16/18 ກະຈາຍທົ່ວ 2300 ບັນທັດ
+// #          ເຮັດໃຫ້ສີດຽວກັນມີຫຼາຍເສດ ແລະ ສະຖານະ (ອະນຸມັດ/ລໍຖ້າ/ປະຕິເສດ) ບໍ່ສະໝ່ຳສະເໝີ
+// # ແກ້ຈາກສ່ວນໃດ: ຄ່າສີ/ຂະໜາດທີ່ຂຽນຊ້ຳຢູ່ໃນທຸກ tab ຂອງ admin_dashboard_screen.dart
+// # ແກ້ເຮັດຫຍັງ: ລວມເປັນຈຸດດຽວ ໃຫ້ສະຖານະມີຄວາມໝາຍທາງສີ (semantic) ແລະ ຕົວອັກສອນ
+// #             ມີລຳດັບຊັ້ນຊັດເຈນ ອ່ານພາສາລາວງ່າຍຂຶ້ນ (ບໍ່ໃຊ້ຂະໜາດຕໍ່າກວ່າ 11 ກັບຂໍ້ຄວາມສຳຄັນ)
+class _Ds {
+  // ---- Surface & structure ----
+  static const bg = Color(0xFFF1F5F9);
+  static const surface = Colors.white;
+  static const sidebar = Color(0xFF0F172A);
+  static const sidebarHover = Color(0xFF1E293B);
+  static const border = Color(0xFFE2E8F0);
+  static const divider = Color(0xFFEEF2F6);
+
+  // ---- Brand ----
+  static const primary = AppColors.primary;
+  static const primarySoft = Color(0xFFEFF6FF);
+
+  // ---- Semantic (ສະຖານະຕ້ອງໃຊ້ຄູ່ນີ້ສະເໝີ ຫ້າມສຸ່ມສີແດງ/ຂຽວເອງ) ----
+  static const success = Color(0xFF15803D);
+  static const successSoft = Color(0xFFDCFCE7);
+  static const warning = Color(0xFFB45309);
+  static const warningSoft = Color(0xFFFEF3C7);
+  static const danger = Color(0xFFB91C1C);
+  static const dangerSoft = Color(0xFFFEE2E2);
+  static const info = Color(0xFF1D4ED8);
+  static const infoSoft = Color(0xFFDBEAFE);
+  static const neutral = Color(0xFF475569);
+  static const neutralSoft = Color(0xFFF1F5F9);
+
+  // ---- Text ----
+  static const textPrimary = Color(0xFF0F172A);
+  static const textSecondary = Color(0xFF475569);
+  static const textMuted = Color(0xFF94A3B8);
+
+  // ---- Spacing / radius ----
+  static const s4 = 4.0, s8 = 8.0, s12 = 12.0, s16 = 16.0, s20 = 20.0, s24 = 24.0;
+  static const rSm = 8.0, rMd = 12.0, rLg = 16.0;
+
+  // ---- Typography scale ----
+  static const pageTitle =
+      TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: textPrimary, height: 1.3);
+  static const pageSubtitle =
+      TextStyle(fontSize: 13, color: textSecondary, height: 1.4);
+  static const sectionTitle =
+      TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: textPrimary, height: 1.3);
+  static const cardTitle =
+      TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: textPrimary, height: 1.35);
+  static const body =
+      TextStyle(fontSize: 13, color: textSecondary, height: 1.45);
+  static const caption =
+      TextStyle(fontSize: 12, color: textMuted, height: 1.4);
+  static const badge =
+      TextStyle(fontSize: 11, fontWeight: FontWeight.w700, height: 1.3);
+  static const kpiValue =
+      TextStyle(fontSize: 26, fontWeight: FontWeight.w700, color: textPrimary, height: 1.1);
+  static const kpiLabel =
+      TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: textSecondary, height: 1.3);
+
+  static BoxDecoration card({Color? borderColor, double radius = rLg}) => BoxDecoration(
+        color: surface,
+        borderRadius: BorderRadius.circular(radius),
+        border: Border.all(color: borderColor ?? border),
+      );
+}
+
+// # ເຮັດຫຍັງ: ເພີ່ມ breakpoint 4 ລະດັບ ແທນການກວດ width < 700 ຢ່າງດຽວ
+// # ຍ້ອນຫຍັງ: ຂອງເກົ່າມີແຕ່ isMobile/ບໍ່ແມ່ນ ຈຶ່ງບໍ່ມີ layout ສຳລັບ tablet
+// #          ໜ້າຈໍກາງຈຶ່ງໄດ້ desktop ທີ່ຖືກບີບ ຫຼື mobile ທີ່ຖືກຍືດ
+// # ແກ້ຈາກສ່ວນໃດ: final bool isMobile = MediaQuery.of(context).size.width < 700;
+// # ແກ້ເຮັດຫຍັງ: ແຍກ mobile/tablet/desktop/large ໃຫ້ແຕ່ລະຂະໜາດມີ layout ຂອງຕົນ
+enum _Bp {
+  mobile,
+  tablet,
+  desktop,
+  large;
+
+  static _Bp of(double w) {
+    if (w < 720) return _Bp.mobile;
+    if (w < 1100) return _Bp.tablet;
+    if (w < 1500) return _Bp.desktop;
+    return _Bp.large;
+  }
+
+  bool get isMobile => this == _Bp.mobile;
+  bool get isTablet => this == _Bp.tablet;
+  bool get hasSidebar => this == _Bp.desktop || this == _Bp.large;
+  bool get hasRail => this == _Bp.tablet;
+
+  /// ຈຳນວນຖັນຂອງ KPI ຕາມພື້ນທີ່ທີ່ມີ
+  int get kpiColumns {
+    switch (this) {
+      case _Bp.mobile:
+        return 2;
+      case _Bp.tablet:
+        return 2;
+      case _Bp.desktop:
+        return 4;
+      case _Bp.large:
+        return 4;
+    }
+  }
+}
+
+// # ເຮັດຫຍັງ: ຕັ້ງຊື່ໃຫ້ 6 ໜ້າຂອງ Admin ແທນການອ້າງດ້ວຍເລກ index ດິບ
+// # ຍ້ອນຫຍັງ: _selectedTab ໃຊ້ 0..5 ໂດຍມີ comment ອະທິບາຍໄວ້ຢູ່ບັນທັດດຽວ
+// #          ການອ່ານໂຄ້ດຕ້ອງນັບ index ເອງທຸກຄັ້ງ ແລະ ງ່າຍທີ່ຈະສະຫຼັບຜິດ
+// # ແກ້ຈາກສ່ວນໃດ: int _selectedTab = 0; // 0: Books, 1: Users, ...
+// # ແກ້ເຮັດຫຍັງ: ຍັງເກັບ _selectedTab ເປັນ int ຄືເກົ່າ (ບໍ່ກະທົບ state ທີ່ມີຢູ່)
+// #             ແຕ່ເພີ່ມ enum ໄວ້ໃຊ້ອ້າງອີງໃນ navigation ແລະ ການຕິດຕາມ error
+enum _Section {
+  books(0, 'ຄັງໜັງສື', 'ຈັດການ ແລະ ອະນຸມັດປຶ້ມທັງໝົດໃນລະບົບ', Icons.menu_book_rounded),
+  users(1, 'ຜູ້ໃຊ້ & ພະນັກງານ', 'ຈັດການບັນຊີ ສິດການນຳໃຊ້ ແລະ ສະຖານະ', Icons.people_alt_rounded),
+  kyc(2, 'ຢືນຢັນຕົວຕົນ', 'ກວດສອບ ແລະ ອະນຸມັດເອກະສານ KYC', Icons.verified_user_rounded),
+  subscriptions(3, 'ສະລິບໂອນເງິນ', 'ກວດສອບການຊຳລະ ແລະ ອະນຸມັດແພັກເກັດ', Icons.receipt_long_rounded),
+  system(4, 'ລະບົບ & ແພັກເກັດ', 'ແພັກເກັດ ໝວດໝູ່ ນັກຂຽນ ແລະ ບັນທຶກລະບົບ', Icons.settings_applications_rounded),
+  reports(5, 'ລາຍງານ & ສະຖິຕິ', 'ພາບລວມການໃຊ້ງານ ແລະ ຕົວເລກສະຫຼຸບ', Icons.analytics_rounded);
+
+  const _Section(this.tab, this.title, this.description, this.icon);
+  final int tab;
+  final String title;
+  final String description;
+  final IconData icon;
+
+  static _Section from(int i) => values.firstWhere((s) => s.tab == i, orElse: () => _Section.books);
+}
+
+/// ປ້າຍສະຖານະທີ່ໃຊ້ຮ່ວມກັນທຸກ tab - ບັງຄັບໃຫ້ສີສະຖານະມາຈາກ _Ds ເທົ່ານັ້ນ
+class _StatusChip extends StatelessWidget {
+  final String label;
+  final Color fg;
+  final Color bg;
+  final IconData? icon;
+
+  const _StatusChip({required this.label, required this.fg, required this.bg, this.icon});
+
+  factory _StatusChip.approved(String label) =>
+      _StatusChip(label: label, fg: _Ds.success, bg: _Ds.successSoft, icon: Icons.check_circle_rounded);
+  factory _StatusChip.pending(String label) =>
+      _StatusChip(label: label, fg: _Ds.warning, bg: _Ds.warningSoft, icon: Icons.hourglass_top_rounded);
+  factory _StatusChip.rejected(String label) =>
+      _StatusChip(label: label, fg: _Ds.danger, bg: _Ds.dangerSoft, icon: Icons.cancel_rounded);
+  factory _StatusChip.info(String label) =>
+      _StatusChip(label: label, fg: _Ds.info, bg: _Ds.infoSoft);
+  factory _StatusChip.neutral(String label) =>
+      _StatusChip(label: label, fg: _Ds.neutral, bg: _Ds.neutralSoft);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(_Ds.rSm)),
+      // # ເຮັດຫຍັງ: ໃສ່ Flexible + ellipsis ໃຫ້ຂໍ້ຄວາມໃນ chip
+      // # ຍ້ອນຫຍັງ: chip ຢູ່ໃນ Wrap ຂອງ _listCard ຊຶ່ງຈຳກັດຄວາມກວ້າງຕາມບ່ອນທີ່ຍັງເຫຼືອ
+      // #          ຖ້າຊື່ສະຖານະ/ໝວດຍາວ (ຕົວຢ່າງ "ເຕັກໂນໂລຊີ / Computer") Row ຈະລົ້ນ
+      // #          ("A RenderFlex overflowed by 23 pixels on the right") - ພົບຕອນ
+      // #          ທົດສອບຈິງທີ່ 375px
+      // # ແກ້ຈາກສ່ວນໃດ: Row ພາຍໃນ _StatusChip
+      // # ແກ້ເຮັດຫຍັງ: ຂໍ້ຄວາມຫຍໍ້ລົງເມື່ອບ່ອນບໍ່ພໍ ແທນທີ່ຈະລົ້ນອອກນອກກ່ອງ
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (icon != null) ...[Icon(icon, size: 13, color: fg), const SizedBox(width: 4)],
+          Flexible(
+            child: Text(
+              label,
+              style: _Ds.badge.copyWith(color: fg),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// ກ່ອງເນື້ອຫາມາດຕະຖານ - ໃຊ້ຫຸ້ມ section ຂອງໜ້າ System Master ແລະ ອື່ນໆ
+class _SectionCard extends StatelessWidget {
+  final String title;
+  final String? subtitle;
+  final IconData icon;
+  final Color accent;
+  final List<Widget> actions;
+  final Widget child;
+
+  const _SectionCard({
+    required this.title,
+    this.subtitle,
+    required this.icon,
+    required this.accent,
+    this.actions = const [],
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: _Ds.card(),
+      margin: const EdgeInsets.only(bottom: _Ds.s16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(_Ds.s16, _Ds.s16, _Ds.s12, _Ds.s12),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(_Ds.s8),
+                  decoration: BoxDecoration(
+                    color: accent.withValues(alpha: 0.10),
+                    borderRadius: BorderRadius.circular(_Ds.rMd),
+                  ),
+                  child: Icon(icon, color: accent, size: 18),
+                ),
+                const SizedBox(width: _Ds.s12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(title, style: _Ds.sectionTitle),
+                      if (subtitle != null)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 2),
+                          child: Text(subtitle!, style: _Ds.caption),
+                        ),
+                    ],
+                  ),
+                ),
+                ...actions,
+              ],
+            ),
+          ),
+          const Divider(height: 1, color: _Ds.divider),
+          Padding(padding: const EdgeInsets.all(_Ds.s12), child: child),
+        ],
+      ),
+    );
+  }
+}
+
 class AdminDashboardScreen extends StatefulWidget {
   const AdminDashboardScreen({super.key});
 
@@ -38,6 +281,12 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
   String _bookStatusFilter = 'ທັງໝົດ';
   bool _isLoading = true;
+
+  // # ເຮັດຫຍັງ: ເກັບຊື່ສ່ວນທີ່ໂຫຼດລົ້ມເຫຼວຈາກຮອບ fetch ຫຼ້າສຸດ
+  // # ຍ້ອນຫຍັງ: ໃຊ້ແຍກ "ຫວ່າງເພາະຍັງບໍ່ມີຂໍ້ມູນ" ອອກຈາກ "ຫວ່າງເພາະໂຫຼດບໍ່ໄດ້"
+  // # ແກ້ຈາກສ່ວນໃດ: state ເດີມມີແຕ່ _isLoading ບໍ່ມີສະຖານະ error
+  // # ແກ້ເຮັດຫຍັງ: ໃຫ້ UI ສະແດງ Error state ພ້ອມປຸ່ມລອງໃໝ່ ແທນຂໍ້ຄວາມ "ບໍ່ພົບລາຍການ"
+  final Set<_Section> _failedSections = {};
 
   int get _pendingBooksCount =>
       _adminBooks.where((b) => b.status.toLowerCase() == 'pending').length;
@@ -72,17 +321,49 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   Future<void> _fetchAdminData() async {
     if (mounted) setState(() => _isLoading = true);
 
+    // # ເຮັດຫຍັງ: ບັນທຶກວ່າ API ສ່ວນໃດລົ້ມເຫຼວ ໃສ່ _failedSections
+    // # ຍ້ອນຫຍັງ: catchError ຄືນລາຍການຫວ່າງ ໜ້າຈໍຈຶ່ງສະແດງ "ບໍ່ພົບລາຍການ" ຄືກັນ
+    // #          ທັງກໍລະນີ "ຍັງບໍ່ມີຂໍ້ມູນຈິງ" ແລະ "ໂຫຼດບໍ່ໄດ້" ຜູ້ດູແລຈຶ່ງແຍກບໍ່ອອກ
+    // #          ວ່າຄວນເພີ່ມຂໍ້ມູນ ຫຼື ຄວນກົດລອງໃໝ່
+    // # ແກ້ຈາກສ່ວນໃດ: catchError((_) => <T>[]) ທັງ 8 ເສັ້ນ ທີ່ກືນ error ງຽບໆ
+    // # ແກ້ເຮັດຫຍັງ: ຍັງຄືນລາຍການຫວ່າງຄືເກົ່າ (Future.wait/eagerError:false ບໍ່ປ່ຽນ)
+    // #             ແຕ່ຈື່ຊື່ສ່ວນທີ່ລົ້ມໄວ້ ເພື່ອໃຫ້ UI ສະແດງສະຖານະ Error ພ້ອມປຸ່ມລອງໃໝ່
+    _failedSections.clear();
     try {
       // ใช้ eagerError: false เพื่อไม่ให้ API ตัวใดตัวหนึ่งล้มเหลวแล้วพาทั้งหมดพัง
       final results = await Future.wait([
-        ApiService.getBooks(role: 'admin', status: 'all').catchError((_) => <BookModel>[]),
-        ApiService.getUsers().catchError((_) => <Map<String, dynamic>>[]),
-        ApiService.getKycList().catchError((_) => <Map<String, dynamic>>[]),
-        ApiService.getSubscriptions().catchError((_) => <Map<String, dynamic>>[]),
-        ApiService.getPackages(showAll: true).catchError((_) => <Map<String, dynamic>>[]),
-        ApiService.getCategories().catchError((_) => <Map<String, dynamic>>[]),
-        ApiService.getAuthors().catchError((_) => <Map<String, dynamic>>[]),
-        ApiService.getAuditLogs().catchError((_) => <Map<String, dynamic>>[]),
+        ApiService.getBooks(role: 'admin', status: 'all').catchError((_) {
+          _failedSections.add(_Section.books);
+          return <BookModel>[];
+        }),
+        ApiService.getUsers().catchError((_) {
+          _failedSections.add(_Section.users);
+          return <Map<String, dynamic>>[];
+        }),
+        ApiService.getKycList().catchError((_) {
+          _failedSections.add(_Section.kyc);
+          return <Map<String, dynamic>>[];
+        }),
+        ApiService.getSubscriptions().catchError((_) {
+          _failedSections.add(_Section.subscriptions);
+          return <Map<String, dynamic>>[];
+        }),
+        ApiService.getPackages(showAll: true).catchError((_) {
+          _failedSections.add(_Section.system);
+          return <Map<String, dynamic>>[];
+        }),
+        ApiService.getCategories().catchError((_) {
+          _failedSections.add(_Section.system);
+          return <Map<String, dynamic>>[];
+        }),
+        ApiService.getAuthors().catchError((_) {
+          _failedSections.add(_Section.system);
+          return <Map<String, dynamic>>[];
+        }),
+        ApiService.getAuditLogs().catchError((_) {
+          _failedSections.add(_Section.system);
+          return <Map<String, dynamic>>[];
+        }),
       ]);
 
       final books = results[0] as List<BookModel>;
@@ -585,272 +866,766 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     );
   }
 
+  // # ເຮັດຫຍັງ: ຂຽນ build() ໃໝ່ທັງໝົດເປັນໂຄງ Admin Dashboard ມາດຕະຖານ
+  // # ຍ້ອນຫຍັງ: ຂອງເກົ່າເປັນ AppBar ດຳ + ແຖວ ChoiceChip ເລື່ອນຂວາງ + IndexedStack
+  // #          ເຊິ່ງບໍ່ມີລຳດັບຊັ້ນ: ບໍ່ຮູ້ວ່າຢູ່ໜ້າໃດ ບໍ່ມີຄຳອະທິບາຍໜ້າ ແລະ ບົນຈໍກວ້າງ
+  // #          ເນື້ອຫາຢຽດເຕັມຄວາມກວ້າງຈົນອ່ານຍາກ
+  // # ແກ້ຈາກສ່ວນໃດ: build(), _buildNavTab() ແລະ BottomNavigationBar ເດີມ
+  // # ແກ້ເຮັດຫຍັງ: desktop = sidebar ຖາວອນ, tablet = rail ໄອຄອນ, mobile = bottom nav
+  // #             ພ້ອມ page header (ຫົວຂໍ້ + ຄຳອະທິບາຍ + ປຸ່ມຫຼັກ) ໃນທຸກໜ້າ
+  // #             IndexedStack ແລະ ລຳດັບ tab ຄືເກົ່າ ຈຶ່ງບໍ່ກະທົບ state ຫຼື navigation
   @override
   Widget build(BuildContext context) {
-    final bool isMobile = MediaQuery.of(context).size.width < 700;
+    final bp = _Bp.of(MediaQuery.of(context).size.width);
+    final section = _Section.from(_selectedTab);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
-      appBar: AppBar(
-        elevation: 0,
-        backgroundColor: const Color(0xFF0F172A),
-        foregroundColor: Colors.white,
-        title: Row(
+      backgroundColor: _Ds.bg,
+      body: SafeArea(
+        child: Row(
           children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF2563EB), Color(0xFF3B82F6)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(10),
-                boxShadow: [
-                  BoxShadow(color: const Color(0xFF2563EB).withValues(alpha: 0.4), blurRadius: 8, offset: const Offset(0, 2)),
+            if (bp.hasSidebar) _buildSidebar(expanded: true),
+            if (bp.hasRail) _buildSidebar(expanded: false),
+            Expanded(
+              child: Column(
+                children: [
+                  _buildTopBar(bp, section),
+                  Expanded(
+                    child: IndexedStack(
+                      index: _selectedTab,
+                      children: [
+                        _buildBookManagementTab(bp.isMobile),
+                        _buildUserManagementTab(bp.isMobile),
+                        _buildKycApprovalTab(bp.isMobile),
+                        _buildSubscriptionApprovalTab(bp.isMobile),
+                        _buildSystemMasterTab(bp.isMobile),
+                        _buildReportsSection(bp),
+                      ],
+                    ),
+                  ),
                 ],
               ),
-              child: const Icon(Icons.admin_panel_settings_rounded, color: Colors.white, size: 22),
-            ),
-            const SizedBox(width: 12),
-            const Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Enterprise Admin Portal', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 0.3)),
-                Text('ລະບົບຄຸ້ມຄອງ E-Book, KYC & Analytics', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11)),
-              ],
             ),
           ],
         ),
-        actions: [
-          IconButton(icon: const Icon(Icons.refresh_rounded, color: Color(0xFFCBD5E1)), onPressed: _fetchAdminData, tooltip: 'ຣີເຟຣຊ'),
-          IconButton(icon: const Icon(Icons.logout_rounded, color: Color(0xFFF87171)), onPressed: _logout, tooltip: 'ອອກຈາກລະບົບ'),
-          const SizedBox(width: 8),
-        ],
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
-          : LayoutBuilder(
-              builder: (context, constraints) {
-                return ConstrainedBox(
-                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
-                  child: Column(
-                    key: const ValueKey('main_scaffold_body_column'),
-                    children: [
-                      // Top Header Nav for Web/Tablet Mode
-                      if (!isMobile)
-                        Container(
-                          color: Colors.white,
-                          child: SingleChildScrollView(
-                            scrollDirection: Axis.horizontal,
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                            child: Row(
-                              children: [
-                                _buildNavTab(0, Icons.menu_book_rounded, 'ຄັງຫນັງສື', count: _adminBooks.length, badge: _pendingBooksCount),
-                                _buildNavTab(1, Icons.people_alt_rounded, 'ຜູ້ໃຊ້/ພະນັກງານ', count: _adminUsers.length),
-                                _buildNavTab(2, Icons.verified_user_rounded, 'KYC & Student', badge: _pendingKycCount),
-                                _buildNavTab(3, Icons.receipt_long_rounded, 'ສະລິບໂອນເງິນ', badge: _pendingSlipCount),
-                                _buildNavTab(4, Icons.settings_applications_rounded, 'ລະບົບ & ແພັກເກັດ'),
-                                _buildNavTab(5, Icons.analytics_rounded, 'ລາຍງານ & ສະຖິຕິ'),
-                              ],
-                            ),
-                          ),
-                        ),
-                      if (!isMobile) const Divider(height: 1),
-
-                      // Content Tab Body
-                      Expanded(
-                        child: Padding(
-                          padding: EdgeInsets.all(isMobile ? 12 : 16),
-                          child: IndexedStack(
-                            index: _selectedTab,
-                            children: [
-                              _buildBookManagementTab(isMobile),
-                              _buildUserManagementTab(isMobile),
-                              _buildKycApprovalTab(isMobile),
-                              _buildSubscriptionApprovalTab(isMobile),
-                              _buildSystemMasterTab(isMobile),
-                              AdminReportsTab(
-                                subscriptions: _subscriptions,
-                                adminBooks: _adminBooks,
-                                adminUsers: _adminUsers,
-                                kycSubmissions: _kycSubmissions,
-                                auditLogs: _auditLogs,
-                                isMobile: isMobile,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              },
-            ),
-      floatingActionButton: _buildFab(),
-      bottomNavigationBar: isMobile
-          ? BottomNavigationBar(
-              currentIndex: _selectedTab,
-              onTap: (index) => setState(() => _selectedTab = index),
-              selectedItemColor: AppColors.primary,
-              unselectedItemColor: const Color(0xFF64748B),
-              type: BottomNavigationBarType.fixed,
-              selectedFontSize: 10,
-              unselectedFontSize: 9,
-              items: [
-                const BottomNavigationBarItem(icon: Icon(Icons.menu_book_rounded), label: 'ຄັງປຶ້ມ'),
-                const BottomNavigationBarItem(icon: Icon(Icons.people_alt_rounded), label: 'ຜູ້ໃຊ້'),
-                BottomNavigationBarItem(
-                  icon: Stack(
-                    children: [
-                      const Icon(Icons.verified_user_rounded),
-                      if (_pendingKycCount > 0)
-                        Positioned(
-                          right: 0,
-                          top: 0,
-                          child: Container(
-                            padding: const EdgeInsets.all(2),
-                            decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
-                            constraints: const BoxConstraints(minWidth: 12, minHeight: 12),
-                            child: Text('$_pendingKycCount', style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
-                          ),
-                        ),
-                    ],
-                  ),
-                  label: 'KYC',
-                ),
-                BottomNavigationBarItem(
-                  icon: Stack(
-                    children: [
-                      const Icon(Icons.receipt_long_rounded),
-                      if (_pendingSlipCount > 0)
-                        Positioned(
-                          right: 0,
-                          top: 0,
-                          child: Container(
-                            padding: const EdgeInsets.all(2),
-                            decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
-                            constraints: const BoxConstraints(minWidth: 12, minHeight: 12),
-                            child: Text('$_pendingSlipCount', style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
-                          ),
-                        ),
-                    ],
-                  ),
-                  label: 'ສະລິບ',
-                ),
-                const BottomNavigationBarItem(icon: Icon(Icons.settings_applications_rounded), label: 'ລະບົບ'),
-                const BottomNavigationBarItem(icon: Icon(Icons.analytics_rounded), label: 'ລາຍງານ'),
-              ],
-            )
-          : null,
+      floatingActionButton: _buildFab(bp),
+      bottomNavigationBar: bp.isMobile ? _buildBottomNav() : null,
     );
   }
 
-  Widget? _buildFab() {
-    if (_selectedTab == 0) {
+  // # ເຮັດຫຍັງ: ຫຸ້ມ AdminReportsTab ໄວ້ໃນ layout ດຽວກັບ tab ອື່ນ
+  // # ຍ້ອນຫຍັງ: ຂອງເກົ່າສົ່ງ isMobile ເຂົ້າໄປໂດຍບໍ່ມີ page header ຄືໜ້າອື່ນ
+  // #          ໜ້າລາຍງານຈຶ່ງເບິ່ງຄືຄົນລະລະບົບກັບໜ້າທີ່ເຫຼືອ
+  // # ແກ້ຈາກສ່ວນໃດ: AdminReportsTab(...) ທີ່ວາງກົງໆໃນ IndexedStack
+  // # ແກ້ເຮັດຫຍັງ: ໃສ່ page header ດຽວກັນ ແລະ ຮັກສາ data contract ເດີມທຸກ parameter
+  Widget _buildReportsSection(_Bp bp) {
+    return _tabScaffold(
+      section: _Section.reports,
+      isMobile: bp.isMobile,
+      child: AdminReportsTab(
+        subscriptions: _subscriptions,
+        adminBooks: _adminBooks,
+        adminUsers: _adminUsers,
+        kycSubmissions: _kycSubmissions,
+        auditLogs: _auditLogs,
+        isMobile: bp.isMobile,
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------- SIDEBAR
+  // # ເຮັດຫຍັງ: ເພີ່ມ sidebar ຖາວອນ (desktop) ແລະ rail ໄອຄອນ (tablet)
+  // # ຍ້ອນຫຍັງ: ChoiceChip ແຖວດຽວເລື່ອນຂວາງເຮັດໃຫ້ເມນູທ້າຍໆ (ລາຍງານ) ຖືກເຊື່ອງ
+  // #          ແລະ ບໍ່ເຫັນວ່າລະບົບມີກີ່ສ່ວນ
+  // # ແກ້ຈາກສ່ວນໃດ: ແຖວ _buildNavTab ທີ່ຢູ່ໃນ SingleChildScrollView ແນວນອນ
+  // # ແກ້ເຮັດຫຍັງ: ເຫັນທຸກເມນູພ້ອມກັນ ມີ badge ຈຳນວນທີ່ຄ້າງ ແລະ ຮູ້ຕຳແໜ່ງປັດຈຸບັນ
+  Widget _buildSidebar({required bool expanded}) {
+    return Container(
+      width: expanded ? 248 : 76,
+      color: _Ds.sidebar,
+      child: Column(
+        children: [
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: expanded ? _Ds.s16 : _Ds.s12, vertical: _Ds.s20),
+            child: Row(
+              mainAxisAlignment: expanded ? MainAxisAlignment.start : MainAxisAlignment.center,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(_Ds.s8),
+                  decoration: BoxDecoration(
+                    color: _Ds.primary,
+                    borderRadius: BorderRadius.circular(_Ds.rMd),
+                  ),
+                  child: const Icon(Icons.admin_panel_settings_rounded, color: Colors.white, size: 20),
+                ),
+                if (expanded) ...[
+                  const SizedBox(width: _Ds.s12),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Admin Dashboard',
+                            style: TextStyle(
+                                color: Colors.white, fontSize: 14, fontWeight: FontWeight.w700)),
+                        Text('ລະບົບຄຸ້ມຄອງ E-Book',
+                            style: TextStyle(color: _Ds.textMuted, fontSize: 11)),
+                      ],
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          const Divider(height: 1, color: _Ds.sidebarHover),
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.symmetric(vertical: _Ds.s12, horizontal: _Ds.s8),
+              children: [
+                for (final s in _Section.values) _buildSidebarItem(s, expanded),
+              ],
+            ),
+          ),
+          const Divider(height: 1, color: _Ds.sidebarHover),
+          Padding(
+            padding: const EdgeInsets.all(_Ds.s8),
+            child: _sidebarAction(
+              icon: Icons.logout_rounded,
+              label: 'ອອກຈາກລະບົບ',
+              expanded: expanded,
+              color: const Color(0xFFFCA5A5),
+              onTap: _logout,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSidebarItem(_Section s, bool expanded) {
+    final selected = _selectedTab == s.tab;
+    final badge = _badgeFor(s);
+    final failed = _failedSections.contains(s);
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Material(
+        color: selected ? _Ds.primary : Colors.transparent,
+        borderRadius: BorderRadius.circular(_Ds.rMd),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(_Ds.rMd),
+          onTap: () => setState(() => _selectedTab = s.tab),
+          child: Tooltip(
+            message: expanded ? '' : s.title,
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: expanded ? _Ds.s12 : 0, vertical: _Ds.s12),
+              child: Row(
+                mainAxisAlignment: expanded ? MainAxisAlignment.start : MainAxisAlignment.center,
+                children: [
+                  Icon(s.icon, size: 20, color: selected ? Colors.white : const Color(0xFF94A3B8)),
+                  if (expanded) ...[
+                    const SizedBox(width: _Ds.s12),
+                    Expanded(
+                      child: Text(
+                        s.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                          color: selected ? Colors.white : const Color(0xFFCBD5E1),
+                        ),
+                      ),
+                    ),
+                  ],
+                  if (failed)
+                    Icon(Icons.error_outline_rounded,
+                        size: 15, color: expanded ? const Color(0xFFFCA5A5) : const Color(0xFFFCA5A5))
+                  else if (badge > 0)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: selected ? Colors.white : _Ds.danger,
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Text('$badge',
+                          style: _Ds.badge.copyWith(color: selected ? _Ds.primary : Colors.white)),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _sidebarAction({
+    required IconData icon,
+    required String label,
+    required bool expanded,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(_Ds.rMd),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(_Ds.rMd),
+        onTap: onTap,
+        child: Tooltip(
+          message: expanded ? '' : label,
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: expanded ? _Ds.s12 : 0, vertical: _Ds.s12),
+            child: Row(
+              mainAxisAlignment: expanded ? MainAxisAlignment.start : MainAxisAlignment.center,
+              children: [
+                Icon(icon, size: 19, color: color),
+                if (expanded) ...[
+                  const SizedBox(width: _Ds.s12),
+                  Text(label,
+                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: color)),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  int _badgeFor(_Section s) {
+    switch (s) {
+      case _Section.books:
+        return _pendingBooksCount;
+      case _Section.kyc:
+        return _pendingKycCount;
+      case _Section.subscriptions:
+        return _pendingSlipCount;
+      default:
+        return 0;
+    }
+  }
+
+  // ---------------------------------------------------------------- TOP BAR
+  // # ເຮັດຫຍັງ: ປ່ຽນແຖບເທິງຈາກ AppBar ດຳ 'Enterprise Admin Portal' ເປັນແຖບຂາວບາງ
+  // # ຍ້ອນຫຍັງ: ຫົວຂໍ້ຍີ່ຫໍ້ຊ້ຳກັບ sidebar ແລະ ກິນພື້ນທີ່ໂດຍບໍ່ບອກວ່າຢູ່ໜ້າໃດ
+  // # ແກ້ຈາກສ່ວນໃດ: AppBar ເດີມທີ່ມີ gradient logo + ຊື່ລະບົບ + ປຸ່ມ refresh/logout
+  // # ແກ້ເຮັດຫຍັງ: ແຖບເທິງບອກຊື່ໜ້າປັດຈຸບັນ ແລະ ເກັບ refresh/logout ໄວ້ຄົບ
+  // #             ສ່ວນ mobile ຍັງມີປຸ່ມ logout ຢູ່ນີ້ ເພາະບໍ່ມີ sidebar
+  Widget _buildTopBar(_Bp bp, _Section section) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: _Ds.surface,
+        border: Border(bottom: BorderSide(color: _Ds.border)),
+      ),
+      padding: EdgeInsets.symmetric(horizontal: bp.isMobile ? _Ds.s16 : _Ds.s24, vertical: _Ds.s12),
+      child: Row(
+        children: [
+          if (bp.isMobile) ...[
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: _Ds.primary,
+                borderRadius: BorderRadius.circular(_Ds.rSm),
+              ),
+              child: const Icon(Icons.admin_panel_settings_rounded, color: Colors.white, size: 16),
+            ),
+            const SizedBox(width: _Ds.s8),
+          ],
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  bp.isMobile ? section.title : 'Admin Dashboard',
+                  style: TextStyle(
+                    fontSize: bp.isMobile ? 15 : 16,
+                    fontWeight: FontWeight.w700,
+                    color: _Ds.textPrimary,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                if (!bp.isMobile)
+                  const Text('ພາບລວມ ແລະ ການຈັດການລະບົບ E-Book', style: _Ds.caption),
+              ],
+            ),
+          ),
+          if (_failedSections.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(right: _Ds.s8),
+              child: _StatusChip(
+                label: bp.isMobile ? '${_failedSections.length}' : 'ໂຫຼດບໍ່ຄົບ ${_failedSections.length} ສ່ວນ',
+                fg: _Ds.warning,
+                bg: _Ds.warningSoft,
+                icon: Icons.warning_amber_rounded,
+              ),
+            ),
+          IconButton(
+            icon: const Icon(Icons.refresh_rounded, color: _Ds.textSecondary),
+            onPressed: _fetchAdminData,
+            tooltip: 'ຣີເຟຣຊຂໍ້ມູນ',
+          ),
+          if (bp.isMobile)
+            IconButton(
+              icon: const Icon(Icons.logout_rounded, color: _Ds.danger),
+              onPressed: _logout,
+              tooltip: 'ອອກຈາກລະບົບ',
+            ),
+        ],
+      ),
+    );
+  }
+
+  // ------------------------------------------------------------- BOTTOM NAV
+  // # ເຮັດຫຍັງ: ຂຽນ bottom navigation ໃໝ່ໃຫ້ອ່ານງ່າຍຂຶ້ນ
+  // # ຍ້ອນຫຍັງ: ຂອງເກົ່າໃຊ້ font 9-10 ແລະ badge ຂະໜາດ 8 ເຊິ່ງນ້ອຍເກີນສຳລັບພາສາລາວ
+  // # ແກ້ຈາກສ່ວນໃດ: BottomNavigationBar ເດີມທີ່ສ້າງ badge ດ້ວຍ Stack ຊ້ຳ 2 ບ່ອນ
+  // # ແກ້ເຮັດຫຍັງ: ຂະໜາດຕົວອັກສອນຂຶ້ນເປັນ 11/12, badge ໃຊ້ helper ດຽວກັນ
+  // #             ແລະ ຍັງມີຄົບ 6 ໜ້າ ລວມ 'ລາຍງານ' ຈຶ່ງບໍ່ຫາຍໄປຈາກ mobile
+  Widget _buildBottomNav() {
+    return Container(
+      decoration: const BoxDecoration(
+        color: _Ds.surface,
+        border: Border(top: BorderSide(color: _Ds.border)),
+      ),
+      child: BottomNavigationBar(
+        currentIndex: _selectedTab,
+        onTap: (index) => setState(() => _selectedTab = index),
+        backgroundColor: _Ds.surface,
+        elevation: 0,
+        selectedItemColor: _Ds.primary,
+        unselectedItemColor: _Ds.textMuted,
+        type: BottomNavigationBarType.fixed,
+        selectedFontSize: 11,
+        unselectedFontSize: 11,
+        selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w700),
+        items: [
+          for (final s in _Section.values)
+            BottomNavigationBarItem(
+              icon: _navIconWithBadge(s.icon, _badgeFor(s), _failedSections.contains(s)),
+              label: _shortLabel(s),
+            ),
+        ],
+      ),
+    );
+  }
+
+  String _shortLabel(_Section s) {
+    switch (s) {
+      case _Section.books:
+        return 'ຄັງປຶ້ມ';
+      case _Section.users:
+        return 'ຜູ້ໃຊ້';
+      case _Section.kyc:
+        return 'KYC';
+      case _Section.subscriptions:
+        return 'ສະລິບ';
+      case _Section.system:
+        return 'ລະບົບ';
+      case _Section.reports:
+        return 'ລາຍງານ';
+    }
+  }
+
+  Widget _navIconWithBadge(IconData icon, int badge, bool failed) {
+    if (badge <= 0 && !failed) return Icon(icon);
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Icon(icon),
+        Positioned(
+          right: -6,
+          top: -4,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+            decoration: BoxDecoration(
+              color: failed ? _Ds.warning : _Ds.danger,
+              borderRadius: BorderRadius.circular(999),
+            ),
+            constraints: const BoxConstraints(minWidth: 16),
+            child: Text(
+              failed ? '!' : '$badge',
+              style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w700),
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // # ເຮັດຫຍັງ: ໃຫ້ FAB ຂຶ້ນສະເພາະ mobile ສ່ວນ desktop/tablet ໃຊ້ປຸ່ມໃນ page header
+  // # ຍ້ອນຫຍັງ: FAB ລອຍທັບເນື້ອຫາເໝາະກັບໜ້າຈໍນ້ອຍ ແຕ່ບົນ desktop ປຸ່ມຫຼັກ
+  // #          ຄວນຢູ່ຄູ່ກັບຫົວຂໍ້ໜ້າຕາມແບບ admin ມາດຕະຖານ
+  // # ແກ້ຈາກສ່ວນໃດ: _buildFab() ເດີມທີ່ຄືນ FAB ທຸກຂະໜາດຈໍ
+  // # ແກ້ເຮັດຫຍັງ: action ເດີມ (ເພີ່ມປຶ້ມ / ເພີ່ມຜູ້ໃຊ້) ຍັງຢູ່ຄົບທັງສອງທາງ
+  Widget? _buildFab(_Bp bp) {
+    if (!bp.isMobile) return null;
+    if (_selectedTab == _Section.books.tab) {
       return FloatingActionButton.extended(
         onPressed: _openAddBookDialog,
-        backgroundColor: AppColors.primary,
+        backgroundColor: _Ds.primary,
         icon: const Icon(Icons.add_rounded, color: Colors.white),
-        label: const Text('ເພີ່ມປຶ້ມ', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        label: const Text('ເພີ່ມປຶ້ມ',
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
       );
     }
-    if (_selectedTab == 1) {
+    if (_selectedTab == _Section.users.tab) {
       return FloatingActionButton.extended(
         onPressed: _openCreateUserDialog,
-        backgroundColor: AppColors.primary,
+        backgroundColor: _Ds.primary,
         icon: const Icon(Icons.person_add_alt_1_rounded, color: Colors.white),
-        label: const Text('ເພີ່ມຜູ້ໃຊ້', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        label: const Text('ເພີ່ມຜູ້ໃຊ້',
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
       );
     }
     return null;
   }
 
-  Widget _buildNavTab(int index, IconData icon, String label, {int? count, int badge = 0}) {
-    final isSelected = _selectedTab == index;
-    return Padding(
-      padding: const EdgeInsets.only(right: 8),
-      child: ChoiceChip(
-        avatar: Icon(icon, size: 18, color: isSelected ? Colors.white : AppColors.textSecondary),
-        label: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(label),
-            if (badge > 0) ...[
-              const SizedBox(width: 6),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-                decoration: BoxDecoration(color: isSelected ? Colors.amber : Colors.red, borderRadius: BorderRadius.circular(10)),
-                child: Text('$badge', style: TextStyle(color: isSelected ? Colors.black : Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+  // ------------------------------------------------- SHARED PAGE STRUCTURE
+  // # ເຮັດຫຍັງ: ເພີ່ມໂຄງມາດຕະຖານໃຫ້ທຸກ tab (page header → KPI → toolbar → ເນື້ອຫາ)
+  // # ຍ້ອນຫຍັງ: ແຕ່ລະ tab ເດີມສ້າງ layout ເອງ ຈຶ່ງມີໄລຍະຫ່າງ ແລະ ລຳດັບຕ່າງກັນ
+  // #          ຜູ້ໃຊ້ຕ້ອງຮຽນຮູ້ໜ້າໃໝ່ທຸກເທື່ອທີ່ສະຫຼັບ tab
+  // # ແກ້ຈາກສ່ວນໃດ: Column ດິບໆທີ່ຂຶ້ນຕົ້ນດ້ວຍ SingleChildScrollView ຂອງ KPI ໃນທຸກ tab
+  // # ແກ້ເຮັດຫຍັງ: ທຸກໜ້າມີໂຄງດຽວກັນ ຈຳກັດຄວາມກວ້າງສູງສຸດເພື່ອບໍ່ໃຫ້ແຖວຍາວເກີນອ່ານ
+  Widget _tabScaffold({
+    required _Section section,
+    required bool isMobile,
+    List<Widget> kpis = const [],
+    Widget? toolbar,
+    Widget? headerAction,
+    required Widget child,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: EdgeInsets.fromLTRB(
+              isMobile ? _Ds.s16 : _Ds.s24, _Ds.s20, isMobile ? _Ds.s16 : _Ds.s24, _Ds.s12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(section.title, style: _Ds.pageTitle),
+                        const SizedBox(height: 2),
+                        Text(section.description, style: _Ds.pageSubtitle),
+                      ],
+                    ),
+                  ),
+                  if (headerAction != null && !isMobile) headerAction,
+                ],
               ),
+              if (kpis.isNotEmpty) ...[
+                const SizedBox(height: _Ds.s16),
+                _kpiGrid(kpis, isMobile),
+              ],
+              if (toolbar != null) ...[
+                const SizedBox(height: _Ds.s12),
+                toolbar,
+              ],
             ],
-          ],
+          ),
         ),
-        selected: isSelected,
-        selectedColor: AppColors.primary,
-        labelStyle: TextStyle(color: isSelected ? Colors.white : AppColors.textPrimary, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal, fontSize: 13),
-        onSelected: (val) {
-          if (val) setState(() => _selectedTab = index);
-        },
+        Expanded(
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(
+                isMobile ? _Ds.s16 : _Ds.s24, 0, isMobile ? _Ds.s16 : _Ds.s24, _Ds.s16),
+            child: child,
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// KPI ຈັດເປັນຕາຕະລາງຕາມພື້ນທີ່ - desktop 4 ຖັນ, tablet/mobile 2 ຖັນ
+  Widget _kpiGrid(List<Widget> kpis, bool isMobile) {
+    return LayoutBuilder(
+      builder: (context, c) {
+        final bp = _Bp.of(MediaQuery.of(context).size.width);
+        final cols = bp.kpiColumns;
+        const gap = _Ds.s12;
+        final width = (c.maxWidth - gap * (cols - 1)) / cols;
+        return Wrap(
+          spacing: gap,
+          runSpacing: gap,
+          children: [
+            for (final k in kpis) SizedBox(width: width > 0 ? width : c.maxWidth, child: k),
+          ],
+        );
+      },
+    );
+  }
+
+  // # ເຮັດຫຍັງ: ຂຽນ KPI card ໃໝ່ແທນ _buildStatSummaryBanner ເດີມ
+  // # ຍ້ອນຫຍັງ: ຂອງເກົ່າໃຊ້ຫົວຂໍ້ font 10 ແລະ ຄ່າ font 15 ຢູ່ໃນກ່ອງກວ້າງ 180
+  // #          ຕົວເລກຈຶ່ງບໍ່ເດັ່ນ ແລະ ຕ້ອງເລື່ອນຂວາງເບິ່ງ
+  // # ແກ້ຈາກສ່ວນໃດ: _buildStatSummaryBanner({title, value, icon, color, wrapExpanded})
+  // # ແກ້ເຮັດຫຍັງ: ຕົວເລກເປັນ 26 ເດັ່ນຊັດ ມີ label 12 ແລະ ສະຖານະ "ຕ້ອງກວດ"
+  // #             ເມື່ອມີລາຍການຄ້າງ ໃຊ້ຂໍ້ມູນຈິງທັງໝົດ ບໍ່ມີການສ້າງຕົວເລກປອມ
+  Widget _kpiCard({
+    required String label,
+    required String value,
+    required IconData icon,
+    required Color accent,
+    String? hint,
+    bool attention = false,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(_Ds.s16),
+      decoration: _Ds.card(borderColor: attention ? _Ds.warning.withValues(alpha: 0.45) : null),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(_Ds.s8),
+                decoration: BoxDecoration(
+                  color: accent.withValues(alpha: 0.10),
+                  borderRadius: BorderRadius.circular(_Ds.rMd),
+                ),
+                child: Icon(icon, color: accent, size: 18),
+              ),
+              const Spacer(),
+              if (attention)
+                const _StatusChip(
+                    label: 'ຕ້ອງກວດ', fg: _Ds.warning, bg: _Ds.warningSoft),
+            ],
+          ),
+          const SizedBox(height: _Ds.s12),
+          Text(value, style: _Ds.kpiValue, maxLines: 1, overflow: TextOverflow.ellipsis),
+          const SizedBox(height: 2),
+          Text(label, style: _Ds.kpiLabel, maxLines: 1, overflow: TextOverflow.ellipsis),
+          if (hint != null) ...[
+            const SizedBox(height: 2),
+            Text(hint, style: _Ds.caption, maxLines: 1, overflow: TextOverflow.ellipsis),
+          ],
+        ],
       ),
     );
   }
 
-  // --- STAT SUMMARY CARD BANNER ---
-  Widget _buildStatSummaryBanner({
-    required String title,
-    required String value,
-    required IconData icon,
-    required Color color,
-    bool wrapExpanded = true,
+  // # ເຮັດຫຍັງ: ລວມຊ່ອງຄົ້ນຫາ ຕົວກອງ ແລະ ປຸ່ມຣີເຟຣຊ ເປັນແຖບດຽວ
+  // # ຍ້ອນຫຍັງ: ຂອງເກົ່າວາງ TextField ກັບ DropdownButton ຢູ່ໃນ Row ເປົ່າ
+  // #          ເບິ່ງຄືສອງອົງປະກອບທີ່ບໍ່ກ່ຽວກັນ ແລະ ບົນ mobile ຈະແອອັດ
+  // # ແກ້ຈາກສ່ວນໃດ: Row[Expanded(TextField), Container(DropdownButton)] ໃນແຕ່ລະ tab
+  // # ແກ້ເຮັດຫຍັງ: ເປັນ toolbar ດຽວ ບົນ mobile ຈະຊ້ອນເປັນ 2 ແຖວອັດຕະໂນມັດ
+  Widget _toolbar({
+    required String hint,
+    required ValueChanged<String> onSearch,
+    List<Widget> filters = const [],
+    bool isMobile = false,
   }) {
-    final content = Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-        boxShadow: [
-          BoxShadow(color: color.withValues(alpha: 0.06), blurRadius: 6, offset: const Offset(0, 2)),
-        ],
+    final search = TextField(
+      onChanged: onSearch,
+      style: const TextStyle(fontSize: 14),
+      decoration: InputDecoration(
+        hintText: hint,
+        hintStyle: const TextStyle(fontSize: 14, color: _Ds.textMuted),
+        prefixIcon: const Icon(Icons.search_rounded, size: 20, color: _Ds.textMuted),
+        isDense: true,
+        contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: _Ds.s12),
+        filled: true,
+        fillColor: _Ds.surface,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(_Ds.rMd),
+          borderSide: const BorderSide(color: _Ds.border),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(_Ds.rMd),
+          borderSide: const BorderSide(color: _Ds.border),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(_Ds.rMd),
+          borderSide: const BorderSide(color: _Ds.primary, width: 1.5),
+        ),
       ),
+    );
+
+    if (isMobile) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          search,
+          if (filters.isNotEmpty) ...[
+            const SizedBox(height: _Ds.s8),
+            Row(children: [for (final f in filters) Expanded(child: f)]),
+          ],
+        ],
+      );
+    }
+
+    return Row(
+      children: [
+        Expanded(child: search),
+        for (final f in filters) ...[const SizedBox(width: _Ds.s8), f],
+      ],
+    );
+  }
+
+  /// ກ່ອງເລືອກຕົວກອງ - ໜ້າຕາດຽວກັນທຸກ tab
+  Widget _filterBox({
+    required String value,
+    required List<DropdownMenuItem<String>> items,
+    required ValueChanged<String?> onChanged,
+    IconData icon = Icons.filter_list_rounded,
+  }) {
+    return Container(
+      height: 48,
+      padding: const EdgeInsets.symmetric(horizontal: _Ds.s12),
+      decoration: _Ds.card(radius: _Ds.rMd),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(color: color.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(10)),
-            child: Icon(icon, color: color, size: 20),
-          ),
-          const SizedBox(width: 8),
-          Flexible(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(fontSize: 10, color: AppColors.textSecondary, fontWeight: FontWeight.bold),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                Text(
-                  value,
-                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: color),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
+          Icon(icon, size: 18, color: _Ds.textMuted),
+          const SizedBox(width: _Ds.s8),
+          DropdownButton<String>(
+            value: value,
+            underline: const SizedBox(),
+            isDense: true,
+            style: const TextStyle(fontSize: 13, color: _Ds.textPrimary),
+            items: items,
+            onChanged: onChanged,
           ),
         ],
       ),
     );
+  }
 
-    if (wrapExpanded) {
-      return Expanded(child: content);
+  // # ເຮັດຫຍັງ: ແຍກສະຖານະ Loading / Empty / Error ອອກຈາກກັນ
+  // # ຍ້ອນຫຍັງ: ຂອງເກົ່າ API ລົ້ມ → catchError → ລາຍການຫວ່າງ → ຂໍ້ຄວາມ "ບໍ່ພົບລາຍການ"
+  // #          ຜູ້ດູແລຈຶ່ງເຂົ້າໃຈວ່າລະບົບບໍ່ມີຂໍ້ມູນ ທັງທີ່ຄວາມຈິງແມ່ນຕິດຕໍ່ backend ບໍ່ໄດ້
+  // # ແກ້ຈາກສ່ວນໃດ: Center(child: Text('ບໍ່ພົບລາຍການ...')) ທີ່ໃຊ້ຊ້ຳທຸກ tab
+  // # ແກ້ເຮັດຫຍັງ: Error ມີໄອຄອນເຕືອນ + ປຸ່ມລອງໃໝ່ ສ່ວນ Empty ບອກວິທີເລີ່ມຕົ້ນ
+  Widget _stateView({
+    required _Section section,
+    required bool isEmpty,
+    required String emptyTitle,
+    required String emptyHint,
+    required IconData emptyIcon,
+    required Widget child,
+  }) {
+    if (_isLoading) return _skeletonList();
+
+    if (_failedSections.contains(section)) {
+      return _errorState(section);
     }
-    return SizedBox(width: 180, child: content);
+
+    if (isEmpty) {
+      return _emptyState(emptyTitle, emptyHint, emptyIcon);
+    }
+    return child;
+  }
+
+  Widget _emptyState(String title, String hint, IconData icon) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(_Ds.s24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(_Ds.s20),
+              decoration: const BoxDecoration(color: _Ds.neutralSoft, shape: BoxShape.circle),
+              child: Icon(icon, size: 32, color: _Ds.textMuted),
+            ),
+            const SizedBox(height: _Ds.s16),
+            Text(title, style: _Ds.sectionTitle, textAlign: TextAlign.center),
+            const SizedBox(height: _Ds.s4),
+            Text(hint, style: _Ds.body, textAlign: TextAlign.center),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _errorState(_Section section) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(_Ds.s24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(_Ds.s20),
+              decoration: const BoxDecoration(color: _Ds.dangerSoft, shape: BoxShape.circle),
+              child: const Icon(Icons.cloud_off_rounded, size: 32, color: _Ds.danger),
+            ),
+            const SizedBox(height: _Ds.s16),
+            const Text('ໂຫຼດຂໍ້ມູນບໍ່ສຳເລັດ', style: _Ds.sectionTitle, textAlign: TextAlign.center),
+            const SizedBox(height: _Ds.s4),
+            Text('ຕິດຕໍ່ server ບໍ່ໄດ້ ຫຼື ບໍ່ມີສິດເຂົ້າເຖິງສ່ວນ "${section.title}"\nກະລຸນາກວດການເຊື່ອມຕໍ່ແລ້ວລອງໃໝ່',
+                style: _Ds.body, textAlign: TextAlign.center),
+            const SizedBox(height: _Ds.s16),
+            FilledButton.icon(
+              onPressed: _fetchAdminData,
+              icon: const Icon(Icons.refresh_rounded, size: 18),
+              label: const Text('ລອງໃໝ່'),
+              style: FilledButton.styleFrom(backgroundColor: _Ds.primary),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Skeleton ແທນ CircularProgressIndicator ກາງຈໍ - ບອກຮູບຮ່າງເນື້ອຫາທີ່ກຳລັງມາ
+  Widget _skeletonList() {
+    return ListView.builder(
+      itemCount: 6,
+      padding: EdgeInsets.zero,
+      itemBuilder: (_, __) => Container(
+        height: 84,
+        margin: const EdgeInsets.only(bottom: _Ds.s12),
+        decoration: _Ds.card(),
+        padding: const EdgeInsets.all(_Ds.s12),
+        child: Row(
+          children: [
+            Container(
+              width: 48,
+              height: 60,
+              decoration: BoxDecoration(
+                  color: _Ds.neutralSoft, borderRadius: BorderRadius.circular(_Ds.rSm)),
+            ),
+            const SizedBox(width: _Ds.s12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(height: 12, width: 180, color: _Ds.neutralSoft),
+                  const SizedBox(height: _Ds.s8),
+                  Container(height: 10, width: 120, color: _Ds.divider),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// ປຸ່ມຫຼັກຂອງໜ້າ (desktop) - ແທນ FAB ທີ່ລອຍທັບເນື້ອຫາ
+  Widget _primaryAction(String label, IconData icon, VoidCallback onTap) {
+    return FilledButton.icon(
+      onPressed: onTap,
+      icon: Icon(icon, size: 18),
+      label: Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
+      style: FilledButton.styleFrom(
+        backgroundColor: _Ds.primary,
+        padding: const EdgeInsets.symmetric(horizontal: _Ds.s16, vertical: _Ds.s16),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(_Ds.rMd)),
+      ),
+    );
   }
 
   // --- TAB 0: BOOKS MANAGEMENT ---
@@ -861,167 +1636,253 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       return matchesSearch && matchesStatus;
     }).toList();
 
-    return Column(
-      children: [
-        // Quick Stats Banner
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: [
-              _buildStatSummaryBanner(title: 'ປຶ້ມທັງໝົດ', value: '${_adminBooks.length} ຫົວ', icon: Icons.menu_book_rounded, color: AppColors.primary, wrapExpanded: false),
-              const SizedBox(width: 8),
-              _buildStatSummaryBanner(title: 'ລໍຖ້າອະນຸມັດ', value: '$_pendingBooksCount ຫົວ', icon: Icons.hourglass_top_rounded, color: Colors.orange.shade800, wrapExpanded: false),
-              const SizedBox(width: 8),
-              _buildStatSummaryBanner(title: 'ອະນຸມັດແລ້ວ', value: '${_adminBooks.where((b) => b.status.toLowerCase() == 'approved').length} ຫົວ', icon: Icons.check_circle_rounded, color: Colors.green, wrapExpanded: false),
+    // # ເຮັດຫຍັງ: ຂຽນໜ້າຄັງໜັງສືໃໝ່ດ້ວຍໂຄງ page header → KPI → toolbar → ລາຍການ
+    // # ຍ້ອນຫຍັງ: ຂອງເກົ່າເປັນ KPI ເລື່ອນຂວາງ + ListTile ຂາວຄືກັນໝົດ ຈຶ່ງແຍກບໍ່ອອກວ່າ
+    // #          ປຶ້ມໃດລໍຖ້າອະນຸມັດ ແລະ ປຸ່ມ action ເປັນໄອຄອນລ້ວນທີ່ບໍ່ບອກຄວາມໝາຍ
+    // # ແກ້ຈາກສ່ວນໃດ: Column[SingleChildScrollView(KPI), Row(search+dropdown), ListView]
+    // # ແກ້ເຮັດຫຍັງ: KPI ເປັນຕາຕະລາງ, ລາຍການທີ່ລໍຖ້າມີແຖບສີເຫຼືອງດ້ານຊ້າຍ,
+    // #             ປຸ່ມອະນຸມັດ/ປະຕິເສດເປັນປຸ່ມມີຂໍ້ຄວາມ - action ເດີມຄົບທຸກອັນ
+    final approvedCount = _adminBooks.where((b) => b.status.toLowerCase() == 'approved').length;
+
+    return _tabScaffold(
+      section: _Section.books,
+      isMobile: isMobile,
+      headerAction: _primaryAction('ເພີ່ມປຶ້ມ', Icons.add_rounded, _openAddBookDialog),
+      kpis: [
+        _kpiCard(
+          label: 'ປຶ້ມທັງໝົດ',
+          value: '${_adminBooks.length}',
+          icon: Icons.menu_book_rounded,
+          accent: _Ds.primary,
+          hint: 'ຫົວໃນລະບົບ',
+        ),
+        _kpiCard(
+          label: 'ລໍຖ້າອະນຸມັດ',
+          value: '$_pendingBooksCount',
+          icon: Icons.hourglass_top_rounded,
+          accent: _Ds.warning,
+          hint: 'ຕ້ອງກວດສອບ',
+          attention: _pendingBooksCount > 0,
+        ),
+        _kpiCard(
+          label: 'ອະນຸມັດແລ້ວ',
+          value: '$approvedCount',
+          icon: Icons.check_circle_rounded,
+          accent: _Ds.success,
+          hint: 'ເຜີຍແຜ່ຢູ່',
+        ),
+        _kpiCard(
+          label: 'ບໍ່ອະນຸມັດ',
+          value: '${_adminBooks.where((b) => b.status.toLowerCase() == 'rejected').length}',
+          icon: Icons.cancel_rounded,
+          accent: _Ds.danger,
+          hint: 'ຖືກປະຕິເສດ',
+        ),
+      ],
+      toolbar: _toolbar(
+        hint: 'ຄົ້ນຫາຊື່ປຶ້ມ ຫຼື ຜູ້ແຕ່ງ...',
+        isMobile: isMobile,
+        onSearch: (val) => setState(() => _searchQuery = val),
+        filters: [
+          _filterBox(
+            value: _bookStatusFilter,
+            onChanged: (val) => setState(() => _bookStatusFilter = val!),
+            items: [
+              const DropdownMenuItem(value: 'ທັງໝົດ', child: Text('ທຸກສະຖານະ')),
+              DropdownMenuItem(value: 'pending', child: Text('ລໍຖ້າອະນຸມັດ ($_pendingBooksCount)')),
+              const DropdownMenuItem(value: 'approved', child: Text('ອະນຸມັດແລ້ວ')),
+              const DropdownMenuItem(value: 'rejected', child: Text('ບໍ່ອະນຸມັດ')),
             ],
           ),
-        ),
-        const SizedBox(height: 12),
+        ],
+      ),
+      child: RefreshIndicator(
+        onRefresh: _fetchAdminData,
+        color: _Ds.primary,
+        child: _stateView(
+          section: _Section.books,
+          isEmpty: filtered.isEmpty,
+          emptyTitle: 'ບໍ່ພົບລາຍການປຶ້ມ',
+          emptyHint: _adminBooks.isEmpty
+              ? 'ຍັງບໍ່ມີປຶ້ມໃນລະບົບ ກົດ "ເພີ່ມປຶ້ມ" ເພື່ອເລີ່ມຕົ້ນ'
+              : 'ບໍ່ມີປຶ້ມທີ່ຕົງກັບຄຳຄົ້ນຫາ ຫຼື ຕົວກອງທີ່ເລືອກ',
+          emptyIcon: Icons.menu_book_rounded,
+          child: ListView.builder(
+            itemCount: filtered.length,
+            padding: EdgeInsets.zero,
+            itemBuilder: (ctx, idx) {
+              final book = filtered[idx];
+              final status = book.status.toLowerCase();
+              final isPending = status == 'pending';
 
-        // Search Bar & Status Filter
-        Row(
-          children: [
-            Expanded(
-              child: TextField(
-                onChanged: (val) => setState(() => _searchQuery = val),
-                decoration: InputDecoration(
-                  hintText: 'ຄົ້ນຫາຊື່ປຶ້ມ ຫຼື ຜູ້ແຕ່ງ...',
-                  prefixIcon: const Icon(Icons.search_rounded),
-                  contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
-                  fillColor: Colors.white,
-                  filled: true,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+              return _listCard(
+                accent: isPending
+                    ? _Ds.warning
+                    : (status == 'rejected' ? _Ds.danger : _Ds.success),
+                highlight: isPending,
+                onTap: () => _showBookDetailModal(book, idx),
+                leading: ClipRRect(
+                  borderRadius: BorderRadius.circular(_Ds.rSm),
+                  child: SizedBox(width: 46, height: 62, child: _buildImage(book.imagePath)),
+                ),
+                title: book.title,
+                subtitle: 'ຜູ້ແຕ່ງ: ${book.author}'
+                    '${book.uploaderName != null ? '  •  ຜູ້ເພີ່ມ: ${book.uploaderName}' : ''}',
+                chips: [
+                  if (status == 'approved') _StatusChip.approved('ອະນຸມັດແລ້ວ'),
+                  if (status == 'rejected') _StatusChip.rejected('ບໍ່ອະນຸມັດ'),
+                  if (isPending) _StatusChip.pending('ລໍຖ້າອະນຸມັດ'),
+                  _StatusChip.info(book.tags.isNotEmpty ? book.tags.first : 'ທົ່ວໄປ'),
+                  if (book.isFree) _StatusChip.neutral('ອ່ານຟຣີ'),
+                ],
+                actions: isPending
+                    ? [
+                        _rowAction('ອະນຸມັດ', Icons.check_rounded, _Ds.success,
+                            () => _changeBookStatus(book, 'approved')),
+                        _rowAction('ປະຕິເສດ', Icons.close_rounded, _Ds.danger,
+                            () => _changeBookStatus(book, 'rejected')),
+                      ]
+                    : [
+                        _iconAction('ແກ້ໄຂ', Icons.edit_outlined, _Ds.info,
+                            () => _openEditBookDialog(book, idx)),
+                        _iconAction('ລຶບ', Icons.delete_outline_rounded, _Ds.danger,
+                            () => _deleteBook(idx)),
+                      ],
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
+  // # ເຮັດຫຍັງ: ເພີ່ມ list card ມາດຕະຖານທີ່ໃຊ້ຮ່ວມກັນທຸກ tab
+  // # ຍ້ອນຫຍັງ: ແຕ່ລະ tab ເດີມສ້າງ Container + ListTile ເອງ ດ້ວຍ radius 14 ແລະ
+  // #          ຂອບ 0xFFE2E8F0 ຄືກັນໝົດ ຈຶ່ງບໍ່ມີລຳດັບຄວາມສຳຄັນ
+  // # ແກ້ຈາກສ່ວນໃດ: Container(margin/decoration) + ListTile ທີ່ຂຽນຊ້ຳໃນ 4 tab
+  // # ແກ້ເຮັດຫຍັງ: ມີແຖບສີດ້ານຊ້າຍບອກສະຖານະ ແລະ ເນັ້ນລາຍການທີ່ຕ້ອງດຳເນີນການ
+  Widget _listCard({
+    required Color accent,
+    required String title,
+    String? subtitle,
+    Widget? leading,
+    List<Widget> chips = const [],
+    List<Widget> actions = const [],
+    VoidCallback? onTap,
+    bool highlight = false,
+  }) {
+    // # ເຮັດຫຍັງ: ວາງແຖບສີດ້ານຊ້າຍເປັນ Positioned ໃນ Stack ແທນ BorderSide ດ້ານດຽວ
+    // # ຍ້ອນຫຍັງ: ສອງທາງກ່ອນໜ້ານີ້ພັງທັງຄູ່ - IntrinsicHeight + Container(width:4)
+    // #          ວັດຄວາມສູງລ່ວງໜ້າ ແຕ່ Wrap ຕັດແຖວຕ່າງກັນຕອນ layout ຈິງ ຈຶ່ງເກີນ
+    // #          1px ທີ່ 375px; ສ່ວນ Border(left: accent, ອື່ນ: _Ds.border) ມີສີບໍ່
+    // #          ຄືກັນທຸກດ້ານ ຊຶ່ງ Flutter ບໍ່ອະນຸຍາດຄູ່ກັບ borderRadius ("A
+    // #          borderRadius can only be given on borders with uniform colors")
+    // #          ເຮັດໃຫ້ card ບໍ່ paint ເລີຍ - ເຫັນເປັນກ່ອງຂາວຫວ່າງໃນ console
+    // # ແກ້ຈາກສ່ວນໃດ: BoxDecoration.border ຂອງ card ນີ້
+    // # ແກ້ເຮັດຫຍັງ: ຂອບເປັນສີດຽວທັງໝົດຈຶ່ງໃຊ້ radius ໄດ້ ແລະ ແຖບສີມາຈາກ Positioned
+    // #             ທີ່ຢືດຕາມ Stack ຈຶ່ງບໍ່ບັງຄັບຄວາມສູງ - ບໍ່ overflow ແລະ paint ປົກກະຕິ
+    return Container(
+      margin: const EdgeInsets.only(bottom: _Ds.s12),
+      decoration: BoxDecoration(
+        color: _Ds.surface,
+        borderRadius: BorderRadius.circular(_Ds.rLg),
+        border: Border.all(
+          color: highlight ? accent.withValues(alpha: 0.45) : _Ds.border,
+        ),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Stack(
+        children: [
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: onTap,
+              child: Padding(
+                // # ເຮັດຫຍັງ: ເພີ່ມ padding ຊ້າຍ 4 ໃຫ້ພໍດີກັບຄວາມກວ້າງແຖບສີ
+                // # ຍ້ອນຫຍັງ: ແຖບສີເປັນ Positioned ຈຶ່ງລອຍທັບເນື້ອຫາຖ້າບໍ່ເຜື່ອບ່ອນ
+                padding: const EdgeInsets.fromLTRB(_Ds.s12 + 4, _Ds.s12, _Ds.s12, _Ds.s12),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (leading != null) ...[leading, const SizedBox(width: _Ds.s12)],
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(title,
+                              style: _Ds.cardTitle, maxLines: 2, overflow: TextOverflow.ellipsis),
+                          if (subtitle != null) ...[
+                            const SizedBox(height: 2),
+                            Text(subtitle,
+                                style: _Ds.body, maxLines: 2, overflow: TextOverflow.ellipsis),
+                          ],
+                          if (chips.isNotEmpty) ...[
+                            const SizedBox(height: _Ds.s8),
+                            Wrap(spacing: _Ds.s4, runSpacing: _Ds.s4, children: chips),
+                          ],
+                        ],
+                      ),
+                    ),
+                    if (actions.isNotEmpty) ...[
+                      const SizedBox(width: _Ds.s8),
+                      Wrap(
+                        spacing: _Ds.s4,
+                        runSpacing: _Ds.s4,
+                        alignment: WrapAlignment.end,
+                        children: actions,
+                      ),
+                    ],
+                  ],
                 ),
               ),
             ),
-            const SizedBox(width: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFFE2E8F0))),
-              child: DropdownButton<String>(
-                value: _bookStatusFilter,
-                underline: const SizedBox(),
-                items: [
-                  const DropdownMenuItem(value: 'ທັງໝົດ', child: Text('ທັງໝົດ', style: TextStyle(fontSize: 12))),
-                  DropdownMenuItem(value: 'pending', child: Text('ລໍຖ້າອະນຸມັດ ($_pendingBooksCount)', style: TextStyle(fontSize: 12, color: Colors.orange.shade900, fontWeight: FontWeight.bold))),
-                  const DropdownMenuItem(value: 'approved', child: Text('ອະນຸມັດແລ້ວ', style: TextStyle(fontSize: 12, color: Colors.green))),
-                  const DropdownMenuItem(value: 'rejected', child: Text('ບໍ່ອະນຸມັດ', style: TextStyle(fontSize: 12, color: Colors.red))),
-                ],
-                onChanged: (val) => setState(() => _bookStatusFilter = val!),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-
-        Expanded(
-          child: RefreshIndicator(
-            onRefresh: _fetchAdminData,
-            color: AppColors.primary,
-            child: filtered.isEmpty
-                ? const Center(child: Text('ບໍ່ພົບລາຍການປຶ້ມ', style: TextStyle(color: AppColors.textSecondary)))
-                : ListView.builder(
-                    itemCount: filtered.length,
-                    itemBuilder: (ctx, idx) {
-                      final book = filtered[idx];
-                      final isPending = book.status.toLowerCase() == 'pending';
-                      final isApproved = book.status.toLowerCase() == 'approved';
-                      final isRejected = book.status.toLowerCase() == 'rejected';
-
-                      return Container(
-                        margin: const EdgeInsets.only(bottom: 10),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(color: isPending ? Colors.orange.shade300 : const Color(0xFFE2E8F0), width: isPending ? 1.5 : 1.0),
-                        ),
-                        child: ListTile(
-                          contentPadding: const EdgeInsets.all(10),
-                          onTap: () => _showBookDetailModal(book, idx),
-                          leading: ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: SizedBox(width: 48, height: 64, child: _buildImage(book.imagePath)),
-                          ),
-                          title: Text(book.title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                          subtitle: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const SizedBox(height: 2),
-                              Text('ຜູ້ແຕ່ງ: ${book.author}', style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
-                              if (book.uploaderName != null)
-                                Text('ຜູ້ເພີ່ມ: ${book.uploaderName}', style: const TextStyle(fontSize: 11, color: AppColors.primary)),
-                              const SizedBox(height: 4),
-                              Wrap(
-                                spacing: 4,
-                                runSpacing: 4,
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                    decoration: BoxDecoration(
-                                      color: isApproved
-                                          ? Colors.green.shade50
-                                          : (isRejected ? Colors.red.shade50 : Colors.orange.shade50),
-                                      borderRadius: BorderRadius.circular(6),
-                                    ),
-                                    child: Text(
-                                      isApproved ? 'ອະນຸມັດແລ້ວ' : (isRejected ? 'ບໍ່ອະນຸມັດ' : 'ລໍຖ້າອະນຸມັດ'),
-                                      style: TextStyle(
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.bold,
-                                        color: isApproved
-                                            ? Colors.green.shade700
-                                            : (isRejected ? Colors.red.shade700 : Colors.orange.shade900),
-                                      ),
-                                    ),
-                                  ),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                    decoration: BoxDecoration(color: const Color(0xFFEFF6FF), borderRadius: BorderRadius.circular(6)),
-                                    child: Text(book.tags.isNotEmpty ? book.tags.first : "ທົ່ວໄປ", style: const TextStyle(fontSize: 10, color: AppColors.primary, fontWeight: FontWeight.bold)),
-                                  ),
-                                  if (book.isFree)
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                      decoration: BoxDecoration(color: Colors.green.shade50, borderRadius: BorderRadius.circular(6)),
-                                      child: const Text('ອ່ານຟຣີ', style: TextStyle(fontSize: 10, color: Colors.green, fontWeight: FontWeight.bold)),
-                                    ),
-                                ],
-                              ),
-                            ],
-                          ),
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              if (isPending) ...[
-                                IconButton(
-                                  tooltip: 'ອະນຸມັດປຶ້ມ',
-                                  icon: const Icon(Icons.check_circle_rounded, color: Colors.green, size: 24),
-                                  onPressed: () => _changeBookStatus(book, 'approved'),
-                                ),
-                                IconButton(
-                                  tooltip: 'ປະຕິເສດປຶ້ມ',
-                                  icon: const Icon(Icons.cancel_rounded, color: Colors.redAccent, size: 24),
-                                  onPressed: () => _changeBookStatus(book, 'rejected'),
-                                ),
-                              ] else ...[
-                                IconButton(
-                                  icon: const Icon(Icons.edit_rounded, color: Colors.blueAccent, size: 20),
-                                  onPressed: () => _openEditBookDialog(book, idx),
-                                ),
-                                IconButton(
-                                  icon: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent, size: 20),
-                                  onPressed: () => _deleteBook(idx),
-                                ),
-                              ],
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                  ),
           ),
+          // # ເຮັດຫຍັງ: ແຖບສະຖານະດ້ານຊ້າຍ ຢືດເຕັມຄວາມສູງ card
+          // # ຍ້ອນຫຍັງ: IgnorePointer ເພື່ອບໍ່ໃຫ້ບັງ InkWell ຂອງ card
+          Positioned(
+            left: 0,
+            top: 0,
+            bottom: 0,
+            width: 4,
+            child: IgnorePointer(child: ColoredBox(color: accent)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// ປຸ່ມ action ທີ່ມີຂໍ້ຄວາມ - ໃຊ້ກັບການຕັດສິນໃຈສຳຄັນ (ອະນຸມັດ/ປະຕິເສດ)
+  Widget _rowAction(String label, IconData icon, Color color, VoidCallback onTap) {
+    return TextButton.icon(
+      onPressed: onTap,
+      icon: Icon(icon, size: 16),
+      label: Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+      style: TextButton.styleFrom(
+        foregroundColor: color,
+        backgroundColor: color.withValues(alpha: 0.08),
+        padding: const EdgeInsets.symmetric(horizontal: _Ds.s12, vertical: _Ds.s8),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(_Ds.rSm)),
+        minimumSize: Size.zero,
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      ),
+    );
+  }
+
+  /// ປຸ່ມ action ແບບໄອຄອນ - ໃຊ້ກັບການກະທຳຮອງ (ແກ້ໄຂ/ລຶບ/ເບິ່ງ)
+  Widget _iconAction(String tooltip, IconData icon, Color color, VoidCallback onTap) {
+    return Tooltip(
+      message: tooltip,
+      child: IconButton(
+        onPressed: onTap,
+        icon: Icon(icon, size: 19),
+        color: color,
+        style: IconButton.styleFrom(
+          backgroundColor: color.withValues(alpha: 0.07),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(_Ds.rSm)),
+          minimumSize: const Size(36, 36),
+          padding: EdgeInsets.zero,
         ),
-      ],
+      ),
     );
   }
 
@@ -1097,139 +1958,139 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       return matchesRole && matchesSearch;
     }).toList();
 
-    return Column(
-      children: [
-        // Quick User Stats Banner
-        Row(
-          children: [
-            _buildStatSummaryBanner(title: 'ຜູ້ໃຊ້ທັງໝົດ', value: '${_adminUsers.length} ຄົນ', icon: Icons.people_alt_rounded, color: Colors.indigo),
-            const SizedBox(width: 8),
-            _buildStatSummaryBanner(title: 'ແອດມິນ/ພະນັກງານ', value: '${_adminUsers.where((u) => (u['role'] ?? '').toString().toLowerCase() != 'user').length} ຄົນ', icon: Icons.admin_panel_settings_rounded, color: Colors.purple),
-          ],
+    // # ເຮັດຫຍັງ: ຂຽນໜ້າຜູ້ໃຊ້ໃໝ່ໃຫ້ແຍກຂໍ້ມູນຊັດ (avatar / ຊື່ / ອີເມວ / role / ສະຖານະ)
+    // # ຍ້ອນຫຍັງ: ຂອງເກົ່າເອົາ role ໄປໃສ່ຫຼັງຊື່ດ້ວຍ font 9 ແລະ ບໍ່ສະແດງສະຖານະບັນຊີເລີຍ
+    // #          ຜູ້ດູແລຈຶ່ງບໍ່ຮູ້ວ່າໃຜຖືກລະງັບ ຈົນກວ່າຈະສັງເກດສີປຸ່ມດ້ານຂວາ
+    // # ແກ້ຈາກສ່ວນໃດ: Column[Row(KPI 2 ອັນ), Row(search+dropdown), ListView(ListTile)]
+    // # ແກ້ເຮັດຫຍັງ: ເພີ່ມ KPI ສະຖານະບັນຊີ, ສະແດງ role ແລະ ສະຖານະເປັນ chip ມາດຕະຖານ
+    // #             ແລະ ຮັກສາ action ເດີມ (ແກ້ໄຂ / ລະງັບ / ປົດລະງັບ / ເບິ່ງລາຍລະອຽດ)
+    final staffCount =
+        _adminUsers.where((u) => (u['role'] ?? '').toString().toLowerCase() != 'user').length;
+    final suspendedCount = _adminUsers.where((u) {
+      final s = (u['status'] ?? 'active').toString().toLowerCase();
+      return s == 'suspended' || s == 'banned';
+    }).length;
+
+    return _tabScaffold(
+      section: _Section.users,
+      isMobile: isMobile,
+      headerAction:
+          _primaryAction('ເພີ່ມຜູ້ໃຊ້', Icons.person_add_alt_1_rounded, _openCreateUserDialog),
+      kpis: [
+        _kpiCard(
+          label: 'ຜູ້ໃຊ້ທັງໝົດ',
+          value: '${_adminUsers.length}',
+          icon: Icons.people_alt_rounded,
+          accent: _Ds.primary,
+          hint: 'ບັນຊີໃນລະບົບ',
         ),
-        const SizedBox(height: 12),
-
-        Row(
-          children: [
-            Expanded(
-              child: TextField(
-                onChanged: (val) => setState(() => _searchQuery = val),
-                decoration: InputDecoration(
-                  hintText: 'ຄົ້ນຫາຊື່ ຫຼື ອີເມວ...',
-                  prefixIcon: const Icon(Icons.search_rounded),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  fillColor: Colors.white,
-                  filled: true,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFFE2E8F0))),
-              child: DropdownButton<String>(
-                value: _userRoleFilter,
-                underline: const SizedBox(),
-                items: ['ທັງໝົດ', 'Admin', 'Employee', 'User'].map((r) => DropdownMenuItem(value: r, child: Text(r, style: const TextStyle(fontSize: 12)))).toList(),
-                onChanged: (val) => setState(() => _userRoleFilter = val!),
-              ),
-            ),
-          ],
+        _kpiCard(
+          label: 'ແອດມິນ & ພະນັກງານ',
+          value: '$staffCount',
+          icon: Icons.admin_panel_settings_rounded,
+          accent: _Ds.info,
+          hint: 'ມີສິດຈັດການ',
         ),
-        const SizedBox(height: 12),
-
-        Expanded(
-          child: RefreshIndicator(
-            onRefresh: _fetchAdminData,
-            color: AppColors.primary,
-            child: ListView.builder(
-              itemCount: filtered.length,
-              itemBuilder: (ctx, idx) {
-                final user = filtered[idx];
-                final status = (user['status'] ?? 'active').toString().toLowerCase();
-                final isSuspended = status == 'suspended' || status == 'banned';
-                final role = (user['role'] ?? 'user').toString();
-
-                return Container(
-                  margin: const EdgeInsets.only(bottom: 10),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: const Color(0xFFE2E8F0)),
-                  ),
-                  child: ListTile(
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    onTap: () => _showUserDetailModal(user),
-                    leading: ImageHelper.buildAvatar(
-                      (user['profile_image_url'] ?? user['profile_image'] ?? user['avatar_url'] ?? user['avatar'])?.toString(),
-                      firstName: (user['first_name'] ?? 'U').toString(),
-                      size: 44,
-                      backgroundColor: role.toLowerCase() == 'admin'
-                          ? Colors.purple
-                          : (role.toLowerCase() == 'employee' ? Colors.orange.shade800 : AppColors.primary),
-                    ),
-                    title: Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            '${user['first_name'] ?? ''} ${user['last_name'] ?? ''}'.trim(),
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: role.toLowerCase() == 'admin'
-                                ? Colors.purple.shade100
-                                : (role.toLowerCase() == 'employee' ? Colors.orange.shade100 : Colors.blue.shade100),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Text(
-                            role.toUpperCase(),
-                            style: TextStyle(
-                              fontSize: 9,
-                              fontWeight: FontWeight.bold,
-                              color: role.toLowerCase() == 'admin'
-                                  ? Colors.purple
-                                  : (role.toLowerCase() == 'employee' ? Colors.orange.shade900 : Colors.blue),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    subtitle: Text('ອີເມວ: ${user['email']}', style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.edit_note_rounded, color: AppColors.primary, size: 22),
-                          onPressed: () {
-                            final realIdx = _adminUsers.indexWhere((u) =>
-                                (u['user_id'] ?? u['id']) == (user['user_id'] ?? user['id']));
-                            _openEditUserDialog(user, realIdx >= 0 ? realIdx : idx);
-                          },
-                        ),
-                        ElevatedButton(
-                          onPressed: () => _toggleUserStatus(user),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: isSuspended ? Colors.green : Colors.redAccent,
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            minimumSize: Size.zero,
-                          ),
-                          child: Text(isSuspended ? 'ປົດລະງັບ' : 'ລະງັບ', style: const TextStyle(color: Colors.white, fontSize: 10)),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
+        _kpiCard(
+          label: 'ຜູ້ໃຊ້ທົ່ວໄປ',
+          value: '${_adminUsers.length - staffCount}',
+          icon: Icons.person_outline_rounded,
+          accent: _Ds.success,
+          hint: 'ບັນຊີລູກຄ້າ',
+        ),
+        _kpiCard(
+          label: 'ຖືກລະງັບ',
+          value: '$suspendedCount',
+          icon: Icons.block_rounded,
+          accent: _Ds.danger,
+          hint: 'ເຂົ້າໃຊ້ບໍ່ໄດ້',
+          attention: suspendedCount > 0,
         ),
       ],
+      toolbar: _toolbar(
+        hint: 'ຄົ້ນຫາຊື່ ຫຼື ອີເມວ...',
+        isMobile: isMobile,
+        onSearch: (val) => setState(() => _searchQuery = val),
+        filters: [
+          _filterBox(
+            value: _userRoleFilter,
+            icon: Icons.badge_outlined,
+            onChanged: (val) => setState(() => _userRoleFilter = val!),
+            items: ['ທັງໝົດ', 'Admin', 'Employee', 'User']
+                .map((r) => DropdownMenuItem(
+                    value: r, child: Text(r == 'ທັງໝົດ' ? 'ທຸກສິດ' : r)))
+                .toList(),
+          ),
+        ],
+      ),
+      child: RefreshIndicator(
+        onRefresh: _fetchAdminData,
+        color: _Ds.primary,
+        child: _stateView(
+          section: _Section.users,
+          isEmpty: filtered.isEmpty,
+          emptyTitle: 'ບໍ່ພົບຜູ້ໃຊ້',
+          emptyHint: _adminUsers.isEmpty
+              ? 'ຍັງບໍ່ມີບັນຊີໃນລະບົບ ກົດ "ເພີ່ມຜູ້ໃຊ້" ເພື່ອສ້າງບັນຊີທຳອິດ'
+              : 'ບໍ່ມີບັນຊີທີ່ຕົງກັບຄຳຄົ້ນຫາ ຫຼື ສິດທີ່ເລືອກ',
+          emptyIcon: Icons.people_alt_rounded,
+          child: ListView.builder(
+            itemCount: filtered.length,
+            padding: EdgeInsets.zero,
+            itemBuilder: (ctx, idx) {
+              final user = filtered[idx];
+              final status = (user['status'] ?? 'active').toString().toLowerCase();
+              final isSuspended = status == 'suspended' || status == 'banned';
+              final role = (user['role'] ?? 'user').toString();
+              final roleLower = role.toLowerCase();
+              final roleColor = roleLower == 'admin'
+                  ? _Ds.info
+                  : (roleLower == 'employee' ? _Ds.warning : _Ds.neutral);
+
+              return _listCard(
+                accent: isSuspended ? _Ds.danger : _Ds.success,
+                highlight: isSuspended,
+                onTap: () => _showUserDetailModal(user),
+                leading: ImageHelper.buildAvatar(
+                  (user['profile_image_url'] ??
+                          user['profile_image'] ??
+                          user['avatar_url'] ??
+                          user['avatar'])
+                      ?.toString(),
+                  firstName: (user['first_name'] ?? 'U').toString(),
+                  size: 44,
+                  backgroundColor: roleColor,
+                ),
+                title: '${user['first_name'] ?? ''} ${user['last_name'] ?? ''}'.trim(),
+                subtitle: '${user['email'] ?? ''}',
+                chips: [
+                  _StatusChip(
+                      label: role.toUpperCase(),
+                      fg: roleColor,
+                      bg: roleColor.withValues(alpha: 0.10)),
+                  if (isSuspended)
+                    _StatusChip.rejected(status == 'banned' ? 'ຖືກແບນ' : 'ຖືກລະງັບ')
+                  else
+                    _StatusChip.approved('ໃຊ້ງານປົກກະຕິ'),
+                ],
+                actions: [
+                  _iconAction('ແກ້ໄຂ', Icons.edit_outlined, _Ds.info, () {
+                    final realIdx = _adminUsers.indexWhere(
+                        (u) => (u['user_id'] ?? u['id']) == (user['user_id'] ?? user['id']));
+                    _openEditUserDialog(user, realIdx >= 0 ? realIdx : idx);
+                  }),
+                  _rowAction(
+                    isSuspended ? 'ປົດລະງັບ' : 'ລະງັບ',
+                    isSuspended ? Icons.lock_open_rounded : Icons.block_rounded,
+                    isSuspended ? _Ds.success : _Ds.danger,
+                    () => _toggleUserStatus(user),
+                  ),
+                ],
+              );
+            },
+          ),
+        ),
+      ),
     );
   }
 
@@ -1242,100 +2103,126 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       return true;
     }).toList();
 
-    return Column(
-      children: [
-        // KYC Stats Banner
-        Row(
-          children: [
-            _buildStatSummaryBanner(title: 'ລໍຖ້າອະນຸມັດ KYC', value: '$_pendingKycCount ຄົນ', icon: Icons.badge_rounded, color: Colors.orange.shade800),
-            const SizedBox(width: 8),
-            _buildStatSummaryBanner(title: 'ອະນຸມັດແລ້ວ', value: '${_kycSubmissions.where((k) => k.status == KycStatus.approved).length} ຄົນ', icon: Icons.verified_rounded, color: Colors.green),
-          ],
-        ),
-        const SizedBox(height: 12),
+    // # ເຮັດຫຍັງ: ຂຽນໜ້າ KYC ໃໝ່ໃຫ້ລາຍການທີ່ລໍຖ້າມີຄວາມສຳຄັນທາງສາຍຕາສູງສຸດ
+    // # ຍ້ອນຫຍັງ: ຂອງເກົ່າທຸກແຖວໜ້າຕາຄືກັນ ແລະ ຂໍ້ມູນ 4 ແຖວອັດກັນດ້ວຍ emoji + font 11
+    // #          ເຊິ່ງເປັນຂໍ້ມູນເອກະສານທີ່ຕ້ອງອ່ານໃຫ້ຊັດກ່ອນຕັດສິນໃຈອະນຸມັດ
+    // # ແກ້ຈາກສ່ວນໃດ: Column[Row(KPI), Row(ຫົວຂໍ້+dropdown), ListView(ListTile 4 ແຖວ)]
+    // # ແກ້ເຮັດຫຍັງ: ລາຍການລໍຖ້າມີແຖບສີເຫຼືອງ ແລະ ຂຶ້ນກ່ອນ, ຂໍ້ມູນເອກະສານເປັນ chip
+    // #             ປຸ່ມອະນຸມັດ/ປະຕິເສດເປັນປຸ່ມມີຂໍ້ຄວາມ - action ເດີມຄົບ
+    final approvedKyc = _kycSubmissions.where((k) => k.status == KycStatus.approved).length;
+    final rejectedKyc = _kycSubmissions.where((k) => k.status == KycStatus.rejected).length;
 
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Text('ລາຍການຂໍອະນຸມັດ KYC', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFFE2E8F0))),
-              child: DropdownButton<String>(
-                value: _kycFilterStatus,
-                underline: const SizedBox(),
-                items: ['ທັງໝົດ', 'ລໍຖ້າອະນຸມັດ', 'ອະນຸມັດແລ້ວ', 'ບໍ່ອະນຸມັດ'].map((s) => DropdownMenuItem(value: s, child: Text(s, style: const TextStyle(fontSize: 12)))).toList(),
-                onChanged: (val) => setState(() => _kycFilterStatus = val!),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
+    // ລໍຖ້າອະນຸມັດຂຶ້ນກ່ອນສະເໝີ - ຜູ້ດູແລເຫັນສິ່ງທີ່ຕ້ອງເຮັດທັນທີ
+    final sorted = [...filtered]..sort((a, b) {
+        int rank(KycStatus s) => s == KycStatus.pending ? 0 : 1;
+        return rank(a.status).compareTo(rank(b.status));
+      });
 
-        Expanded(
-          child: RefreshIndicator(
-            onRefresh: _fetchAdminData,
-            color: AppColors.primary,
-            child: filtered.isEmpty
-                ? const Center(child: Text('ບໍ່ມີລາຍການ KYC'))
-                : ListView.builder(
-                    itemCount: filtered.length,
-                    itemBuilder: (ctx, idx) {
-                      final item = filtered[idx];
-                      return Container(
-                        margin: const EdgeInsets.only(bottom: 10),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(color: const Color(0xFFE2E8F0)),
-                        ),
-                        child: ListTile(
-                          contentPadding: const EdgeInsets.all(10),
-                          onTap: () => _showKycDetailModal(item),
-                          leading: const CircleAvatar(
-                            backgroundColor: Color(0xFFEFF6FF),
-                            child: Icon(Icons.badge_rounded, color: AppColors.primary, size: 24),
-                          ),
-                          title: Text(item.fullName.isNotEmpty ? item.fullName : item.userName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                          subtitle: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('👤 ຊື່-ນາມສະກຸນ: ${item.fullName.isNotEmpty ? item.fullName : item.userName}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
-                              Text('⚧ ເພດ: ${item.genderText} | 🎂 ວັນເກີດ: ${item.dateOfBirth.isNotEmpty ? item.dateOfBirth : "ບໍ່ລະບຸ"}', style: const TextStyle(fontSize: 11, color: AppColors.primary, fontWeight: FontWeight.bold)),
-                              Text('🆔 ເລກບັດ: ${item.idCardNumber} (${item.documentType})', style: const TextStyle(fontSize: 11, color: Colors.blueGrey)),
-                              Text('📧 ອີເມວ: ${item.userEmail}', style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
-                            ],
-                          ),
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Chip(
-                                label: Text(item.statusText, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
-                                backgroundColor: item.status == KycStatus.approved
-                                    ? Colors.green.shade100
-                                    : (item.status == KycStatus.rejected ? Colors.red.shade100 : Colors.amber.shade100),
-                              ),
-                              if (item.status != KycStatus.approved)
-                                IconButton(
-                                  icon: const Icon(Icons.check_circle_rounded, color: Colors.green),
-                                  tooltip: 'ອະນຸມັດ KYC',
-                                  onPressed: () => _approveKyc(item),
-                                ),
-                              if (item.status != KycStatus.rejected)
-                                IconButton(
-                                  icon: const Icon(Icons.cancel_rounded, color: Colors.redAccent),
-                                  tooltip: 'ປະຕິເສດ KYC',
-                                  onPressed: () => _showRejectKycDialog(item),
-                                ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-          ),
+    return _tabScaffold(
+      section: _Section.kyc,
+      isMobile: isMobile,
+      kpis: [
+        _kpiCard(
+          label: 'ລໍຖ້າອະນຸມັດ',
+          value: '$_pendingKycCount',
+          icon: Icons.pending_actions_rounded,
+          accent: _Ds.warning,
+          hint: 'ຕ້ອງກວດເອກະສານ',
+          attention: _pendingKycCount > 0,
+        ),
+        _kpiCard(
+          label: 'ອະນຸມັດແລ້ວ',
+          value: '$approvedKyc',
+          icon: Icons.verified_rounded,
+          accent: _Ds.success,
+          hint: 'ຜ່ານການກວດສອບ',
+        ),
+        _kpiCard(
+          label: 'ບໍ່ອະນຸມັດ',
+          value: '$rejectedKyc',
+          icon: Icons.gpp_bad_rounded,
+          accent: _Ds.danger,
+          hint: 'ຖືກປະຕິເສດ',
+        ),
+        _kpiCard(
+          label: 'ຄຳຮ້ອງທັງໝົດ',
+          value: '${_kycSubmissions.length}',
+          icon: Icons.folder_shared_rounded,
+          accent: _Ds.primary,
+          hint: 'ທຸກສະຖານະ',
         ),
       ],
+      toolbar: _toolbar(
+        hint: 'ຄົ້ນຫາຊື່ ຫຼື ອີເມວຜູ້ຍື່ນ...',
+        isMobile: isMobile,
+        onSearch: (val) => setState(() => _searchQuery = val),
+        filters: [
+          _filterBox(
+            value: _kycFilterStatus,
+            onChanged: (val) => setState(() => _kycFilterStatus = val!),
+            items: ['ທັງໝົດ', 'ລໍຖ້າອະນຸມັດ', 'ອະນຸມັດແລ້ວ', 'ບໍ່ອະນຸມັດ']
+                .map((s) => DropdownMenuItem(
+                    value: s, child: Text(s == 'ທັງໝົດ' ? 'ທຸກສະຖານະ' : s)))
+                .toList(),
+          ),
+        ],
+      ),
+      child: RefreshIndicator(
+        onRefresh: _fetchAdminData,
+        color: _Ds.primary,
+        child: _stateView(
+          section: _Section.kyc,
+          isEmpty: sorted.isEmpty,
+          emptyTitle: 'ບໍ່ມີລາຍການ KYC',
+          emptyHint: _kycSubmissions.isEmpty
+              ? 'ຍັງບໍ່ມີຜູ້ໃຊ້ຍື່ນເອກະສານຢືນຢັນຕົວຕົນເຂົ້າມາ'
+              : 'ບໍ່ມີຄຳຮ້ອງທີ່ຕົງກັບຕົວກອງທີ່ເລືອກ',
+          emptyIcon: Icons.verified_user_rounded,
+          child: ListView.builder(
+            itemCount: sorted.length,
+            padding: EdgeInsets.zero,
+            itemBuilder: (ctx, idx) {
+              final item = sorted[idx];
+              final isPending = item.status == KycStatus.pending;
+              final displayName = item.fullName.isNotEmpty ? item.fullName : item.userName;
+
+              return _listCard(
+                accent: isPending
+                    ? _Ds.warning
+                    : (item.status == KycStatus.rejected ? _Ds.danger : _Ds.success),
+                highlight: isPending,
+                onTap: () => _showKycDetailModal(item),
+                leading: CircleAvatar(
+                  radius: 22,
+                  backgroundColor: isPending ? _Ds.warningSoft : _Ds.primarySoft,
+                  child: Icon(Icons.badge_rounded,
+                      color: isPending ? _Ds.warning : _Ds.primary, size: 22),
+                ),
+                title: displayName,
+                subtitle: '${item.userEmail}\n'
+                    'ເລກເອກະສານ: ${item.idCardNumber}  •  ${item.documentType}',
+                chips: [
+                  if (item.status == KycStatus.approved) _StatusChip.approved(item.statusText),
+                  if (item.status == KycStatus.rejected) _StatusChip.rejected(item.statusText),
+                  if (isPending) _StatusChip.pending(item.statusText),
+                  _StatusChip.neutral(item.genderText),
+                  if (item.dateOfBirth.isNotEmpty) _StatusChip.neutral('ເກີດ ${item.dateOfBirth}'),
+                ],
+                actions: [
+                  _iconAction('ເບິ່ງເອກະສານ', Icons.visibility_outlined, _Ds.info,
+                      () => _showKycDetailModal(item)),
+                  if (item.status != KycStatus.approved)
+                    _rowAction('ອະນຸມັດ', Icons.check_rounded, _Ds.success,
+                        () => _approveKyc(item)),
+                  if (item.status != KycStatus.rejected)
+                    _rowAction('ປະຕິເສດ', Icons.close_rounded, _Ds.danger,
+                        () => _showRejectKycDialog(item)),
+                ],
+              );
+            },
+          ),
+        ),
+      ),
     );
   }
 
@@ -1375,357 +2262,415 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       return true;
     }).toList();
 
-    return Column(
-      children: [
-        // Slip Stats Banner
-        Row(
-          children: [
-            _buildStatSummaryBanner(title: 'ສະລິບລໍຖ້າກວດສອບ', value: '$_pendingSlipCount ລາຍການ', icon: Icons.receipt_long_rounded, color: Colors.amber.shade900),
-            const SizedBox(width: 8),
-            _buildStatSummaryBanner(title: 'ອະນຸມັດແລ້ວ', value: '${_subscriptions.where((s) => (s['payment_status'] ?? '').toString().toLowerCase() == 'active').length} ລາຍການ', icon: Icons.verified_user_rounded, color: Colors.green),
-          ],
-        ),
-        const SizedBox(height: 12),
+    // # ເຮັດຫຍັງ: ຂຽນໜ້າສະລິບໂອນເງິນໃໝ່ໃຫ້ຄົບ 6 ຢ່າງ (ຜູ້ໃຊ້/ແພັກເກັດ/ຍອດ/ວັນທີ/ສະຖານະ/action)
+    // # ຍ້ອນຫຍັງ: ຂອງເກົ່າສະແດງແຕ່ຊື່ ແພັກເກັດ ແລະ ຍອດ - ບໍ່ມີວັນທີແຈ້ງຊຳລະ
+    // #          ຜູ້ດູແລຈຶ່ງບໍ່ຮູ້ວ່າລາຍການໃດຄ້າງດົນແລ້ວ ແລະ ຄວນຈັດການກ່ອນ
+    // # ແກ້ຈາກສ່ວນໃດ: Column[Row(KPI), Row(ຫົວຂໍ້+dropdown), ListView(ListTile)]
+    // # ແກ້ເຮັດຫຍັງ: ເພີ່ມວັນທີ ແລະ ຍອດລວມທີ່ອະນຸມັດແລ້ວ ພ້ອມຈັດລາຍການລໍຖ້າຂຶ້ນກ່ອນ
+    // #             ໃຊ້ _formatCurrency ເດີມ ບໍ່ປ່ຽນການຄິດໄລ່
+    final activeSubs = _subscriptions
+        .where((s) => (s['payment_status'] ?? '').toString().toLowerCase() == 'active')
+        .toList();
+    final rejectedSubs = _subscriptions
+        .where((s) => (s['payment_status'] ?? '').toString().toLowerCase() == 'rejected')
+        .length;
+    final totalApproved = activeSubs.fold<double>(
+        0, (sum, s) => sum + (double.tryParse((s['amount'] ?? '0').toString()) ?? 0));
 
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Text('ລາຍການແຈ້ງຊຳລະເງິນ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFFE2E8F0))),
-              child: DropdownButton<String>(
-                value: _subFilterStatus,
-                underline: const SizedBox(),
-                items: ['ທັງໝົດ', 'pending', 'active', 'rejected'].map((s) => DropdownMenuItem(value: s, child: Text(s.toUpperCase(), style: const TextStyle(fontSize: 12)))).toList(),
-                onChanged: (val) => setState(() => _subFilterStatus = val!),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
+    final sorted = [...filtered]..sort((a, b) {
+        int rank(Map<String, dynamic> s) =>
+            (s['payment_status'] ?? 'pending').toString().toLowerCase() == 'pending' ? 0 : 1;
+        return rank(a).compareTo(rank(b));
+      });
 
-        Expanded(
-          child: RefreshIndicator(
-            onRefresh: _fetchAdminData,
-            color: AppColors.primary,
-            child: filtered.isEmpty
-                ? const Center(child: Text('ບໍ່ມີລາຍການສະລິບໂອນເງິນ'))
-                : ListView.builder(
-                    itemCount: filtered.length,
-                    itemBuilder: (ctx, idx) {
-                      final sub = filtered[idx];
-                      final status = (sub['payment_status'] ?? 'pending').toString();
-                      return Container(
-                        margin: const EdgeInsets.only(bottom: 10),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(color: const Color(0xFFE2E8F0)),
-                        ),
-                        child: ListTile(
-                          contentPadding: const EdgeInsets.all(10),
-                          onTap: () => _showSubscriptionDetailModal(sub),
-                          leading: const CircleAvatar(
-                            backgroundColor: Color(0xFFFEF3C7),
-                            child: Icon(Icons.receipt_long_rounded, color: Colors.amber, size: 24),
-                          ),
-                          title: Text('${sub['first_name'] ?? ""} ${sub['last_name'] ?? ""}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                          subtitle: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('ແພັກເກັດ: ${sub['package_name'] ?? "VIP"}', style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
-                              Text('ຍອດຊຳລະ: ${_formatCurrency(sub['amount'])} LAK', style: const TextStyle(fontSize: 12, color: AppColors.primary, fontWeight: FontWeight.bold)),
-                            ],
-                          ),
-                          trailing: status == 'pending'
-                              ? Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    ElevatedButton(
-                                      onPressed: () => _approveSubscription(sub),
-                                      style: ElevatedButton.styleFrom(backgroundColor: Colors.green, padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4)),
-                                      child: const Text('ອະນຸມັດ', style: TextStyle(color: Colors.white, fontSize: 11)),
-                                    ),
-                                    const SizedBox(width: 4),
-                                    IconButton(icon: const Icon(Icons.close_rounded, color: Colors.redAccent), onPressed: () => _rejectSubscription(sub)),
-                                  ],
-                                )
-                              : Chip(label: Text(status.toUpperCase(), style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold)), backgroundColor: status == 'active' ? Colors.green.shade100 : Colors.red.shade100),
-                        ),
-                      );
-                    },
-                  ),
-          ),
+    return _tabScaffold(
+      section: _Section.subscriptions,
+      isMobile: isMobile,
+      kpis: [
+        _kpiCard(
+          label: 'ລໍຖ້າກວດສອບ',
+          value: '$_pendingSlipCount',
+          icon: Icons.receipt_long_rounded,
+          accent: _Ds.warning,
+          hint: 'ສະລິບຄ້າງ',
+          attention: _pendingSlipCount > 0,
+        ),
+        _kpiCard(
+          label: 'ອະນຸມັດແລ້ວ',
+          value: '${activeSubs.length}',
+          icon: Icons.verified_user_rounded,
+          accent: _Ds.success,
+          hint: 'ສະມາຊິກໃຊ້ງານຢູ່',
+        ),
+        _kpiCard(
+          label: 'ບໍ່ອະນຸມັດ',
+          value: '$rejectedSubs',
+          icon: Icons.money_off_rounded,
+          accent: _Ds.danger,
+          hint: 'ຖືກປະຕິເສດ',
+        ),
+        _kpiCard(
+          label: 'ຍອດທີ່ອະນຸມັດ',
+          value: _formatCurrency(totalApproved),
+          icon: Icons.payments_rounded,
+          accent: _Ds.primary,
+          hint: 'LAK ລວມ',
         ),
       ],
+      toolbar: _toolbar(
+        hint: 'ຄົ້ນຫາຊື່ຜູ້ໂອນ ຫຼື ແພັກເກັດ...',
+        isMobile: isMobile,
+        onSearch: (val) => setState(() => _searchQuery = val),
+        filters: [
+          _filterBox(
+            value: _subFilterStatus,
+            onChanged: (val) => setState(() => _subFilterStatus = val!),
+            items: const [
+              DropdownMenuItem(value: 'ທັງໝົດ', child: Text('ທຸກສະຖານະ')),
+              DropdownMenuItem(value: 'pending', child: Text('ລໍຖ້າກວດສອບ')),
+              DropdownMenuItem(value: 'active', child: Text('ອະນຸມັດແລ້ວ')),
+              DropdownMenuItem(value: 'rejected', child: Text('ບໍ່ອະນຸມັດ')),
+            ],
+          ),
+        ],
+      ),
+      child: RefreshIndicator(
+        onRefresh: _fetchAdminData,
+        color: _Ds.primary,
+        child: _stateView(
+          section: _Section.subscriptions,
+          isEmpty: sorted.isEmpty,
+          emptyTitle: 'ບໍ່ມີລາຍການສະລິບໂອນເງິນ',
+          emptyHint: _subscriptions.isEmpty
+              ? 'ຍັງບໍ່ມີຜູ້ໃຊ້ແຈ້ງຊຳລະຄ່າແພັກເກັດເຂົ້າມາ'
+              : 'ບໍ່ມີລາຍການທີ່ຕົງກັບຕົວກອງທີ່ເລືອກ',
+          emptyIcon: Icons.receipt_long_rounded,
+          child: ListView.builder(
+            itemCount: sorted.length,
+            padding: EdgeInsets.zero,
+            itemBuilder: (ctx, idx) {
+              final sub = sorted[idx];
+              final status = (sub['payment_status'] ?? 'pending').toString().toLowerCase();
+              final isPending = status == 'pending';
+              final created = (sub['created_at'] ?? '').toString();
+              final dateText = created.length >= 10 ? created.substring(0, 10) : '-';
+              final name = '${sub['first_name'] ?? ""} ${sub['last_name'] ?? ""}'.trim();
+
+              return _listCard(
+                accent: isPending
+                    ? _Ds.warning
+                    : (status == 'active' ? _Ds.success : _Ds.danger),
+                highlight: isPending,
+                onTap: () => _showSubscriptionDetailModal(sub),
+                leading: CircleAvatar(
+                  radius: 22,
+                  backgroundColor: isPending ? _Ds.warningSoft : _Ds.primarySoft,
+                  child: Icon(Icons.receipt_long_rounded,
+                      color: isPending ? _Ds.warning : _Ds.primary, size: 22),
+                ),
+                title: name.isNotEmpty ? name : 'ບໍ່ລະບຸຊື່ຜູ້ໂອນ',
+                subtitle: 'ແພັກເກັດ: ${sub['package_name'] ?? "-"}  •  ແຈ້ງເມື່ອ $dateText',
+                chips: [
+                  _StatusChip(
+                    label: '${_formatCurrency(sub['amount'])} LAK',
+                    fg: _Ds.primary,
+                    bg: _Ds.primarySoft,
+                    icon: Icons.payments_rounded,
+                  ),
+                  if (status == 'active') _StatusChip.approved('ອະນຸມັດແລ້ວ'),
+                  if (status == 'rejected') _StatusChip.rejected('ບໍ່ອະນຸມັດ'),
+                  if (isPending) _StatusChip.pending('ລໍຖ້າກວດສອບ'),
+                ],
+                actions: [
+                  _iconAction('ເບິ່ງສະລິບ', Icons.visibility_outlined, _Ds.info,
+                      () => _showSubscriptionDetailModal(sub)),
+                  if (isPending) ...[
+                    _rowAction('ອະນຸມັດ', Icons.check_rounded, _Ds.success,
+                        () => _approveSubscription(sub)),
+                    _rowAction('ປະຕິເສດ', Icons.close_rounded, _Ds.danger,
+                        () => _rejectSubscription(sub)),
+                  ],
+                ],
+              );
+            },
+          ),
+        ),
+      ),
     );
   }
 
   // --- TAB 4: SYSTEM & PACKAGES MASTER TAB ---
+  // # ເຮັດຫຍັງ: ຂຽນໜ້າລະບົບໃໝ່ໂດຍແຍກເປັນ 4 ໝວດຊັດເຈນດ້ວຍ _SectionCard
+  // # ຍ້ອນຫຍັງ: ຂອງເກົ່າເປັນ SingleChildScrollView ຍາວອັນດຽວ ທີ່ເອົາແພັກເກັດ ໝວດໝູ່
+  // #          ນັກຂຽນ ແລະ audit log ຕໍ່ກັນລົງມາ ຈົນເບິ່ງຄືລາຍການດຽວຂະໜາດໃຫຍ່
+  // #          ແລະ ຫົວຂໍ້ແຕ່ລະໝວດໃຊ້ຄົນລະຮູບແບບ (Text ລ້ວນ / Card / Row)
+  // # ແກ້ຈາກສ່ວນໃດ: Column[Row(ຫົວຂໍ້+ປຸ່ມ), ..._packages.map, Card, Card, Card]
+  // # ແກ້ເຮັດຫຍັງ: ທຸກໝວດໃຊ້ _SectionCard ດຽວກັນ (ໄອຄອນ + ຫົວຂໍ້ + ຄຳອະທິບາຍ + ປຸ່ມ)
+  // #             ພ້ອມ KPI ສະຫຼຸບຂ້າງເທິງ - CRUD ເດີມຂອງທຸກໝວດຢູ່ຄົບ
   Widget _buildSystemMasterTab(bool isMobile) {
-    return SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Packages Section Header
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text('ຈັດການແພັກເກັດສະມາຊິກ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-              ElevatedButton.icon(
-                onPressed: _openCreatePackageDialog,
-                icon: const Icon(Icons.add_rounded, color: Colors.white, size: 18),
-                label: const Text('ສ້າງແພັກເກັດ', style: TextStyle(color: Colors.white, fontSize: 12)),
-                style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
+    final activePkgs = _packages
+        .where((p) => p['is_active'] == 1 || p['is_active'] == true || p['is_active'] == null)
+        .length;
 
-          // Packages Grid Cards
-          ..._packages.map((pkg) {
-            final isStudentPkg = pkg['is_for_student'] == 1 || pkg['is_for_student'] == true;
-            final isActive = pkg['is_active'] == 1 || pkg['is_active'] == true || pkg['is_active'] == null;
+    return _tabScaffold(
+      section: _Section.system,
+      isMobile: isMobile,
+      kpis: [
+        _kpiCard(
+          label: 'ແພັກເກັດທັງໝົດ',
+          value: '${_packages.length}',
+          icon: Icons.workspace_premium_rounded,
+          accent: _Ds.primary,
+          hint: '$activePkgs ເປີດນຳໃຊ້',
+        ),
+        _kpiCard(
+          label: 'ໝວດໝູ່ປຶ້ມ',
+          value: '${_masterCategories.length}',
+          icon: Icons.category_rounded,
+          accent: _Ds.info,
+          hint: 'ໃນຖານຂໍ້ມູນ',
+        ),
+        _kpiCard(
+          label: 'ນັກຂຽນ',
+          value: '${_authors.length}',
+          icon: Icons.person_pin_rounded,
+          accent: _Ds.success,
+          hint: 'ລົງທະບຽນແລ້ວ',
+        ),
+        _kpiCard(
+          label: 'ບັນທຶກລະບົບ',
+          value: '${_auditLogs.length}',
+          icon: Icons.security_rounded,
+          accent: _Ds.neutral,
+          hint: 'ເຫດການທີ່ບັນທຶກ',
+        ),
+      ],
+      child: _stateView(
+        section: _Section.system,
+        isEmpty: false,
+        emptyTitle: '',
+        emptyHint: '',
+        emptyIcon: Icons.settings_applications_rounded,
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            // ---------------------------------------------------- PACKAGES
+            _SectionCard(
+              title: 'ແພັກເກັດສະມາຊິກ',
+              subtitle: 'ກຳນົດລາຄາ ໄລຍະເວລາ ແລະ ການເປີດ/ປິດນຳໃຊ້',
+              icon: Icons.workspace_premium_rounded,
+              accent: _Ds.primary,
+              actions: [
+                _rowAction('ສ້າງແພັກເກັດ', Icons.add_rounded, _Ds.primary,
+                    _openCreatePackageDialog),
+              ],
+              child: _packages.isEmpty
+                  ? _inlineEmpty('ຍັງບໍ່ມີແພັກເກັດ ກົດ "ສ້າງແພັກເກັດ" ເພື່ອເລີ່ມຕົ້ນ')
+                  : Column(
+                      children: _packages.map((pkg) {
+                        final isStudentPkg =
+                            pkg['is_for_student'] == 1 || pkg['is_for_student'] == true;
+                        final isActive = pkg['is_active'] == 1 ||
+                            pkg['is_active'] == true ||
+                            pkg['is_active'] == null;
 
-            return Container(
-              margin: const EdgeInsets.only(bottom: 10),
-              decoration: BoxDecoration(
-                color: isActive ? Colors.white : const Color(0xFFF1F5F9),
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: isActive ? const Color(0xFFE2E8F0) : Colors.red.shade200),
-              ),
-              child: ListTile(
-                onTap: () => _showPackageDetailModal(pkg),
-                leading: Icon(
-                  isStudentPkg ? Icons.school_rounded : Icons.workspace_premium_rounded,
-                  color: isActive ? (isStudentPkg ? Colors.orange : Colors.purple) : Colors.grey,
-                  size: 32,
-                ),
-                title: Row(
-                  children: [
-                    Text(
-                      pkg['name'] ?? '',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                        color: isActive ? AppColors.textPrimary : Colors.grey.shade700,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    if (isStudentPkg)
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(color: Colors.orange.shade100, borderRadius: BorderRadius.circular(6)),
-                        child: const Text('ນັກຮຽນ/ນັກສຶກສາ', style: TextStyle(fontSize: 9, color: Colors.orange, fontWeight: FontWeight.bold)),
-                      ),
-                    const SizedBox(width: 6),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: isActive ? Colors.green.shade50 : Colors.red.shade50,
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        isActive ? 'Active (ເປີດນຳໃຊ້)' : 'Inactive (ປິດນຳໃຊ້)',
-                        style: TextStyle(
-                          fontSize: 9,
-                          color: isActive ? Colors.green.shade800 : Colors.redAccent,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                subtitle: Text(
-                  'ລາຄາ: ${_formatCurrency(pkg['price'])} LAK | ໄລຍະເວລາ: ${pkg['duration_days']} ມື້',
-                  style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
-                ),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.edit_note_rounded, color: AppColors.primary),
-                      tooltip: 'ແກ້ໄຂແພັກເກັດ',
-                      onPressed: () => _openEditPackageDialog(pkg),
-                    ),
-                    Switch(
-                      value: isActive,
-                      activeThumbColor: Colors.green,
-                      inactiveThumbColor: Colors.redAccent,
-                      onChanged: (val) => _togglePackageStatus(pkg),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          }),
-          const SizedBox(height: 20),
-
-          // Master Categories Section
-          Card(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-            child: Padding(
-              padding: const EdgeInsets.all(14),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text('ໝວດໝູ່ປຶ້ມ (Categories - MySQL)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                      IconButton(
-                        icon: const Icon(Icons.add_circle_outline_rounded, color: AppColors.primary),
-                        onPressed: () {
-                          final catCtrl = TextEditingController();
-                          showDialog(
-                            context: context,
-                            builder: (ctx) => AlertDialog(
-                              title: const Text('ເພີ່ມໝວດໝູ່ໃໝ່'),
-                              content: TextField(controller: catCtrl, decoration: const InputDecoration(hintText: 'ຊື່ໝວດໝູ່...')),
-                              actions: [
-                                TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('ຍົກເລີກ')),
-                                ElevatedButton(
-                                  onPressed: () async {
-                                    final catName = catCtrl.text.trim();
-                                    if (catName.isNotEmpty) {
-                                      Navigator.pop(ctx);
-                                      final success = await ApiService.createCategory(catName);
-                                      if (mounted && success) {
-                                        await _fetchAdminData();
-                                      }
-                                    }
-                                  },
-                                  child: const Text('ບັນທຶກ'),
-                                ),
-                              ],
+                        return _listCard(
+                          accent: isActive ? _Ds.success : _Ds.neutral,
+                          onTap: () => _showPackageDetailModal(pkg),
+                          leading: CircleAvatar(
+                            radius: 22,
+                            backgroundColor:
+                                isActive ? _Ds.primarySoft : _Ds.neutralSoft,
+                            child: Icon(
+                              isStudentPkg
+                                  ? Icons.school_rounded
+                                  : Icons.workspace_premium_rounded,
+                              color: isActive ? _Ds.primary : _Ds.textMuted,
+                              size: 22,
                             ),
-                          );
-                        },
-                      ),
-                    ],
-                  ),
-                  _masterCategories.isEmpty
-                      ? const Padding(padding: EdgeInsets.all(8), child: Text('ບໍ່ມີໝວດໝູ່ໃນຖານຂໍ້ມູນ'))
-                      : Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: _masterCategories.map((cat) {
-                            final catName = (cat['name'] ?? '').toString();
-                            return Chip(
-                              label: Text(catName, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.primary)),
-                              backgroundColor: Colors.blue.shade50,
-                            );
-                          }).toList(),
-                        ),
-                ],
-              ),
+                          ),
+                          title: (pkg['name'] ?? '').toString(),
+                          subtitle:
+                              '${_formatCurrency(pkg['price'])} LAK  •  ${pkg['duration_days']} ມື້',
+                          chips: [
+                            if (isActive)
+                              _StatusChip.approved('ເປີດນຳໃຊ້')
+                            else
+                              _StatusChip.neutral('ປິດນຳໃຊ້'),
+                            if (isStudentPkg) _StatusChip.info('ນັກຮຽນ/ນັກສຶກສາ'),
+                          ],
+                          actions: [
+                            _iconAction('ແກ້ໄຂແພັກເກັດ', Icons.edit_outlined, _Ds.info,
+                                () => _openEditPackageDialog(pkg)),
+                            Switch(
+                              value: isActive,
+                              activeThumbColor: _Ds.success,
+                              inactiveThumbColor: _Ds.textMuted,
+                              onChanged: (val) => _togglePackageStatus(pkg),
+                            ),
+                          ],
+                        );
+                      }).toList(),
+                    ),
             ),
-          ),
-          const SizedBox(height: 16),
 
-          // Authors Section
-          Card(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-            child: Padding(
-              padding: const EdgeInsets.all(14),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text('ລາຍຊື່ນັກຂຽນ (Authors)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                      ElevatedButton.icon(
-                        onPressed: _openCreateAuthorDialog,
-                        icon: const Icon(Icons.person_add_rounded, size: 16),
-                        label: const Text('ເພີ່ມນັກຂຽນ', style: TextStyle(fontSize: 11)),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  _authors.isEmpty
-                      ? const Padding(padding: EdgeInsets.all(8), child: Text('ບໍ່ມີນັກຂຽນໃນຖານຂໍ້ມູນ'))
-                      : ListView.separated(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: _authors.length,
-                          separatorBuilder: (_, __) => const Divider(height: 1),
-                          itemBuilder: (ctx, idx) {
-                            final author = _authors[idx];
-                            final authorId = author['author_id'] ?? 0;
-                            final authorName = (author['name'] ?? '').toString();
-                            final authorBio = (author['biography'] ?? '').toString();
-                            return ListTile(
-                              leading: CircleAvatar(
-                                backgroundColor: AppColors.primary.withValues(alpha: 0.15),
-                                child: Text(authorName.isNotEmpty ? authorName[0].toUpperCase() : '?', style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary)),
-                              ),
-                              title: Text(authorName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                              subtitle: Text(authorBio.isNotEmpty ? authorBio : 'ບໍ່ມີປະຫວັດ', style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
-                              trailing: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  IconButton(
-                                    icon: const Icon(Icons.edit_rounded, color: Colors.blueAccent, size: 18),
-                                    onPressed: () => _openEditAuthorDialog(authorId, authorName, authorBio),
-                                  ),
-                                  IconButton(
-                                    icon: const Icon(Icons.delete_rounded, color: Colors.redAccent, size: 18),
-                                    onPressed: () => _confirmDeleteAuthor(authorId, authorName),
-                                  ),
-                                ],
-                              ),
-                            );
-                          },
-                        ),
-                ],
-              ),
+            // -------------------------------------------------- CATEGORIES
+            _SectionCard(
+              title: 'ໝວດໝູ່ປຶ້ມ',
+              subtitle: 'ໃຊ້ຈັດກຸ່ມປຶ້ມໃນໜ້າຄົ້ນຫາຂອງຜູ້ໃຊ້',
+              icon: Icons.category_rounded,
+              accent: _Ds.info,
+              actions: [
+                _rowAction('ເພີ່ມໝວດໝູ່', Icons.add_rounded, _Ds.info, _openCreateCategoryDialog),
+              ],
+              child: _masterCategories.isEmpty
+                  ? _inlineEmpty('ບໍ່ມີໝວດໝູ່ໃນຖານຂໍ້ມູນ')
+                  : Wrap(
+                      spacing: _Ds.s8,
+                      runSpacing: _Ds.s8,
+                      children: _masterCategories.map((cat) {
+                        return _StatusChip.info((cat['name'] ?? '').toString());
+                      }).toList(),
+                    ),
             ),
-          ),
-          const SizedBox(height: 16),
 
-          // Security Audit Logs
-          Card(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-            child: Padding(
-              padding: const EdgeInsets.all(14),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Row(
-                    children: [
-                      Icon(Icons.security_rounded, color: Colors.indigo, size: 20),
-                      SizedBox(width: 8),
-                      Text('ບັນທຶກຄວາມປອດໄພ (Audit Logs)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  _auditLogs.isEmpty
-                      ? const Padding(padding: EdgeInsets.all(16), child: Text('ບໍ່ມີບັນທຶກ Audit Logs'))
-                      : ListView.separated(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: _auditLogs.length > 8 ? 8 : _auditLogs.length,
-                          separatorBuilder: (_, __) => const Divider(height: 1),
-                          itemBuilder: (ctx, idx) {
-                            final log = _auditLogs[idx];
-                            return ListTile(
+            // ----------------------------------------------------- AUTHORS
+            _SectionCard(
+              title: 'ນັກຂຽນ',
+              subtitle: 'ຂໍ້ມູນຜູ້ແຕ່ງທີ່ຜູກກັບປຶ້ມໃນຄັງ',
+              icon: Icons.person_pin_rounded,
+              accent: _Ds.success,
+              actions: [
+                _rowAction('ເພີ່ມນັກຂຽນ', Icons.person_add_alt_rounded, _Ds.success,
+                    _openCreateAuthorDialog),
+              ],
+              child: _authors.isEmpty
+                  ? _inlineEmpty('ບໍ່ມີນັກຂຽນໃນຖານຂໍ້ມູນ')
+                  : Column(
+                      children: _authors.map((author) {
+                        final authorId = author['author_id'] ?? 0;
+                        final authorName = (author['name'] ?? '').toString();
+                        final authorBio = (author['biography'] ?? '').toString();
+                        return _listCard(
+                          accent: _Ds.success,
+                          title: authorName,
+                          subtitle: authorBio.isNotEmpty ? authorBio : 'ບໍ່ມີປະຫວັດ',
+                          leading: CircleAvatar(
+                            radius: 22,
+                            backgroundColor: _Ds.successSoft,
+                            child: Text(
+                              authorName.isNotEmpty ? authorName[0].toUpperCase() : '?',
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.w700, color: _Ds.success),
+                            ),
+                          ),
+                          actions: [
+                            _iconAction('ແກ້ໄຂ', Icons.edit_outlined, _Ds.info,
+                                () => _openEditAuthorDialog(authorId, authorName, authorBio)),
+                            _iconAction('ລຶບ', Icons.delete_outline_rounded, _Ds.danger,
+                                () => _confirmDeleteAuthor(authorId, authorName)),
+                          ],
+                        );
+                      }).toList(),
+                    ),
+            ),
+
+            // -------------------------------------------------- AUDIT LOGS
+            _SectionCard(
+              title: 'ບັນທຶກຄວາມປອດໄພ',
+              subtitle: 'ເຫດການສຳຄັນທີ່ເກີດຂຶ້ນໃນລະບົບ (ຫຼ້າສຸດ 8 ລາຍການ)',
+              icon: Icons.security_rounded,
+              accent: _Ds.neutral,
+              child: _auditLogs.isEmpty
+                  ? _inlineEmpty('ບໍ່ມີບັນທຶກ Audit Logs')
+                  // # ເຮັດຫຍັງ: ຫຸ້ມ ListTile ດ້ວຍ Material ໂປ່ງໃສ
+                  // # ຍ້ອນຫຍັງ: ListTile paint ພື້ນຫຼັງ+ink ໃສ່ Material ໃກ້ສຸດ ແຕ່
+                  // #          _SectionCard ເປັນ Container ທີ່ມີສີພື້ນຄັ່ນຢູ່ ຈຶ່ງບັງ ink
+                  // #          ໄວ້ ("ListTile background color or ink splashes may be
+                  // #          invisible" ໃນ console) - ກົດແລ້ວບໍ່ເຫັນ feedback
+                  // # ແກ້ຈາກສ່ວນໃດ: Column ຂອງ audit logs ໃນ _SectionCard ນີ້
+                  // # ແກ້ເຮັດຫຍັງ: ມີ Material ຂອງໂຕເອງ ຈຶ່ງເຫັນ ink ຕອນກົດ ຕາມທີ່
+                  // #             Flutter ແນະນຳ ແລະ ບໍ່ມີ error ອອກ console ອີກ
+                  : Material(
+                      color: Colors.transparent,
+                      child: Column(
+                        children: [
+                          for (final log in _auditLogs.take(8))
+                            ListTile(
                               dense: true,
+                              contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: _Ds.s8, vertical: 2),
                               onTap: () => _showAuditLogDetailModal(log),
-                              title: Text('${log['first_name'] ?? "User"}: ${log['action']}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                              subtitle: Text('IP: ${log['ip_address'] ?? "127.0.0.1"} | ${log['details'] ?? "N/A"}', style: const TextStyle(fontSize: 10)),
-                            );
-                          },
-                        ),
-                ],
-              ),
+                              leading: const Icon(Icons.history_rounded,
+                                  size: 18, color: _Ds.textMuted),
+                              title: Text(
+                                '${log['first_name'] ?? "User"}: ${log['action']}',
+                                style: const TextStyle(
+                                    fontSize: 13, fontWeight: FontWeight.w600,
+                                    color: _Ds.textPrimary),
+                              ),
+                              subtitle: Text(
+                                'IP ${log['ip_address'] ?? "127.0.0.1"}  •  ${log['details'] ?? "N/A"}',
+                                style: _Ds.caption,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              trailing: const Icon(Icons.chevron_right_rounded,
+                                  size: 18, color: _Ds.textMuted),
+                            ),
+                        ],
+                      ),
+                    ),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// ຂໍ້ຄວາມຫວ່າງພາຍໃນ section - ນ້ອຍກວ່າ _emptyState ທີ່ໃຊ້ເຕັມໜ້າ
+  Widget _inlineEmpty(String text) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: _Ds.s16),
+      child: Center(child: Text(text, style: _Ds.body, textAlign: TextAlign.center)),
+    );
+  }
+
+  // # ເຮັດຫຍັງ: ແຍກ dialog ເພີ່ມໝວດໝູ່ອອກມາເປັນ method ຂອງຕົນເອງ
+  // # ຍ້ອນຫຍັງ: ຂອງເກົ່າຝັງ showDialog ໄວ້ໃນ onPressed ຂອງ IconButton ກາງ build tree
+  // #          ເຮັດໃຫ້ build method ຍາວ ແລະ ອ່ານໂຄງ UI ຍາກ
+  // # ແກ້ຈາກສ່ວນໃດ: onPressed ຂອງ IconButton(Icons.add_circle_outline_rounded)
+  // # ແກ້ເຮັດຫຍັງ: ຕັກກະການສ້າງໝວດໝູ່ (ApiService.createCategory) ຄືເກົ່າທຸກຢ່າງ
+  void _openCreateCategoryDialog() {
+    final catCtrl = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('ເພີ່ມໝວດໝູ່ໃໝ່'),
+        content: TextField(
+          controller: catCtrl,
+          decoration: const InputDecoration(hintText: 'ຊື່ໝວດໝູ່...'),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('ຍົກເລີກ')),
+          ElevatedButton(
+            onPressed: () async {
+              final catName = catCtrl.text.trim();
+              if (catName.isNotEmpty) {
+                Navigator.pop(ctx);
+                final success = await ApiService.createCategory(catName);
+                if (mounted && success) {
+                  await _fetchAdminData();
+                }
+              }
+            },
+            child: const Text('ບັນທຶກ'),
           ),
         ],
       ),
     );
   }
+
 
   void _showBookDetailModal(BookModel book, int index) {
     showModalBottomSheet(

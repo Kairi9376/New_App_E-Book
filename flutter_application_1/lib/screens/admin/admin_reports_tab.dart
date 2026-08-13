@@ -108,26 +108,43 @@ class AdminReportsTab extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: AppColors.primary.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(10),
+                // # ເຮັດຫຍັງ: ຫຸ້ມ Row ຫົວຂໍ້ດ້ວຍ Expanded ແລະ ຕັດຂໍ້ຄວາມດ້ວຍ ellipsis
+                // # ຍ້ອນຫຍັງ: Row ຊັ້ນໃນບໍ່ມີຂອບເຂດຄວາມກວ້າງ ພໍຢູ່ mobile ຫົວຂໍ້ 15px
+                // #          ບວກກັບປຸ່ມພິມຈຶ່ງກວ້າງເກີນຈໍ ເກີດ "RIGHT OVERFLOWED BY 17 PIXELS"
+                // #          ເປັນແຖບເຫຼືອງ-ດຳທັບໜ້າຈໍຈິງ (ເຫັນຕອນທົດສອບ 375px)
+                // # ແກ້ຈາກສ່ວນໃດ: Row[Container(icon), Column(2 Text)] ທີ່ບໍ່ໄດ້ຫຸ້ມ Expanded
+                // # ແກ້ເຮັດຫຍັງ: ຫົວຂໍ້ຫຍໍ້ລົງຕາມພື້ນທີ່ທີ່ເຫຼືອ ບໍ່ດັນປຸ່ມອອກນອກຈໍ
+                Expanded(
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(Icons.analytics_rounded, color: AppColors.primary, size: 20),
                       ),
-                      child: const Icon(Icons.analytics_rounded, color: AppColors.primary, size: 20),
-                    ),
-                    const SizedBox(width: 10),
-                    const Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('ລາຍງານສະຖິຕິ & ຜົນປະກອບການ', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
-                        Text('Executive Reports & Analytics Overview', style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
-                      ],
-                    ),
-                  ],
+                      const SizedBox(width: 10),
+                      const Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('ລາຍງານສະຖິຕິ & ຜົນປະກອບການ',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                            Text('Executive Reports & Analytics Overview',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
+                const SizedBox(width: 8),
                 ElevatedButton.icon(
                   onPressed: () => _showExportReportModal(
                     context: context,
@@ -528,14 +545,28 @@ class AdminReportsTab extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
+          // # ເຮັດຫຍັງ: ຫຸ້ມ title ດ້ວຍ Expanded ພ້ອມ ellipsis
+          // # ຍ້ອນຫຍັງ: ຫົວຂໍ້ຍາວເຊັ່ນ 'ລາຍຮັບລວມການສະໝັກສະມາຊິກ' ບວກໄອຄອນ 20px
+          // #          ກວ້າງເກີນກ່ອງ KPI ຕອນຢູ່ mobile ເກີດ "RIGHT OVERFLOWED BY 19 PIXELS"
+          // # ແກ້ຈາກສ່ວນໃດ: Row[Text(title), Icon] ທີ່ Text ບໍ່ມີຂອບເຂດ
+          // # ແກ້ເຮັດຫຍັງ: ຫົວຂໍ້ຫຍໍ້ຕາມພື້ນທີ່ ໄອຄອນຍັງຢູ່ຂວາສະເໝີ
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(title, style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: color)),
+              Expanded(
+                child: Text(title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: color)),
+              ),
+              const SizedBox(width: 4),
               Icon(icon, color: color, size: 20),
             ],
           ),
-          Text(value, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: color)),
+          Text(value,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: color)),
           Text(subtitle, style: const TextStyle(fontSize: 10, color: AppColors.textSecondary), maxLines: 1, overflow: TextOverflow.ellipsis),
         ],
       ),
