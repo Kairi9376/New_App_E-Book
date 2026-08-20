@@ -10,11 +10,11 @@ import 'book_detail_screen.dart';
 class MouseTouchScrollBehavior extends MaterialScrollBehavior {
   @override
   Set<PointerDeviceKind> get dragDevices => {
-        PointerDeviceKind.touch,
-        PointerDeviceKind.mouse,
-        PointerDeviceKind.trackpad,
-        PointerDeviceKind.stylus,
-      };
+    PointerDeviceKind.touch,
+    PointerDeviceKind.mouse,
+    PointerDeviceKind.trackpad,
+    PointerDeviceKind.stylus,
+  };
 }
 
 class SavedScreen extends StatefulWidget {
@@ -54,10 +54,12 @@ class _SavedScreenState extends State<SavedScreen> {
     await ApiService.toggleBookmark(item.id);
 
     if (mounted) {
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('ລົບ "${item.title}" ອອກຈາກລາຍການບັນທຶກແລ້ວ'),
           backgroundColor: const Color(0xFFEF4444),
+          duration: const Duration(seconds: 3),
           action: SnackBarAction(
             label: 'ເລີກທຳ',
             textColor: Colors.white,
@@ -72,9 +74,14 @@ class _SavedScreenState extends State<SavedScreen> {
   }
 
   void _openBookDetail(SavedBookItem item) {
-    final parsedTags = item.category.isNotEmpty
-        ? item.category.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList()
-        : ['ທົ່ວໄປ'];
+    final parsedTags =
+        item.category.isNotEmpty
+            ? item.category
+                .split(',')
+                .map((e) => e.trim())
+                .where((e) => e.isNotEmpty)
+                .toList()
+            : ['ທົ່ວໄປ'];
 
     final bookModel = BookModel(
       id: item.bookId?.toString() ?? item.id,
@@ -112,15 +119,18 @@ class _SavedScreenState extends State<SavedScreen> {
 
   List<SavedBookItem> get _filteredList {
     final catList = _categories;
-    final safeIndex = (_selectedCategoryIndex < catList.length) ? _selectedCategoryIndex : 0;
+    final safeIndex =
+        (_selectedCategoryIndex < catList.length) ? _selectedCategoryIndex : 0;
     final selectedCat = catList[safeIndex];
 
     return _savedList.where((book) {
-      final matchesSearch = _searchQuery.isEmpty ||
+      final matchesSearch =
+          _searchQuery.isEmpty ||
           book.title.toLowerCase().contains(_searchQuery.toLowerCase()) ||
           book.author.toLowerCase().contains(_searchQuery.toLowerCase());
 
-      final matchesCategory = safeIndex == 0 ||
+      final matchesCategory =
+          safeIndex == 0 ||
           book.category.toLowerCase().contains(selectedCat.toLowerCase());
 
       return matchesSearch && matchesCategory;
@@ -128,7 +138,12 @@ class _SavedScreenState extends State<SavedScreen> {
   }
 
   Widget _buildImage(String path, {double? width, double? height}) {
-    return ImageHelper.buildImage(path, width: width, height: height, fit: BoxFit.cover);
+    return ImageHelper.buildImage(
+      path,
+      width: width,
+      height: height,
+      fit: BoxFit.cover,
+    );
   }
 
   @override
@@ -147,7 +162,11 @@ class _SavedScreenState extends State<SavedScreen> {
             children: [
               const Row(
                 children: [
-                  Icon(Icons.bookmark_rounded, color: AppColors.primary, size: 26),
+                  Icon(
+                    Icons.bookmark_rounded,
+                    color: AppColors.primary,
+                    size: 26,
+                  ),
                   SizedBox(width: 8),
                   Text(
                     'ບັນທຶກ (Saved Books)',
@@ -160,7 +179,10 @@ class _SavedScreenState extends State<SavedScreen> {
                 ],
               ),
               IconButton(
-                icon: const Icon(Icons.refresh_rounded, color: AppColors.primary),
+                icon: const Icon(
+                  Icons.refresh_rounded,
+                  color: AppColors.primary,
+                ),
                 onPressed: _fetchSavedBooks,
                 tooltip: 'ຣີເຟຣຊ',
               ),
@@ -187,8 +209,15 @@ class _SavedScreenState extends State<SavedScreen> {
               onChanged: (val) => setState(() => _searchQuery = val),
               decoration: const InputDecoration(
                 hintText: 'ຄົ້ນຫາໃນລາຍການບັນທຶກ...',
-                hintStyle: TextStyle(fontSize: 13, color: AppColors.textSecondary),
-                icon: Icon(Icons.search_rounded, color: AppColors.textSecondary, size: 20),
+                hintStyle: TextStyle(
+                  fontSize: 13,
+                  color: AppColors.textSecondary,
+                ),
+                icon: Icon(
+                  Icons.search_rounded,
+                  color: AppColors.textSecondary,
+                  size: 20,
+                ),
                 border: InputBorder.none,
               ),
             ),
@@ -213,8 +242,10 @@ class _SavedScreenState extends State<SavedScreen> {
                       label: Text(categoriesList[idx]),
                       labelStyle: TextStyle(
                         fontSize: 12,
-                        fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                        color: isSelected ? Colors.white : AppColors.textPrimary,
+                        fontWeight:
+                            isSelected ? FontWeight.bold : FontWeight.w500,
+                        color:
+                            isSelected ? Colors.white : AppColors.textPrimary,
                       ),
                       selectedColor: AppColors.primary,
                       backgroundColor: const Color(0xFFF1F5F9),
@@ -234,45 +265,62 @@ class _SavedScreenState extends State<SavedScreen> {
 
           // Saved Grid Items
           Expanded(
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
-                : displayList.isEmpty
+            child:
+                _isLoading
                     ? const Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.bookmark_border_rounded, size: 64, color: Color(0xFFCBD5E1)),
-                            SizedBox(height: 12),
-                            Text(
-                              'ບໍ່ມີປຶ້ມທີ່ບັນທຶກໄວ້',
-                              style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.textSecondary),
-                            ),
-                            SizedBox(height: 6),
-                            Text(
-                              'ກົດໄອຄອນຄັ້ນໜ້າ 📌 ໃນໜ້າໜັງສືເພື່ອບັນທຶກໄວ້ອ່ານພາຍຫຼັງ',
-                              style: TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
-                              textAlign: TextAlign.center,
-                            ),
-                          ],
-                        ),
-                      )
-                    : RefreshIndicator(
-                        onRefresh: _fetchSavedBooks,
+                      child: CircularProgressIndicator(
                         color: AppColors.primary,
-                        child: GridView.builder(
-                          physics: const AlwaysScrollableScrollPhysics(),
-                          itemCount: displayList.length,
-                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2,
-                            childAspectRatio: 0.55,
-                            crossAxisSpacing: 14,
-                            mainAxisSpacing: 16,
-                          ),
-                          itemBuilder: (context, index) {
-                            return _buildSavedCard(displayList[index], index);
-                          },
-                        ),
                       ),
+                    )
+                    : displayList.isEmpty
+                    ? const Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.bookmark_border_rounded,
+                            size: 64,
+                            color: Color(0xFFCBD5E1),
+                          ),
+                          SizedBox(height: 12),
+                          Text(
+                            'ບໍ່ມີປຶ້ມທີ່ບັນທຶກໄວ້',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                          SizedBox(height: 6),
+                          Text(
+                            'ກົດໄອຄອນຄັ້ນໜ້າ 📌 ໃນໜ້າໜັງສືເພື່ອບັນທຶກໄວ້ອ່ານພາຍຫຼັງ',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Color(0xFF94A3B8),
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      ),
+                    )
+                    : RefreshIndicator(
+                      onRefresh: _fetchSavedBooks,
+                      color: AppColors.primary,
+                      child: GridView.builder(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        itemCount: displayList.length,
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 2,
+                              childAspectRatio: 0.55,
+                              crossAxisSpacing: 14,
+                              mainAxisSpacing: 16,
+                            ),
+                        itemBuilder: (context, index) {
+                          return _buildSavedCard(displayList[index], index);
+                        },
+                      ),
+                    ),
           ),
         ],
       ),
@@ -280,9 +328,14 @@ class _SavedScreenState extends State<SavedScreen> {
   }
 
   Widget _buildSavedCard(SavedBookItem item, int index) {
-    final catBadgeList = item.category.isNotEmpty
-        ? item.category.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList()
-        : ['ທົ່ວໄປ'];
+    final catBadgeList =
+        item.category.isNotEmpty
+            ? item.category
+                .split(',')
+                .map((e) => e.trim())
+                .where((e) => e.isNotEmpty)
+                .toList()
+            : ['ທົ່ວໄປ'];
 
     return InkWell(
       onTap: () => _openBookDetail(item),
@@ -353,25 +406,31 @@ class _SavedScreenState extends State<SavedScreen> {
             Wrap(
               spacing: 4,
               runSpacing: 4,
-              children: catBadgeList.map(
-                (catName) => Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFE2EDFF),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Text(
-                    catName,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.primary,
-                    ),
-                  ),
-                ),
-              ).toList(),
+              children:
+                  catBadgeList
+                      .map(
+                        (catName) => Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFE2EDFF),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            catName,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.primary,
+                            ),
+                          ),
+                        ),
+                      )
+                      .toList(),
             ),
             const SizedBox(height: 6),
 
@@ -405,7 +464,11 @@ class _SavedScreenState extends State<SavedScreen> {
                 ),
                 Row(
                   children: [
-                    const Icon(Icons.favorite_rounded, size: 12, color: Color(0xFFEF4444)),
+                    const Icon(
+                      Icons.favorite_rounded,
+                      size: 12,
+                      color: Color(0xFFEF4444),
+                    ),
                     const SizedBox(width: 2),
                     Text(
                       item.formattedLikes,
@@ -427,12 +490,25 @@ class _SavedScreenState extends State<SavedScreen> {
               height: 28,
               child: ElevatedButton.icon(
                 onPressed: () => _openBookDetail(item),
-                icon: const Icon(Icons.menu_book_rounded, size: 12, color: Colors.white),
-                label: const Text('ອ່ານເລີຍ', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white)),
+                icon: const Icon(
+                  Icons.menu_book_rounded,
+                  size: 12,
+                  color: Colors.white,
+                ),
+                label: const Text(
+                  'ອ່ານເລີຍ',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   padding: EdgeInsets.zero,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                   elevation: 0,
                 ),
               ),
@@ -443,4 +519,3 @@ class _SavedScreenState extends State<SavedScreen> {
     );
   }
 }
-

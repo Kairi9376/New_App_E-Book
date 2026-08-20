@@ -836,7 +836,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
     }
 
     return SizedBox(
-      height: 290,
+      height: 316,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         itemCount: displayBooks.length,
@@ -892,7 +892,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
     }
 
     return SizedBox(
-      height: 290,
+      height: 316,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         itemCount: displayBooks.length,
@@ -963,10 +963,10 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
           ),
           const SizedBox(height: 8),
 
-          // Title
+                              // Title
           Text(
             book.title,
-            maxLines: 1,
+            maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(
               fontSize: 13,
@@ -1023,8 +1023,10 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                 color: const Color(0xFFF1F5F9),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Text(
+                            child: Text(
                 book.tags.first,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
                   fontSize: 10,
                   color: AppColors.textSecondary,

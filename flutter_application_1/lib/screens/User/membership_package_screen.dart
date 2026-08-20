@@ -1427,26 +1427,35 @@ class _MembershipPackageScreenState extends State<MembershipPackageScreen> {
                 const SizedBox(height: 16),
 
                 // Price Badge
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.baseline,
-                  textBaseline: TextBaseline.alphabetic,
-                  children: [
-                    Text(
-                      formattedPrice,
-                      style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.w800,
-                          color: primaryColor),
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      '/ $days ວັນ',
-                      style: const TextStyle(
-                          fontSize: 12,
-                          color: AppColors.textSecondary,
-                          fontWeight: FontWeight.w600),
-                    ),
-                  ],
+                // Wrapped in FittedBox(scaleDown) so long prices (the longest
+                // bundle here is "490,000 ກີບ" + "/ 365 ວັນ") scale down to fit
+                // the card on ANY screen width instead of overflowing to the
+                // right. Row keeps mainAxisSize.min + baseline alignment.
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.baseline,
+                    textBaseline: TextBaseline.alphabetic,
+                    children: [
+                      Text(
+                        formattedPrice,
+                        style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w800,
+                            color: primaryColor),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        '/ $days ວັນ',
+                        style: const TextStyle(
+                            fontSize: 12,
+                            color: AppColors.textSecondary,
+                            fontWeight: FontWeight.w600),
+                      ),
+                    ],
+                  ),
                 ),
                 const SizedBox(height: 18),
                 const Divider(height: 1, color: Color(0xFFE2E8F0)),

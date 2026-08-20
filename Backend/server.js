@@ -35,11 +35,24 @@ app.use(express.urlencoded({ extended: true }));
 // Serve Uploaded Files Static Folder (Access files via <origin>/uploads/...)
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+// # PUBLIC_BASE_URL = the scheme+host:port EXTERNAL clients (Flutter app,
+// # browser) use to reach this backend. It is the ONLY source for building
+// # public file URLs. NEVER derive a public URL from process.env.PORT:
+// #   INTERNAL:  PORT=5000                    (express listen port inside container)
+// #   PUBLIC:    PUBLIC_BASE_URL=http://localhost:5001   (client/host reachable)
+// # Docker maps host 5001 -> container 5000; clients never reach 5000 directly.
+const PUBLIC_BASE_URL = (process.env.PUBLIC_BASE_URL || '').trim().replace(/\/+$/, '');
+
 // Absolute origin as the CLIENT reached us, taken from the request rather than
 // from PORT. Inside Docker the app listens on 5000 but is published on another
 // host port, and Android emulators dial 10.0.2.2 instead of localhost - so the
 // listen port is never a safe basis for a URL we hand back to a client.
 const clientOrigin = (req) => `${req.protocol}://${req.get('host')}`;
+
+// Origin used when handing absolute URLs back to clients. Prefers the explicit
+// PUBLIC_BASE_URL so the host:port is stable and correct; falls back to the
+// request Host header only when PUBLIC_BASE_URL is not configured.
+const publicOrigin = (req) => PUBLIC_BASE_URL || clientOrigin(req);
 
 // Test Database Connection
 testConnection();
@@ -50,7 +63,7 @@ app.get('/', (req, res) => {
     message: 'Welcome to E-Book Application RESTful API',
     status: 'Running',
     database: 'MySQL (phpMyAdmin / XAMPP)',
-    static_uploads: `${clientOrigin(req)}/uploads`,
+    static_uploads: `${publicOrigin(req)}/uploads`,
     timestamp: new Date().toISOString()
   });
 });
@@ -85,7 +98,7 @@ app.post('/api/upload', requireAuth, upload.fields([
         const relativePath = path.relative(__dirname, file.path).replace(/\\/g, '/');
         responseData[key] = {
           filename: file.filename,
-          url: `${clientOrigin(req)}/${relativePath}`,
+          url: `${publicOrigin(req)}/${relativePath}`,
           path: relativePath,
           size: file.size
         };
@@ -130,6 +143,7 @@ app.use((err, req, res, next) => {
 
 // Start Express Server
 app.listen(PORT, () => {
+  const displayOrigin = PUBLIC_BASE_URL || `http://localhost:${PORT}`;
   console.log(`🚀 E-Book API Server is running on http://localhost:${PORT}`);
-  console.log(`📁 Uploads available at http://localhost:${PORT}/uploads/`);
+  console.log(`📁 Uploads public base: ${displayOrigin}/uploads/`);
 });

@@ -20,6 +20,7 @@ class AppColors {
 class AppTheme {
   static ThemeData get lightTheme {
     return ThemeData(
+      fontFamily: 'PhetsarathOT',
       useMaterial3: true,
       colorScheme: ColorScheme.fromSeed(
         seedColor: AppColors.primary,

@@ -1,4 +1,4 @@
-name: flutter_application_1
+﻿name: flutter_application_1
 description: "A new Flutter project."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
@@ -18,13 +18,13 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # of the product and file versions while build-number is used as the build suffix.
 version: 1.0.0+1
 
-# # ເຮັດຫຍັງ: ຕັ້ງ constraint ໃຫ້ຕົງກັບ package ຮຸ່ນທີ່ໃຊ້ຈິງຫຼັງ merge branch Nutt
-# # ຍ້ອນຫຍັງ: ຫຼັງ merge, pdfrx ຖືກຫຼຸດເປັນ ^1.3.5 ເຊິ່ງຕ້ອງການ sdk >=3.7.0 ແລະ
-# #          flutter >=3.29.0 ແຕ່ pubspec ຍັງປະກາດ sdk >=2.19.4 ໂດຍບໍ່ມີ flutter
-# #          constraint ເລີຍ - ຄົນທີ່ໃຊ້ Dart 2.19 ຈຶ່ງເຫັນວ່າຜ່ານ ແຕ່ pub ຈະລົ້ມຈິງ
-# # ແກ້ຈາກສ່ວນໃດ: environment ທີ່ branch Nutt ຄືນເປັນ sdk '>=2.19.4 <4.0.0' ຢ່າງດຽວ
-# # ແກ້ເຮັດຫຍັງ: ເລືອກຂັ້ນຕໍ່າທີ່ຕໍ່າສຸດເທົ່າທີ່ package ຍອມ ເພື່ອໃຫ້ທັງເຄື່ອງ Windows
-# #             (Flutter ເກົ່າກວ່າ) ແລະ macOS (Flutter 3.44) ໃຊ້ຮ່ວມກັນໄດ້
+# # à»€àº®àº±àº”àº«àºàº±àº‡: àº•àº±à»‰àº‡ constraint à»ƒàº«à»‰àº•àº»àº‡àºàº±àºš package àº®àº¸à»ˆàº™àº—àºµà»ˆà»ƒàºŠà»‰àºˆàº´àº‡àº«àº¼àº±àº‡ merge branch Nutt
+# # àºà»‰àº­àº™àº«àºàº±àº‡: àº«àº¼àº±àº‡ merge, pdfrx àº–àº·àºàº«àº¼àº¸àº”à»€àº›àº±àº™ ^1.3.5 à»€àºŠàº´à»ˆàº‡àº•à»‰àº­àº‡àºàº²àº™ sdk >=3.7.0 à»àº¥àº°
+# #          flutter >=3.29.0 à»àº•à»ˆ pubspec àºàº±àº‡àº›àº°àºàº²àº” sdk >=2.19.4 à»‚àº”àºàºšà»à»ˆàº¡àºµ flutter
+# #          constraint à»€àº¥àºµàº - àº„àº»àº™àº—àºµà»ˆà»ƒàºŠà»‰ Dart 2.19 àºˆàº¶à»ˆàº‡à»€àº«àº±àº™àº§à»ˆàº²àºœà»ˆàº²àº™ à»àº•à»ˆ pub àºˆàº°àº¥àº»à»‰àº¡àºˆàº´àº‡
+# # à»àºà»‰àºˆàº²àºàºªà»ˆàº§àº™à»ƒàº”: environment àº—àºµà»ˆ branch Nutt àº„àº·àº™à»€àº›àº±àº™ sdk '>=2.19.4 <4.0.0' àº¢à»ˆàº²àº‡àº”àº½àº§
+# # à»àºà»‰à»€àº®àº±àº”àº«àºàº±àº‡: à»€àº¥àº·àº­àºàº‚àº±à»‰àº™àº•à»à»ˆàº²àº—àºµà»ˆàº•à»à»ˆàº²àºªàº¸àº”à»€àº—àº»à»ˆàº²àº—àºµà»ˆ package àºàº­àº¡ à»€àºžàº·à»ˆàº­à»ƒàº«à»‰àº—àº±àº‡à»€àº„àº·à»ˆàº­àº‡ Windows
+# #             (Flutter à»€àºàº»à»ˆàº²àºàº§à»ˆàº²) à»àº¥àº° macOS (Flutter 3.44) à»ƒàºŠà»‰àº®à»ˆàº§àº¡àºàº±àº™à»„àº”à»‰
 environment:
   sdk: '>=3.7.0 <4.0.0'
   flutter: '>=3.29.0'
@@ -75,6 +75,15 @@ flutter:
 
   assets:
     - assets/
+    - assets/fonts/
+
+  fonts:
+    - family: PhetsarathOT
+      fonts:
+        - asset: assets/fonts/PhetsarathOT-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/PhetsarathOT-Bold.ttf
+          weight: 700
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
@@ -101,3 +110,4 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+

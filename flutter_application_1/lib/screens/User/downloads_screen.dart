@@ -10,11 +10,11 @@ import 'book_detail_screen.dart';
 class MouseTouchScrollBehavior extends MaterialScrollBehavior {
   @override
   Set<PointerDeviceKind> get dragDevices => {
-        PointerDeviceKind.touch,
-        PointerDeviceKind.mouse,
-        PointerDeviceKind.trackpad,
-        PointerDeviceKind.stylus,
-      };
+    PointerDeviceKind.touch,
+    PointerDeviceKind.mouse,
+    PointerDeviceKind.trackpad,
+    PointerDeviceKind.stylus,
+  };
 }
 
 class DownloadsScreen extends StatefulWidget {
@@ -57,6 +57,7 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
     await ApiService.deleteDownload(deletedId);
 
     if (mounted) {
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('ລົບ "${item.title}" ອອກຈາກລາຍການດາວໂຫຼດແລ້ວ'),
@@ -78,9 +79,14 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
   }
 
   void _openBookDetail(DownloadedBookItem item) {
-    final parsedTags = item.category.isNotEmpty
-        ? item.category.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList()
-        : ['ທົ່ວໄປ'];
+    final parsedTags =
+        item.category.isNotEmpty
+            ? item.category
+                .split(',')
+                .map((e) => e.trim())
+                .where((e) => e.isNotEmpty)
+                .toList()
+            : ['ທົ່ວໄປ'];
 
     final bookModel = BookModel(
       id: item.bookId?.toString() ?? item.id,
@@ -120,15 +126,18 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
 
   List<DownloadedBookItem> get _filteredList {
     final catList = _categories;
-    final safeIndex = (_selectedCategoryIndex < catList.length) ? _selectedCategoryIndex : 0;
+    final safeIndex =
+        (_selectedCategoryIndex < catList.length) ? _selectedCategoryIndex : 0;
     final selectedCat = catList[safeIndex];
 
     return _downloadList.where((book) {
-      final matchesSearch = _searchQuery.isEmpty ||
+      final matchesSearch =
+          _searchQuery.isEmpty ||
           book.title.toLowerCase().contains(_searchQuery.toLowerCase()) ||
           book.author.toLowerCase().contains(_searchQuery.toLowerCase());
 
-      final matchesCategory = safeIndex == 0 ||
+      final matchesCategory =
+          safeIndex == 0 ||
           book.category.toLowerCase().contains(selectedCat.toLowerCase());
 
       return matchesSearch && matchesCategory;
@@ -136,7 +145,12 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
   }
 
   Widget _buildImage(String path, {double? width, double? height}) {
-    return ImageHelper.buildImage(path, width: width, height: height, fit: BoxFit.cover);
+    return ImageHelper.buildImage(
+      path,
+      width: width,
+      height: height,
+      fit: BoxFit.cover,
+    );
   }
 
   @override
@@ -154,7 +168,11 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
             children: [
               const Row(
                 children: [
-                  Icon(Icons.download_for_offline_rounded, color: AppColors.primary, size: 26),
+                  Icon(
+                    Icons.download_for_offline_rounded,
+                    color: AppColors.primary,
+                    size: 26,
+                  ),
                   SizedBox(width: 8),
                   Text(
                     'ດາວໂຫຼດ (Downloaded Books)',
@@ -167,7 +185,10 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
                 ],
               ),
               IconButton(
-                icon: const Icon(Icons.refresh_rounded, color: AppColors.primary),
+                icon: const Icon(
+                  Icons.refresh_rounded,
+                  color: AppColors.primary,
+                ),
                 onPressed: _fetchDownloads,
                 tooltip: 'ຣີເຟຣຊ',
               ),
@@ -194,8 +215,15 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
               onChanged: (val) => setState(() => _searchQuery = val),
               decoration: const InputDecoration(
                 hintText: 'ຄົ້ນຫາໃນລາຍການດາວໂຫຼດ...',
-                hintStyle: TextStyle(fontSize: 13, color: AppColors.textSecondary),
-                icon: Icon(Icons.search_rounded, color: AppColors.textSecondary, size: 20),
+                hintStyle: TextStyle(
+                  fontSize: 13,
+                  color: AppColors.textSecondary,
+                ),
+                icon: Icon(
+                  Icons.search_rounded,
+                  color: AppColors.textSecondary,
+                  size: 20,
+                ),
                 border: InputBorder.none,
               ),
             ),
@@ -220,8 +248,10 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
                     selectedColor: AppColors.primary,
                     backgroundColor: const Color(0xFFEFF3F8),
                     labelStyle: TextStyle(
-                      color: isSelected ? Colors.white : const Color(0xFF64748B),
-                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                      color:
+                          isSelected ? Colors.white : const Color(0xFF64748B),
+                      fontWeight:
+                          isSelected ? FontWeight.bold : FontWeight.w500,
                       fontSize: 12,
                     ),
                     side: BorderSide.none,
@@ -239,40 +269,56 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
 
           // Downloaded List Items
           Expanded(
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
-                : displayList.isEmpty
+            child:
+                _isLoading
                     ? const Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.cloud_download_outlined, size: 64, color: Color(0xFFCBD5E1)),
-                            SizedBox(height: 12),
-                            Text(
-                              'ບໍ່ມີໄຟລ໌ດາວໂຫຼດໃນເຄື່ອງ',
-                              style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.textSecondary),
-                            ),
-                            SizedBox(height: 6),
-                            Text(
-                              'ກົດປຸ່ມດາວໂຫຼດ 📥 ໃນໜ້າໜັງສືເພື່ອບັນທຶກໄວ້ອ່ານອອບໄລນ໌',
-                              style: TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
-                              textAlign: TextAlign.center,
-                            ),
-                          ],
-                        ),
-                      )
-                    : RefreshIndicator(
-                        onRefresh: _fetchDownloads,
+                      child: CircularProgressIndicator(
                         color: AppColors.primary,
-                        child: ListView.separated(
-                          physics: const AlwaysScrollableScrollPhysics(),
-                          itemCount: displayList.length,
-                          separatorBuilder: (_, __) => const SizedBox(height: 14),
-                          itemBuilder: (context, index) {
-                            return _buildDownloadCard(displayList[index], index);
-                          },
-                        ),
                       ),
+                    )
+                    : displayList.isEmpty
+                    ? const Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.cloud_download_outlined,
+                            size: 64,
+                            color: Color(0xFFCBD5E1),
+                          ),
+                          SizedBox(height: 12),
+                          Text(
+                            'ບໍ່ມີໄຟລ໌ດາວໂຫຼດໃນເຄື່ອງ',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                          SizedBox(height: 6),
+                          Text(
+                            'ກົດປຸ່ມດາວໂຫຼດ 📥 ໃນໜ້າໜັງສືເພື່ອບັນທຶກໄວ້ອ່ານອອບໄລນ໌',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Color(0xFF94A3B8),
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      ),
+                    )
+                    : RefreshIndicator(
+                      onRefresh: _fetchDownloads,
+                      color: AppColors.primary,
+                      child: ListView.separated(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        itemCount: displayList.length,
+                        separatorBuilder: (_, __) => const SizedBox(height: 14),
+                        itemBuilder: (context, index) {
+                          return _buildDownloadCard(displayList[index], index);
+                        },
+                      ),
+                    ),
           ),
         ],
       ),
@@ -280,9 +326,14 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
   }
 
   Widget _buildDownloadCard(DownloadedBookItem item, int index) {
-    final catBadgeList = item.category.isNotEmpty
-        ? item.category.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList()
-        : ['ທົ່ວໄປ'];
+    final catBadgeList =
+        item.category.isNotEmpty
+            ? item.category
+                .split(',')
+                .map((e) => e.trim())
+                .where((e) => e.isNotEmpty)
+                .toList()
+            : ['ທົ່ວໄປ'];
 
     return InkWell(
       onTap: () => _openBookDetail(item),
@@ -307,11 +358,7 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
             // Book Thumbnail Image
             ClipRRect(
               borderRadius: BorderRadius.circular(10),
-              child: _buildImage(
-                item.imagePath,
-                width: 85,
-                height: 115,
-              ),
+              child: _buildImage(item.imagePath, width: 85, height: 115),
             ),
             const SizedBox(width: 14),
 
@@ -374,7 +421,10 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
                     children: [
                       ...catBadgeList.map(
                         (catName) => Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 3,
+                          ),
                           decoration: BoxDecoration(
                             color: const Color(0xFFEBF1F7),
                             borderRadius: BorderRadius.circular(6),
@@ -391,7 +441,10 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
                       ),
                       if (item.fileSizeBytes > 0)
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 3,
+                          ),
                           decoration: BoxDecoration(
                             color: const Color(0xFFF1F5F9),
                             borderRadius: BorderRadius.circular(6),
@@ -399,7 +452,11 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              const Icon(Icons.sd_storage_outlined, size: 12, color: AppColors.textSecondary),
+                              const Icon(
+                                Icons.sd_storage_outlined,
+                                size: 12,
+                                color: AppColors.textSecondary,
+                              ),
                               const SizedBox(width: 3),
                               Text(
                                 item.formattedFileSize,
@@ -414,7 +471,10 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
                         ),
                       if (item.pageCount > 0)
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 3,
+                          ),
                           decoration: BoxDecoration(
                             color: const Color(0xFFF1F5F9),
                             borderRadius: BorderRadius.circular(6),
@@ -438,10 +498,18 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
                     width: 115,
                     child: ElevatedButton.icon(
                       onPressed: () => _openBookDetail(item),
-                      icon: const Icon(Icons.menu_book_rounded, size: 14, color: Colors.white),
+                      icon: const Icon(
+                        Icons.menu_book_rounded,
+                        size: 14,
+                        color: Colors.white,
+                      ),
                       label: const Text(
                         'ອ່ານເລີຍ',
-                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
                       ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary,
@@ -461,4 +529,3 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
     );
   }
 }
-

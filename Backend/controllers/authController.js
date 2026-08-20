@@ -99,13 +99,44 @@ exports.register = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Email is already registered' });
     }
 
-    const salt = await bcrypt.genSalt(10);
+        const salt = await bcrypt.genSalt(10);
     const password_hash = await bcrypt.hash(password, salt);
+
+    // # ------------------------------------------------------------------
+    // # ทำไมต้อง: แอปไคลเอนต์ (Build ที่ใช้งานอยู่) ส่ง field `gender` เป็น
+    // #   ฉลากภาษาลาว/ไทย เช่น 'ຊາຍ','ສມຍ','ชาย','หญิง' (หรือค่าว่างเป็น '')
+    // #   แต่ฐานข้อมูลมีคอลัมน์ gender เป็น
+    // #   ENUM('male','female','other','unspecified') เท่านั้น
+    // #  consequence: MySQL โยน "Data truncated for column 'gender'" (errno 1265)
+    // #   → mysql2  throw → ตกมาที่ catch ให้เป็น "Server error during registration"
+    // #  solution: mapping ค่าใดก็ตามให้เป็นสมาชิก ENUM ที่ถูกต้อง ไม่งั้นเลือกเป็น
+    // #   'unspecified' (ค่าเริ่มต้นของ ENUM) แทนการให้ MySQL truncate
+    const GENDER_MAP = {
+      'male': 'male',
+      'ชาย': 'male', 'ຊາຍ': 'male', 'man': 'male', 'men': 'male', 'm': 'male',
+      'female': 'female',
+      'หญิง': 'female', 'ຍິງ': 'female', 'woman': 'female', 'women': 'female', 'f': 'female',
+      'other': 'other',
+      'unspecified': 'unspecified',
+    };
+    const normGender = (!gender || gender === '')
+        ? 'unspecified'
+        : (GENDER_MAP[String(gender).trim().toLowerCase()] || 'unspecified');
+
+    // birth_date: รับค่าอาจเป็นสตริงวันที่รูปแบบต่างภาษา → แปลงเป็น YYYY-MM-DD
+    //   (UTC) หรือ NULL หากไม่สามารถแปลงได้ เพื่อป้องกัน SQL error เพราะ format วันที่
+    let normBirth = null;
+    if (birth_date != null && String(birth_date).trim() !== '') {
+      const d = new Date(String(birth_date));
+      if (!Number.isNaN(d.getTime())) {
+        normBirth = d.toISOString().slice(0, 10);
+      }
+    }
 
     const [result] = await pool.query(
       `INSERT INTO users (email, password_hash, first_name, last_name, phone_number, birth_date, gender, role, status)
        VALUES (?, ?, ?, ?, ?, ?, ?, 'user', 'active')`,
-      [email, password_hash, first_name, last_name, phone_number || null, birth_date || null, gender || 'unspecified']
+      [email, password_hash, first_name, last_name, phone_number || null, normBirth, normGender]
     );
 
     res.status(201).json({
